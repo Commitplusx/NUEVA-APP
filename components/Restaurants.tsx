@@ -161,7 +161,7 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
   });
 
   return (
-    <div className="pb-24">
+    <div>
       <header className="p-4">
         <div className="flex justify-between items-center mb-4">
           <button className="p-2 rounded-full bg-white shadow-sm border border-gray-200"><MenuIcon className="w-6 h-6 text-gray-800"/></button>

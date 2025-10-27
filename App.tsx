@@ -158,7 +158,7 @@ const App: React.FC = () => {
     <div className="bg-gray-200 font-sans">
       <div className="relative w-full md:max-w-sm mx-auto h-screen bg-white md:shadow-lg flex flex-col transform-gpu overflow-hidden">
         <main className="flex-grow overflow-y-auto bg-gray-50">
-           <div key={currentPage} className="animate-fade-in">
+           <div key={currentPage} className="animate-fade-in pb-20">
              {renderContent()}
            </div>
         </main>

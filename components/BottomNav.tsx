@@ -17,7 +17,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentPage, setCurrentPag
   ];
 
   return (
-    <nav className="w-full bg-white border-t border-gray-200">
+    <nav className="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200">
       <div className="flex justify-around items-center h-20">
         {navItems.map((item) => {
           const isSelected = currentPage === item.page;

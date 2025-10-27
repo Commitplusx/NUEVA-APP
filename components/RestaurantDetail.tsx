@@ -35,7 +35,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, 
   const otherItems = restaurant.menu.filter(item => !item.isPopular);
 
   return (
-    <div className="pb-24 bg-gray-50">
+    <div className="bg-gray-50">
       <div className="relative">
         <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-48 object-cover" />
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">

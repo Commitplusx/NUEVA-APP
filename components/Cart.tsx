@@ -75,7 +75,7 @@ export const Cart: React.FC<CartProps> = ({ cartItems, onUpdateCart, onNavigate,
       )}
 
       {cartItems.length > 0 && (
-        <div className="border-t pt-4 mt-4 space-y-4 pb-20">
+        <div className="border-t pt-4 mt-4 space-y-4">
             <div className="space-y-1 text-gray-700 font-medium">
               <div className="flex justify-between">
                 <span>Subtotal</span>

@@ -38,7 +38,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      <div className="pb-20">
+      <div>
         <button
           onClick={onNavigate}
           className="bg-red-600 text-white w-full py-4 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg"

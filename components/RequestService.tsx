@@ -80,7 +80,7 @@ export const RequestService: React.FC = () => {
         </button>
       </section>
 
-      <section className="pb-20">
+      <section>
         <button
           onClick={handleConfirm}
           className="bg-red-600 text-white w-full py-4 rounded-md font-bold hover:bg-red-700 transition-colors"
