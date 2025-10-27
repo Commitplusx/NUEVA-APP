@@ -99,7 +99,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ item, restaurant, 
       </div>
       
       {/* --- Bottom Action Bar --- */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm h-24 bg-white border-t border-gray-200 flex items-center justify-between px-4 rounded-b-3xl">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm h-24 bg-white border-t border-gray-200 flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
               <button onClick={() => handleQuantityChange(-1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors disabled:opacity-50" disabled={quantity <= 1}>
                   <MinusIcon className="w-6 h-6 text-gray-800" />

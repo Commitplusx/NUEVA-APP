@@ -1,5 +1,5 @@
 {
-  "name": "Estrella Service Request",
+  "name": "Index.html",
   "description": "A web application for requesting delivery services, inspired by a mobile app design. Users can select service tariffs, specify order details, and confirm their request.",
   "requestFramePermissions": []
 }
