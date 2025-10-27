@@ -155,8 +155,8 @@ const App: React.FC = () => {
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="bg-gray-200 font-sans">
-      <div className="relative w-full md:max-w-sm mx-auto h-screen bg-white md:shadow-lg flex flex-col transform-gpu overflow-hidden">
+    <div className="bg-gray-200 font-sans h-full">
+      <div className="relative w-full md:max-w-sm mx-auto h-full bg-white md:shadow-lg flex flex-col">
         <main className="flex-grow overflow-y-auto bg-gray-50">
            <div key={currentPage} className="animate-fade-in pb-20">
              {renderContent()}
