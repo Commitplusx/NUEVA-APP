@@ -1,17 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { obtenerRespuestaDeSoporte } from '../services/api';
+import { SparklesIcon, SendIcon } from './icons';
 
 interface Message {
-  text: string;
   sender: 'user' | 'ai';
+  text: string;
 }
 
 const TypingIndicator: React.FC = () => (
-    <div className="flex items-center space-x-1 self-start">
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+    <div className="flex items-center space-x-1.5">
+        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
     </div>
+);
+
+const PromptButton: React.FC<{text: string, onClick: () => void}> = ({text, onClick}) => (
+    <button
+        onClick={onClick}
+        className="px-4 py-2 bg-white border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+    >
+        {text}
+    </button>
 );
 
 export const SupportChat: React.FC = () => {
@@ -20,27 +30,31 @@ export const SupportChat: React.FC = () => {
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    // Scroll to the bottom whenever messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const userMessage = inputValue.trim();
-    if (!userMessage || isLoading) return;
-
-    // Add user message to UI
-    setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
+  const sendMessage = async (messageText: string) => {
+    if (!messageText || isLoading) return;
+    
+    setShowPrompts(false);
+    const userMessage = messageText.trim();
+    const newMessages: Message[] = [...messages, { sender: 'user', text: userMessage }];
+    setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const aiResponse = await obtenerRespuestaDeSoporte(userMessage);
+      const formattedHistory = newMessages.slice(0, -1).map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+
+      const aiResponse = await obtenerRespuestaDeSoporte(formattedHistory, userMessage);
       
-      // Update local message state for UI
       setMessages(prev => [...prev, { sender: 'ai', text: aiResponse }]);
     } catch (error) {
       console.error("Error getting support response:", error);
@@ -50,28 +64,56 @@ export const SupportChat: React.FC = () => {
     }
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputValue);
+  };
+
+  const handlePromptClick = (promptText: string) => {
+     sendMessage(promptText);
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-100">
-        <header className="bg-white p-4 border-b border-gray-200 shadow-sm text-center">
-            <h1 className="text-xl font-bold text-gray-800">Soporte Estrella</h1>
-            <p className="text-sm text-gray-500">Asistente Virtual</p>
+        <header className="bg-white p-3 border-b border-gray-200 shadow-sm flex items-center gap-3">
+            <div className="relative">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <SparklesIcon className="w-7 h-7 text-orange-500" />
+                </div>
+                 <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
+            </div>
+            <div>
+                <h1 className="text-lg font-bold text-gray-800">Asistente Estrella</h1>
+                <p className="text-sm text-green-600 font-semibold">En línea</p>
+            </div>
         </header>
 
         <div className="flex-grow p-4 overflow-y-auto space-y-4">
-            {messages.map((msg, index) => (
-                <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs md:max-w-md px-4 py-2 rounded-2xl ${
-                        msg.sender === 'user' 
-                        ? 'bg-orange-500 text-white rounded-br-none' 
-                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
-                    }`}>
-                        <p className="text-sm">{msg.text}</p>
+            {messages.map((msg, index) => {
+                const isLastMessage = index === messages.length - 1;
+                return (
+                    <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl shadow-sm ${
+                            msg.sender === 'user' 
+                            ? 'bg-orange-500 text-white rounded-br-lg' 
+                            : 'bg-white text-gray-800 border border-gray-200 rounded-bl-lg'
+                        } ${msg.sender === 'ai' && isLastMessage ? 'animate-fade-in-bubble' : ''}`}>
+                            <p className="text-sm leading-relaxed">{msg.text}</p>
+                        </div>
                     </div>
+                );
+            })}
+            
+            {showPrompts && (
+                <div className="flex justify-center gap-2 pt-2 animate-fade-in">
+                    <PromptButton text="Estado de mi pedido" onClick={() => handlePromptClick("¿Cuál es el estado de mi pedido de Burger Joint?")} />
+                    <PromptButton text="Tarifas de servicio" onClick={() => handlePromptClick("¿Cuáles son las tarifas de servicio?")} />
                 </div>
-            ))}
+            )}
+
             {isLoading && (
                  <div className="flex justify-start">
-                     <div className="max-w-xs md:max-w-md px-4 py-2 rounded-2xl bg-white text-gray-800 border border-gray-200 rounded-bl-none">
+                     <div className="max-w-xs md:max-w-md px-4 py-3 rounded-2xl bg-white text-gray-800 border border-gray-200 rounded-bl-lg shadow-sm animate-fade-in-bubble">
                         <TypingIndicator />
                      </div>
                 </div>
@@ -79,20 +121,24 @@ export const SupportChat: React.FC = () => {
             <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-200 flex items-center gap-2">
-            <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Escribe tu pregunta..."
-                className="flex-grow py-3 px-4 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
-                disabled={isLoading}
-            />
-            <button type="submit" className="bg-orange-500 text-white rounded-full p-3 hover:bg-orange-600 transition-colors disabled:bg-gray-400" disabled={isLoading || !inputValue}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-            </button>
+        <form onSubmit={handleFormSubmit} className="p-3 bg-white border-t border-gray-200">
+            <div className="relative">
+                <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder="Escribe tu mensaje..."
+                    className="w-full py-3 pl-5 pr-16 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 border border-transparent focus:border-orange-500 transition"
+                    disabled={isLoading}
+                />
+                <button
+                    type="submit"
+                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-orange-500 text-white rounded-full p-2.5 hover:bg-orange-600 transition-all duration-200 transform disabled:bg-gray-400 disabled:scale-90"
+                    disabled={isLoading || !inputValue.trim()}
+                >
+                    <SendIcon className="h-5 w-5" />
+                </button>
+            </div>
         </form>
     </div>
   );

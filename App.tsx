@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { Home } from './components/Home';
-import { RequestService } from './components/RequestService';
-import { Restaurants } from './components/Restaurants';
 import { RestaurantDetail } from './components/RestaurantDetail';
 import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
 import { Toast } from './components/Toast';
 import { SupportChat } from './components/SupportChat';
 import { confirmarPedido } from './services/api';
+import { ComingSoon } from './components/ComingSoon';
+import { RequestService } from './components/RequestService';
 
 // --- Types ---
 export interface Ingredient {
@@ -49,7 +49,7 @@ export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'pr
 
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('restaurants');
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -132,23 +132,23 @@ const App: React.FC = () => {
       case 'request':
         return <RequestService />;
       case 'restaurants':
-        return <Restaurants onSelectRestaurant={handleSelectRestaurant} />;
+        return <ComingSoon title="Restaurantes" />;
       case 'restaurantDetail':
         if (selectedRestaurant) {
           return <RestaurantDetail restaurant={selectedRestaurant} onSelectItem={handleSelectMenuItem} onBack={handleBackToRestaurants} />;
         }
-        return <Restaurants onSelectRestaurant={handleSelectRestaurant} />;
+        return <ComingSoon title="Restaurantes" />;
       case 'productDetail':
         if (selectedMenuItem && selectedRestaurant) {
           return <ProductDetail item={selectedMenuItem} restaurant={selectedRestaurant} onAddToCart={handleAddToCart} onBack={handleBackToMenu} />
         }
-        return <Restaurants onSelectRestaurant={handleSelectRestaurant} />; // Fallback
+        return <ComingSoon title="Restaurantes" />; // Fallback
       case 'cart':
         return <Cart cartItems={cart} onUpdateCart={handleUpdateCart} onNavigate={setCurrentPage} onConfirmOrder={handleConfirmOrder} />;
        case 'support':
         return <SupportChat />;
       default:
-        return <Restaurants onSelectRestaurant={handleSelectRestaurant} />;
+        return <ComingSoon title="Restaurantes" />;
     }
   };
   
@@ -157,8 +157,8 @@ const App: React.FC = () => {
   return (
     <div className="bg-gray-200 font-sans h-full">
       <div className="relative w-full md:max-w-sm mx-auto h-full bg-white md:shadow-lg flex flex-col">
-        <main className="flex-grow overflow-y-auto bg-gray-50">
-           <div key={currentPage} className="animate-fade-in pb-20">
+        <main className="flex-grow overflow-y-hidden bg-gray-50 no-scrollbar">
+           <div key={currentPage} className="animate-fade-in pb-20 h-full">
              {renderContent()}
            </div>
         </main>

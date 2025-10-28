@@ -51,7 +51,8 @@ export const Cart: React.FC<CartProps> = ({ cartItems, onUpdateCart, onNavigate,
             const removedIngredients = originalIngredients.filter(name => !customizedIngredients.includes(name));
             
             return (
-              <div key={cartItem.id} className="flex items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+              <div key={cartItem.id} className="flex items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm gap-3">
+                <img src={cartItem.product.imageUrl} alt={cartItem.product.name} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
                 <div className="flex-grow">
                   <p className="font-bold">{cartItem.product.name}</p>
                    {removedIngredients.length > 0 && (
