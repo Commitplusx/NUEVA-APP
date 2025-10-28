@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { TariffCard } from './TariffCard';
 import { LocationIcon, LockIcon, ForaneosIcon, WrenchIcon, EditIcon, ArrowRightIcon } from './icons';
@@ -191,27 +192,29 @@ export const RequestService: React.FC = () => {
          <p className="text-xs text-center text-gray-500 mt-2">Por favor, selecciona una tarifa para tu servicio.</p>
       </section>
 
-       <section className="space-y-3">
-          <div className="relative flex items-center">
-              <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="text" placeholder="Origen (ej: Centro, Plaza)" value={origin} onChange={(e) => setOrigin(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
-          </div>
-          <div className="relative flex items-center">
-              <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="text" placeholder="Destino (ej: Orilla, Fuera)" value={destination} onChange={(e) => setDestination(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
-          </div>
-          <div className="h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 border-2 border-dashed border-gray-300">
-              <div className="text-center">
-                  <LocationIcon className="w-8 h-8 mx-auto mb-1" />
-                  <p className="font-semibold text-sm">Simulación de Mapa</p>
-              </div>
-          </div>
-           <textarea placeholder="Descripción del paquete o mandado..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black h-20 resize-none"></textarea>
-      </section>
+      {!isScheduling && (
+        <section className="space-y-3 animate-fade-in">
+           <div className="relative flex items-center">
+               <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+               <input type="text" placeholder="Origen (ej: Centro, Plaza)" value={origin} onChange={(e) => setOrigin(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
+           </div>
+           <div className="relative flex items-center">
+               <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+               <input type="text" placeholder="Destino (ej: Orilla, Fuera)" value={destination} onChange={(e) => setDestination(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
+           </div>
+           <div className="h-28 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 border-2 border-dashed border-gray-300">
+               <div className="text-center">
+                   <LocationIcon className="w-8 h-8 mx-auto mb-1" />
+                   <p className="font-semibold text-sm">Simulación de Mapa</p>
+               </div>
+           </div>
+            <textarea placeholder="Descripción del paquete o mandado..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black h-20 resize-none"></textarea>
+       </section>
+      )}
 
       <section className="grid grid-cols-2 gap-3">
         <button onClick={() => setIsScheduling(!isScheduling)} className="bg-gray-700 text-white text-xs font-bold py-3 rounded-md hover:bg-black transition-colors">
-          {confirmedSchedule ? 'REPROGRAMAR' : 'PROGRAMAR RECOGIDA'}
+          {isScheduling ? 'VOLVER A DETALLES' : (confirmedSchedule ? 'REPROGRAMAR' : 'PROGRAMAR RECOGIDA')}
         </button>
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white text-center text-xs font-bold py-3 rounded-md hover:bg-green-700 transition-colors">
           CONTACTAR SOPORTE
@@ -249,20 +252,22 @@ export const RequestService: React.FC = () => {
             </div>
         </section>
       )}
-
-      <section>
-        {confirmedSchedule && (
-          <div className="text-center mb-3 p-2 bg-green-100 text-green-800 rounded-md text-sm font-semibold">
-            <p>Recogida programada: {getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
-          </div>
-        )}
-        <button
-          onClick={handleProceedToConfirmation}
-          className="bg-red-600 text-white w-full py-4 rounded-md font-bold hover:bg-red-700 transition-colors shadow-lg"
-        >
-          CONTINUAR
-        </button>
-      </section>
+      
+      {!isScheduling && (
+        <section className="animate-fade-in">
+          {confirmedSchedule && (
+            <div className="text-center mb-3 p-2 bg-green-100 text-green-800 rounded-md text-sm font-semibold">
+              <p>Recogida programada: {getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
+            </div>
+          )}
+          <button
+            onClick={handleProceedToConfirmation}
+            className="bg-red-600 text-white w-full py-4 rounded-md font-bold hover:bg-red-700 transition-colors shadow-lg"
+          >
+            CONTINUAR
+          </button>
+        </section>
+      )}
     </div>
   );
 };
