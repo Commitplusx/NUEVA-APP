@@ -4,12 +4,6 @@ import { CartItem, Restaurant } from '../App';
 // ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y "Type"
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 
-// services/api.tsx (Código Corregido Definitivo)
-
-import { CartItem, Restaurant } from '../App';
-// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y "Type"
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
-
 /*
 =================================================
  PARTE 1: TU CÓDIGO ORIGINAL DE GEMINI (PARA EL CHAT)
@@ -34,8 +28,8 @@ export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Pr
 };
 
 // --- AI Services ---
-// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI"
-const ai = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
+// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y lee la variable de Vercel/Vite
+const ai = new GoogleGenAI(import.meta.env.VITE_GEMINI_API_KEY || "");
 
 /**
  * Searches for restaurants using a natural language query powered by Gemini.
@@ -134,7 +128,7 @@ export const solicitarServicio = async (data: ServiceRequestData): Promise<{succ
   const response = await fetch('/api/submit-service', {
     method: 'POST',
     headers: {
-      'Content-Type': 'json',
+      'Content-Type': 'application/json', // Corregido a 'application/json'
     },
     body: JSON.stringify(data),
   });
