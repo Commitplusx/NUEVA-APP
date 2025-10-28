@@ -1,5 +1,5 @@
 import React from 'react';
-import { HomeIcon, CartIcon, RestaurantIcon, SupportIcon } from './icons';
+import { HomeIcon, CartIcon, RestaurantIcon } from './icons';
 import { Page } from '../App';
 
 interface BottomNavProps {
@@ -12,7 +12,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentPage, setCurrentPag
   const navItems = [
     { page: 'home' as Page, icon: HomeIcon, label: 'Home' },
     { page: 'restaurants' as Page, icon: RestaurantIcon, label: 'Restaurants' },
-    { page: 'support' as Page, icon: SupportIcon, label: 'Support' },
     { page: 'cart' as Page, icon: CartIcon, label: 'Cart' },
   ];
 
@@ -25,7 +24,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentPage, setCurrentPag
             <button
               key={item.page}
               onClick={() => setCurrentPage(item.page)}
-              className="flex items-center justify-center w-1/4 h-full transition-colors duration-300"
+              className="flex items-center justify-center w-1/3 h-full transition-colors duration-300"
               aria-current={isSelected ? 'page' : undefined}
               aria-label={`Navigate to ${item.label}`}
             >

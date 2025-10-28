@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Restaurant } from '../App';
 import { MenuIcon, ChevronDownIcon, UserCircleIcon, SearchIcon, StarIcon, ClockIcon, SaltIcon, ChickenIcon, OnionIcon, GarlicIcon, PeppersIcon, GingerIcon, BroccoliIcon } from './icons';
-import { buscarRestaurantesConIA } from '../services/api';
 
 const restaurants: Restaurant[] = [
   {
@@ -150,47 +149,16 @@ interface RestaurantsProps {
 export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [aiFilteredIds, setAiFilteredIds] = useState<number[] | null>(null);
-
-  const handleAiSearch = async () => {
-    if (searchQuery.trim().length < 3) {
-      setAiFilteredIds(null);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const ids = await buscarRestaurantesConIA(searchQuery, restaurants);
-      setAiFilteredIds(ids);
-    } catch (error) {
-      console.error("AI search failed:", error);
-      setAiFilteredIds([]); // Show no results on error
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   const handleCategoryClick = (categoryName: string) => {
     setSelectedCategory(categoryName);
-    setAiFilteredIds(null); // Reset AI search when category changes
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    if (e.target.value === '') {
-      setAiFilteredIds(null); // Reset AI search when input is cleared
-    }
   };
 
   const filteredRestaurants = useMemo(() => {
-    // AI search results take precedence
-    if (aiFilteredIds !== null) {
-      return aiFilteredIds
-        .map(id => restaurants.find(r => r.id === id))
-        .filter((r): r is Restaurant => r !== undefined);
-    }
-
-    // Fallback to local filtering by category and search query
     return restaurants.filter(restaurant => {
       const categoryMatch = selectedCategory === 'All' || restaurant.category.toLowerCase().includes(selectedCategory.toLowerCase());
       const searchMatch = searchQuery.trim() === '' || 
@@ -198,7 +166,7 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
         restaurant.menu.some(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
       return categoryMatch && searchMatch;
     });
-  }, [selectedCategory, searchQuery, aiFilteredIds]);
+  }, [selectedCategory, searchQuery]);
 
   return (
     <div>
@@ -224,20 +192,14 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
           <div className="relative flex items-center">
               <input 
                 type="text" 
-                placeholder="Busca con IA: 'algo picante' y presiona Enter" 
+                placeholder="Busca tu restaurante o platillo..." 
                 className="w-full py-3 pl-10 pr-4 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
               />
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <SearchIcon className="w-5 h-5"/>
               </div>
-              {isSearching && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              )}
           </div>
       </div>
 
@@ -258,15 +220,11 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
       <section className="px-4">
         <div className="flex justify-between items-center mb-3">
             <h2 className="text-xl font-bold text-gray-800">
-              {aiFilteredIds !== null ? 'Resultados de IA' : 'Restaurantes Abiertos'}
+              Restaurantes Abiertos
             </h2>
         </div>
         <div className="grid grid-cols-1 gap-6">
-            {isSearching ? (
-                 <p className="text-center text-gray-500 col-span-1 py-10">
-                    Buscando con IA...
-                </p>
-            ) : filteredRestaurants.length > 0 ? (
+            {filteredRestaurants.length > 0 ? (
                 filteredRestaurants.map((restaurant) => (
                     <RestaurantCard
                         key={restaurant.id}

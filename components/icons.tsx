@@ -141,12 +141,6 @@ export const UserCircleIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
-export const SupportIcon: React.FC<IconProps> = (props) => (
-  <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-  </svg>
-);
-
 export const ArrowRightIcon: React.FC<IconProps> = (props) => (
     <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -159,29 +153,31 @@ export const EditIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
-// Ingredient Icons
-export const SaltIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12M12 12H2L4 4h16l2 8H12zM7 8v2M12 8v2M17 8v2" /></svg>);
-export const ChickenIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.87,14.09a3.3,3.3,0,0,0-4.6-4.62,8.74,8.74,0,0,0-7.36,3.69,8.7,8.7,0,0,0,3.68,7.36,3.3,3.3,0,0,0,4.6,4.62,8.74,8.74,0,0,0,7.36-3.69A8.7,8.7,0,0,0,18.87,14.09Z" /><path d="M8.3,10.2,5.2,4.2A2,2,0,0,1,6,2H8a2,2,0,0,1,2,1.3L11.7,8" /><circle cx="12.5" cy="8.5" r="1.5" /></svg>);
-export const OnionIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2A10,10,0,0,0,2,12a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1A10,10,0,0,0,12,2Z" /><path d="M12,2a2.5,2.5,0,0,1,2.5,2.5V13h-5V4.5A2.5,2.5,0,0,1,12,2Z" /></svg>);
-export const GarlicIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2a5,5,0,0,0-5,5c0,2.5,2,4.5,5,4.5s5-2,5-4.5A5,5,0,0,0,12,2Z" /><path d="M12,11.5c-2.5,0-4.5,2-4.5,4.5V22h9V16c0-2.5-2-4.5-4.5-4.5Z" /><path d="M8,7A3,3,0,0,0,5,4" /><path d="M16,7a3,3,0,0,1,3-3" /></svg>);
-export const PeppersIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5,2c-2,0-3.5,1.5-3.5,3.5v.5c0,1.5,1,3,2.5,3s2.5-1.5,2.5-3v-.5C14,3.5,13,2,12.5,2Z" /><path d="M12,9c-3.5,0-6,2.5-6,6v3a4,4,0,0,0,4,4h4a4,4,0,0,0,4-4v-3C18,11.5,15.5,9,12,9Z" /></svg>);
-export const GingerIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5 10.5C10.5 8.5 8.5 7.5 6 7.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5h.5c2 0 3.5-1.5 3.5-3.5s-1.5-3.5-3.5-3.5" /><path d="M12.5 10.5c2 2 4 3 6.5 3 2.5 0 4.5-2 4.5-4.5s-2-4.5-4.5-4.5h-.5c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5" /></svg>);
-export const BroccoliIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2a4,4,0,0,0-4,4c0,1,1.5,2.5,4,2.5s4-1.5,4-2.5A4,4,0,0,0,12,2Z" /><path d="M12,8.5c-2,0-4,1-4,2.5s2,2.5,4,2.5,4-1,4-2.5S14,8.5,12,8.5Z" /><path d="M12,13.5v8" /><path d="M9,21.5h6" /></svg>);
-
 export const WrenchIcon: React.FC<IconProps> = (props) => (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
     </svg>
 );
-
+// FIX: Add SparklesIcon used in the support chat.
 export const SparklesIcon: React.FC<IconProps> = (props) => (
     <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m11-1a2 2 0 00-2-2h-1a2 2 0 00-2 2v1a2 2 0 002 2h1a2 2 0 002-2v-1zM15 5h1a2 2 0 012 2v1a2 2 0 01-2 2h-1a2 2 0 01-2-2V7a2 2 0 012-2z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
     </svg>
 );
 
+// FIX: Add SendIcon used in the support chat.
 export const SendIcon: React.FC<IconProps> = (props) => (
-    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
     </svg>
 );
+
+// Ingredient Icons
+export const SaltIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12M12 12H2L4 4h16l2 8H12zM7 8v2M12 8v2M17 8v2" /></svg>);
+export const ChickenIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18.87,14.09a3.3,3.3,0,0,0-4.6-4.62,8.74,8.74,0,0,0-7.36,3.69,8.7,8.7,0,0,0,3.68,7.36,3.3,3.3,0,0,0,4.6,4.62,8.74,8.74,0,0,0,7.36-3.69A8.7,8.7,0,0,0,18.87,14.09Z" /><path d="M8.3,10.2,5.2,4.2A2,2,0,0,1,6,2H8a2,2,0,0,1,2,1.3L11.7,8" /><circle cx="12.5" cy="8.5" r="1.5" /></svg>);
+export const OnionIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2A10,10,0,0,0,2,12a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1A10,10,0,0,0,12,2Z" /><path d="M12,2a2.5,2.5,0,0,1,2.5,2.5V13h-5V4.5A2.5,2.5,0,0,1,12,2Z" /></svg>);
+export const GarlicIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2a5,5,0,0,0-5,5c0,2.5,2,4.5,5,4.5s5-2,5-4.5A5,5,0,0,0,12,2Z" /><path d="M12,11.5c-2.5,0-4.5,2,4.5-4.5V22h9V16c0-2.5-2-4.5-4.5-4.5Z" /><path d="M8,7A3,3,0,0,0,5,4" /><path d="M16,7a3,3,0,0,1,3-3" /></svg>);
+export const PeppersIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5,2c-2,0-3.5,1.5-3.5,3.5v.5c0,1.5,1,3,2.5,3s2.5-1.5,2.5-3v-.5C14,3.5,13,2,12.5,2Z" /><path d="M12,9c-3.5,0-6,2.5-6,6v3a4,4,0,0,0,4,4h4a4,4,0,0,0,4-4v-3C18,11.5,15.5,9,12,9Z" /></svg>);
+export const GingerIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5 10.5C10.5 8.5 8.5 7.5 6 7.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5h.5c2 0 3.5-1.5 3.5-3.5s-1.5-3.5-3.5-3.5" /><path d="M12.5 10.5c2 2 4 3 6.5 3 2.5 0 4.5-2 4.5-4.5s-2-4.5-4.5-4.5h-.5c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5" /></svg>);
+export const BroccoliIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2a4,4,0,0,0-4,4c0,1,1.5,2.5,4,2.5s4-1.5,4-2.5A4,4,0,0,0,12,2Z" /><path d="M12,8.5c-2,0-4,1-4,2.5s2,2.5,4,2.5,4-1,4-2.5S14,8.5,12,8.5Z" /><path d="M12,13.5v8" /><path d="M9,21.5h6" /></svg>);

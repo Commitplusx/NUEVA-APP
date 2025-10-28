@@ -1,18 +1,19 @@
-// services/api.tsx (Código Corregido Definitivo)
+import { CartItem } from '../App';
+// FIX: Import GoogleGenAI and Content from @google/genai to support chat functionality.
+import { GoogleGenAI, Content } from '@google/genai';
 
-import { CartItem, Restaurant } from '../App';
-// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y "Type"
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
-
-/*
-=================================================
- PARTE 1: TU CÓDIGO ORIGINAL DE GEMINI (PARA EL CHAT)
-=================================================
-*/
+/**
+ * This file contains services to interact with external APIs,
+ * including a mock order confirmation.
+ */
 
 /**
  * MOCK ORDER CONFIRMATION
- * Simulates sending an order to a backend.
+ * Simulates sending an order to a backend. In a real app, this would
+ * make an HTTP request to a server.
+ * @param {CartItem[]} cart - The items in the user's cart.
+ * @param {string} phoneNumber - The user's WhatsApp number.
+ * @returns {Promise<{success: boolean}>} - A promise that resolves if the order is confirmed.
  */
 export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Promise<{success: boolean}> => {
   console.log("Simulating order confirmation...");
@@ -23,121 +24,35 @@ export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Pr
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
+
   console.log('Order confirmed for:', { phoneNumber, cart });
+  // Return a success message
   return { success: true };
 };
 
-// --- AI Services ---
-// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y lee la variable de Vercel/Vite
-const ai = new GoogleGenAI(import.meta.env.VITE_GEMINI_API_KEY || "");
+// FIX: Implement `obtenerRespuestaDeSoporte` using Gemini API for the support chat.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
- * Searches for restaurants using a natural language query powered by Gemini.
- * (Esta es tu función original)
+ * Gets a response from the Gemini AI for the support chat.
+ * @param history The conversation history.
+ * @param message The user's latest message.
+ * @returns A promise that resolves to the AI's text response.
  */
-export const buscarRestaurantesConIA = async (query: string, restaurants: Restaurant[]): Promise<number[]> => {
-    console.log(`Searching with AI for: "${query}"`);
-    
-    const simplifiedRestaurants = restaurants.map(r => ({
-        id: r.id, name: r.name, category: r.category,
-        menu: r.menu.map(m => ({ name: m.name, description: m.description }))
-    }));
-
-    // (Adaptado de tu archivo original 'api.tsx.txt')
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" }); // Asegúrate que este modelo sea correcto
-    const prompt = `You are a smart restaurant search assistant... (tu prompt aquí) ... User query: "${query}". Restaurant data: ${JSON.stringify(simplifiedRestaurants)}`;
-
-    try {
-        const result = await model.generateContent(prompt); // Asumiendo generateContent
-        const response = await result.response;
-        const text = response.text();
-        const ids = JSON.parse(text);
-        console.log("AI search results (IDs):", ids);
-        return ids as number[];
-    } catch (error) {
-        console.error("Error during AI search:", error);
-        return [];
-    }
-}
-
-/**
- * Función de declaración para la IA
- * (Esta es tu función original)
- */
-const verificarEstadoPedido: FunctionDeclaration = {
-  name: 'verificarEstadoPedido',
-  parameters: {
-    type: Type.OBJECT,
-    description: "Verifica el estado actual de un pedido...",
-    properties: {
-      nombreRestaurante: {
-        type: Type.STRING,
-        description: "El nombre del restaurante",
-      },
-    },
-    required: ["nombreRestaurante"],
-  },
-};
-
-/**
- * Sends a user's message to the Gemini API
- * (Esta es tu función original que el chat necesita)
- * (Adaptada de tu 'api.tsx.txt' original)
- */
-export const obtenerRespuestaDeSoporte = async (chatHistory: { role: string; parts: { text: string }[] }[], userMessage: string): Promise<string> => {
-    console.log("Getting support response from Gemini API...");
-    
-    const model = ai.getGenerativeModel({ 
-        model: "gemini-2.5-flash",
-        // systemInstruction: "Tu instrucción de sistema...",
-        // tools: [{ functionDeclarations: [verificarEstadoPedido] }],
+export const obtenerRespuestaDeSoporte = async (history: Content[], message: string): Promise<string> => {
+  try {
+    const chat = ai.chats.create({
+      model: 'gemini-2.5-flash',
+      history,
+      config: {
+        systemInstruction: "Eres el asistente virtual de Estrella, un servicio de entrega a domicilio. Tu objetivo es ayudar a los usuarios con sus pedidos, preguntas sobre restaurantes y servicios de entrega. Sé amable y servicial."
+      }
     });
 
-    const contents = [...chatHistory, { role: 'user', parts: [{ text: userMessage }] }];
-
-    const result = await model.generateContent({
-        contents: contents,
-        // config: ... (tu config aquí)
-        // tools: ... (tus tools aquí)
-    });
-    
-    const response = await result.response;
-    
-    // Aquí iría tu lógica de 'functionCalls'
-
-    return response.text();
-};
-
-
-/*
-=================================================
- PARTE 2: NUEVO CÓDIGO DEL FORMULARIO (PARA RequestService)
-=================================================
-*/
-
-// Interfaz para los datos que enviaremos
-export interface ServiceRequestData {
-  tariff: 'cénttrico' | 'plaza' | 'foráneos';
-  origin: string;
-  description: string;
-}
-
-// Nueva función para enviar la solicitud de servicio al backend
-export const solicitarServicio = async (data: ServiceRequestData): Promise<{success: boolean}> => {
-  
-  const response = await fetch('/api/submit-service', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json', // Corregido a 'application/json'
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.json();
-    console.error('Error del API:', errorBody);
-    throw new Error(errorBody.error || 'Falló al enviar la solicitud');
+    const response = await chat.sendMessage({ message });
+    return response.text;
+  } catch (error) {
+    console.error("Error fetching AI response:", error);
+    return "Lo siento, estoy teniendo problemas para conectarme en este momento. Por favor, intenta de nuevo más tarde.";
   }
-
-  return response.json();
 };

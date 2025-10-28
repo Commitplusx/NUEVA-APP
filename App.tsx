@@ -5,7 +5,6 @@ import { RestaurantDetail } from './components/RestaurantDetail';
 import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
 import { Toast } from './components/Toast';
-import { SupportChat } from './components/SupportChat';
 import { confirmarPedido } from './services/api';
 import { ComingSoon } from './components/ComingSoon';
 import { RequestService } from './components/RequestService';
@@ -45,7 +44,7 @@ export interface CartItem {
   customizedIngredients: Ingredient[];
 }
 
-export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'support';
+export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart';
 
 
 const App: React.FC = () => {
@@ -145,8 +144,6 @@ const App: React.FC = () => {
         return <ComingSoon title="Restaurantes" />; // Fallback
       case 'cart':
         return <Cart cartItems={cart} onUpdateCart={handleUpdateCart} onNavigate={setCurrentPage} onConfirmOrder={handleConfirmOrder} />;
-       case 'support':
-        return <SupportChat />;
       default:
         return <ComingSoon title="Restaurantes" />;
     }
