@@ -1,11 +1,14 @@
 import React from 'react';
 import { FoodIcon, ShoppingIcon, DeliveryBoxIcon, ArrowRightIcon, UserCircleIcon, MotorcycleIcon } from './icons';
 
+import { Page } from '../types';
+
 interface HomeProps {
   onNavigate: () => void;
+  setCurrentPage: (page: Page) => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
+export const Home: React.FC<HomeProps> = ({ onNavigate, setCurrentPage }) => {
   return (
     <div className="p-6 flex flex-col h-full bg-gray-50 justify-between">
       {/* Top section wrapper */}
@@ -51,13 +54,6 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
 
       {/* CTA Button */}
       <div className="flex-shrink-0">
-        <button
-          onClick={onNavigate}
-          className="bg-red-600 text-white w-full py-5 rounded-full font-bold hover:bg-red-700 transition-all duration-300 shadow-lg flex items-center justify-center gap-3 transform hover:scale-[1.02]"
-        >
-          <MotorcycleIcon className="w-7 h-7" />
-          <span className="text-base">SOLICITAR UN SERVICIO</span>
-        </button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { Home } from './components/Home';
+import { Restaurants } from './components/Restaurants';
 import { RestaurantDetail } from './components/RestaurantDetail';
 import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
@@ -8,57 +9,69 @@ import { Toast } from './components/Toast';
 import { confirmarPedido } from './services/api';
 import { ComingSoon } from './components/ComingSoon';
 import { RequestService } from './components/RequestService';
-
-// --- Types ---
-export interface Ingredient {
-  name: string;
-  icon: React.FC<{className?: string}>;
-}
-export interface MenuItem {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl?: string;
-  rating?: number;
-  reviews?: number;
-  ingredients?: Ingredient[];
-  isPopular?: boolean;
-}
-
-export interface Restaurant {
-  id: number;
-  name: string;
-  category: string;
-  imageUrl: string;
-  rating: number;
-  deliveryFee: string;
-  deliveryTime: string;
-  menu: MenuItem[];
-}
-
-export interface CartItem {
-  id: string; // Unique identifier for product + customization combo
-  product: MenuItem;
-  quantity: number;
-  customizedIngredients: Ingredient[];
-}
-
-export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart';
-
+import { Admin } from './components/Admin';
+import { Login } from './components/Login';
+import { Page, Restaurant, MenuItem, CartItem, Ingredient, UserRole } from './types';
+import { supabase } from './services/supabase';
 
 const App: React.FC = () => {
+  console.log('App component is rendering');
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [userRole, setUserRole] = useState<UserRole>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('session', session);
+      if (session) {
+        // Assuming a simple role logic for now
+        // You might want to have a 'roles' table in your DB
+        // and check user roles from there.
+        setUserRole('user'); 
+      }
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('onAuthStateChange', session);
+      if (session) {
+        setUserRole('user');
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage(null);
     }, 3000); // Hide after 3 seconds
+  };
+
+  const handleLogin = (role: 'admin' | 'user') => {
+    setUserRole(role);
+    if (role === 'admin') {
+      setCurrentPage('admin');
+    } else {
+      setCurrentPage('home');
+    }
+  };
+
+  const handleGuestLogin = () => {
+    setUserRole('guest');
+    setCurrentPage('home');
+  };
+
+  const handleLogout = () => {
+    setUserRole(null);
   };
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
@@ -125,13 +138,17 @@ const App: React.FC = () => {
 
 
   const renderContent = () => {
+    if (!userRole) {
+      return <Login onLogin={handleLogin} onGuestLogin={handleGuestLogin} />;
+    }
+
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={() => setCurrentPage('request')} />;
+        return <Home onNavigate={() => setCurrentPage('request')} setCurrentPage={setCurrentPage} />;
       case 'request':
         return <RequestService />;
       case 'restaurants':
-        return <ComingSoon title="Restaurantes" />;
+        return <Restaurants onSelectRestaurant={handleSelectRestaurant} />;
       case 'restaurantDetail':
         if (selectedRestaurant) {
           return <RestaurantDetail restaurant={selectedRestaurant} onSelectItem={handleSelectMenuItem} onBack={handleBackToRestaurants} />;
@@ -144,6 +161,11 @@ const App: React.FC = () => {
         return <ComingSoon title="Restaurantes" />; // Fallback
       case 'cart':
         return <Cart cartItems={cart} onUpdateCart={handleUpdateCart} onNavigate={setCurrentPage} onConfirmOrder={handleConfirmOrder} />;
+      case 'admin':
+        if (userRole === 'admin') {
+          return <Admin />;
+        }
+        return <ComingSoon title="Restaurantes" />;
       default:
         return <ComingSoon title="Restaurantes" />;
     }
@@ -159,8 +181,8 @@ const App: React.FC = () => {
              {renderContent()}
            </div>
         </main>
-        {currentPage !== 'productDetail' && (
-          <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} cartItemCount={cartItemCount} />
+        {userRole && userRole !== 'admin' && currentPage !== 'productDetail' && (
+          <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} cartItemCount={cartItemCount} userRole={userRole} handleLogout={handleLogout} />
         )}
         <Toast message={toastMessage} />
       </div>

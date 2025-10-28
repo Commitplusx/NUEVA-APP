@@ -1,6 +1,5 @@
-import { CartItem } from '../App';
-// FIX: Import GoogleGenAI and Content from @google/genai to support chat functionality.
-import { GoogleGenAI, Content } from '@google/genai';
+import { CartItem, Restaurant } from '../types';
+import { supabase } from './supabase';
 
 /**
  * This file contains services to interact with external APIs,
@@ -30,29 +29,67 @@ export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Pr
   return { success: true };
 };
 
-// FIX: Implement `obtenerRespuestaDeSoporte` using Gemini API for the support chat.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * GET RESTAURANTS
+ * Fetches the list of restaurants from Supabase.
+ * @returns {Promise<Restaurant[]>} - A promise that resolves with the list of restaurants.
+ */
+export const getRestaurants = async (): Promise<Restaurant[]> => {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching restaurants:', error);
+    throw error;
+  }
+
+  return data;
+};
 
 /**
- * Gets a response from the Gemini AI for the support chat.
- * @param history The conversation history.
- * @param message The user's latest message.
- * @returns A promise that resolves to the AI's text response.
+ * ADD RESTAURANT
+ * Adds a new restaurant to Supabase.
+ * @param {Omit<Restaurant, 'id' | 'rating' | 'menu'>} restaurant - The restaurant to add.
+ * @returns {Promise<Restaurant>} - A promise that resolves with the added restaurant.
  */
-export const obtenerRespuestaDeSoporte = async (history: Content[], message: string): Promise<string> => {
-  try {
-    const chat = ai.chats.create({
-      model: 'gemini-2.5-flash',
-      history,
-      config: {
-        systemInstruction: "Eres el asistente virtual de Estrella, un servicio de entrega a domicilio. Tu objetivo es ayudar a los usuarios con sus pedidos, preguntas sobre restaurantes y servicios de entrega. Sé amable y servicial."
-      }
-    });
+export const addRestaurant = async (restaurant: Omit<Restaurant, 'id' | 'rating' | 'menu'>): Promise<Restaurant> => {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .insert([restaurant])
+    .select();
 
-    const response = await chat.sendMessage({ message });
-    return response.text;
-  } catch (error) {
-    console.error("Error fetching AI response:", error);
-    return "Lo siento, estoy teniendo problemas para conectarme en este momento. Por favor, intenta de nuevo más tarde.";
+  if (error) {
+    console.error('Error adding restaurant:', error);
+    throw error;
+  }
+
+  return data[0];
+};
+
+export const updateRestaurant = async (id: number, updates: Partial<Restaurant>): Promise<Restaurant> => {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .update(updates)
+    .eq('id', id)
+    .select();
+
+  if (error) {
+    console.error('Error updating restaurant:', error);
+    throw error;
+  }
+
+  return data[0];
+};
+
+export const deleteRestaurant = async (id: number): Promise<void> => {
+  const { error } = await supabase
+    .from('restaurants')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting restaurant:', error);
+    throw error;
   }
 };
