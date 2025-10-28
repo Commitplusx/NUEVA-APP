@@ -4,6 +4,12 @@ import { CartItem, Restaurant } from '../App';
 // ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y "Type"
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 
+// services/api.tsx (Código Corregido Definitivo)
+
+import { CartItem, Restaurant } from '../App';
+// ¡ESTA LÍNEA ESTÁ CORREGIDA! Usa "GoogleGenAI" y "Type"
+import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
+
 /*
 =================================================
  PARTE 1: TU CÓDIGO ORIGINAL DE GEMINI (PARA EL CHAT)
@@ -128,7 +134,7 @@ export const solicitarServicio = async (data: ServiceRequestData): Promise<{succ
   const response = await fetch('/api/submit-service', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'json',
     },
     body: JSON.stringify(data),
   });
