@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
-import { getRestaurants } from '../services/api';
 import { Restaurant } from '../types';
 
 export const useRestaurants = () => {
@@ -11,8 +10,11 @@ export const useRestaurants = () => {
   const fetchRestaurants = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getRestaurants();
-      setRestaurants(data);
+      const { data, error } = await supabase.from('restaurants').select('*');
+      if (error) {
+        throw error;
+      }
+      setRestaurants(data || []);
       setError(null);
     } catch (err) {
       setError('No se pudieron cargar los restaurantes.');

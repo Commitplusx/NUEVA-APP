@@ -5,7 +5,7 @@ import { Restaurants } from './components/Restaurants';
 import { RestaurantDetail } from './components/RestaurantDetail';
 import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
-import { Toast } from './components/Toast';
+import { Toast, ToastType } from './components/Toast';
 import { confirmarPedido } from './services/api';
 import { ComingSoon } from './components/ComingSoon';
 import { RequestService } from './components/RequestService';
@@ -17,61 +17,63 @@ import { supabase } from './services/supabase';
 const App: React.FC = () => {
   console.log('App component is rendering');
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [user, setUser] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole>('guest');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<ToastType>('success');
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('session', session);
       if (session) {
-        // Assuming a simple role logic for now
-        // You might want to have a 'roles' table in your DB
-        // and check user roles from there.
-        setUserRole('user'); 
+        const user = session.user;
+        const role = user.email?.endsWith('@admin.com') ? 'admin' : 'user';
+        setUser(user.email || null);
+        setUserRole(role);
       }
     };
 
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('onAuthStateChange', session);
       if (session) {
-        setUserRole('user');
+        const user = session.user;
+        const role = user.email?.endsWith('@admin.com') ? 'admin' : 'user';
+        setUser(user.email || null);
+        setUserRole(role);
       } else {
-        setUserRole(null);
+        setUser(null);
+        setUserRole('guest');
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const showToast = (message: string) => {
+  const showToast = (message: string, type: ToastType) => {
     setToastMessage(message);
+    setToastType(type);
     setTimeout(() => {
       setToastMessage(null);
     }, 3000); // Hide after 3 seconds
   };
 
-  const handleLogin = (role: 'admin' | 'user') => {
+  const handleLogin = (username: string, role: UserRole) => {
+    setUser(username);
     setUserRole(role);
-    if (role === 'admin') {
-      setCurrentPage('admin');
-    } else {
-      setCurrentPage('home');
-    }
+    setCurrentPage('home');
+    showToast(`¡Bienvenido, ${username}!`, 'success');
   };
 
-  const handleGuestLogin = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
     setUserRole('guest');
     setCurrentPage('home');
-  };
-
-  const handleLogout = () => {
-    setUserRole(null);
+    showToast('Has cerrado sesión.', 'success');
   };
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
@@ -108,7 +110,7 @@ const App: React.FC = () => {
       }
       return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients }];
     });
-    showToast("¡Añadido al carrito!");
+    showToast("¡Añadido al carrito!", 'success');
     setCurrentPage('restaurantDetail'); // Go back to menu after adding
   };
 
@@ -127,24 +129,26 @@ const App: React.FC = () => {
   const handleConfirmOrder = async (phoneNumber: string) => {
     try {
       await confirmarPedido(cart, phoneNumber);
-      showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.");
+      showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
       setCart([]);
       setCurrentPage('restaurants');
     } catch (error) {
       console.error("Order confirmation failed:", error);
-      showToast("Hubo un problema al confirmar el pedido.");
+      showToast("Hubo un problema al confirmar el pedido.", 'error');
     }
   };
 
 
   const renderContent = () => {
-    if (!userRole) {
-      return <Login onLogin={handleLogin} onGuestLogin={handleGuestLogin} />;
+    if (!user) {
+      return <Login onLogin={handleLogin} onBack={() => setCurrentPage('home')} />;
     }
 
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={() => setCurrentPage('request')} setCurrentPage={setCurrentPage} />;
+        return <Home onNavigate={() => setCurrentPage('request')} setCurrentPage={setCurrentPage} onLogin={() => setCurrentPage('login')} />;
+      case 'login':
+        return <Login onLogin={handleLogin} onBack={() => setCurrentPage('home')} />;
       case 'request':
         return <RequestService />;
       case 'restaurants':
@@ -181,10 +185,10 @@ const App: React.FC = () => {
              {renderContent()}
            </div>
         </main>
-        {userRole && userRole !== 'admin' && currentPage !== 'productDetail' && (
+        {userRole && currentPage !== 'productDetail' && (
           <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} cartItemCount={cartItemCount} userRole={userRole} handleLogout={handleLogout} />
         )}
-        <Toast message={toastMessage} />
+        <Toast message={toastMessage} type={toastType} />
       </div>
     </div>
   );

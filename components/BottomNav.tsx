@@ -1,5 +1,5 @@
 import React from 'react';
-import { HomeIcon, CartIcon, RestaurantIcon, UserCircleIcon } from './icons';
+import { HomeIcon, CartIcon, RestaurantIcon, WrenchIcon, UserCircleIcon } from './icons';
 import { Page, UserRole } from '../types';
 
 interface BottomNavProps {
@@ -15,15 +15,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentPage, setCurrentPag
     { page: 'home' as Page, icon: HomeIcon, label: 'Home' },
     { page: 'restaurants' as Page, icon: RestaurantIcon, label: 'Restaurants' },
     { page: 'cart' as Page, icon: CartIcon, label: 'Cart' },
-    { page: 'login' as Page, icon: UserCircleIcon, label: 'Login' },
+    { page: 'request' as Page, icon: WrenchIcon, label: 'Request Service' },
   ];
 
+  if (userRole === 'admin') {
+    navItems.push({ page: 'admin' as Page, icon: UserCircleIcon, label: 'Admin' });
+  }
+
   const handleNavClick = (page: Page) => {
-    if (page === 'login') {
-      handleLogout();
-    } else {
-      setCurrentPage(page);
-    }
+    setCurrentPage(page);
   };
 
   return (
@@ -50,6 +50,17 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentPage, setCurrentPag
             </button>
           );
         })}
+        {userRole !== 'guest' && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-center w-1/4 h-full transition-all duration-300 ease-in-out"
+              aria-label={`Logout`}
+            >
+              <div className={`relative p-2 rounded-full transition-all duration-300`}>
+                <UserCircleIcon className={`w-7 h-7 transition-all duration-300 text-gray-400`} />
+              </div>
+            </button>
+        )}
       </div>
     </nav>
   );

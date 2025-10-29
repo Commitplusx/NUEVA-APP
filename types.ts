@@ -36,6 +36,6 @@ export interface CartItem {
   customizedIngredients: Ingredient[];
 }
 
-export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'admin';
+export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'admin' | 'login';
 
 export type UserRole = 'admin' | 'user' | 'guest' | null;

@@ -6,9 +6,10 @@ import { Page } from '../types';
 interface HomeProps {
   onNavigate: () => void;
   setCurrentPage: (page: Page) => void;
+  onLogin: () => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate, setCurrentPage }) => {
+export const Home: React.FC<HomeProps> = ({ onNavigate, setCurrentPage, onLogin }) => {
   return (
     <div className="p-6 flex flex-col h-full bg-gray-50 justify-between">
       {/* Top section wrapper */}
@@ -20,9 +21,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, setCurrentPage }) => {
                   <h1 className="text-3xl font-bold text-gray-900">Hola, bienvenido</h1>
                   <p className="text-base text-gray-500 mt-1">¿Listo para tu mandado?</p>
               </div>
-              <div className="p-2 bg-white rounded-full shadow-sm border border-gray-200">
+              <button onClick={onLogin} className="p-2 bg-white rounded-full shadow-sm border border-gray-200">
                   <UserCircleIcon className="w-10 h-10 text-gray-400" />
-              </div>
+              </button>
           </div>
         </div>
 

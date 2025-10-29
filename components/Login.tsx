@@ -1,92 +1,93 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabase';
+import { UserRole } from '../types';
 
 interface LoginProps {
-  onLogin: (role: 'admin' | 'user') => void;
-  onGuestLogin: () => void;
+  onLogin: (username: string, role: UserRole) => void;
+  onBack: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLogin, onGuestLogin }) => {
-  const [showForm, setShowForm] = useState<'admin' | 'user' | null>(null);
+export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setLoading(true);
     setError(null);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      if (showForm) {
-        onLogin(showForm);
+      if (error) {
+        console.log(error);
+        if (error.message === 'Invalid login credentials') {
+          setError('Email o contraseña incorrectos. Por favor, inténtalo de nuevo.');
+        } else {
+          setError(error.message);
+        }
+      } else if (data.user) {
+        // For simplicity, we'll assume a user is either an admin or a user based on their email.
+        // In a real app, you would have a more robust role management system.
+        const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
+        onLogin(data.user.email, role);
       }
+    } catch (error) {
+      setError('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (showForm) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-100">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Iniciar Sesión como {showForm === 'admin' ? 'Administrador' : 'Usuario'}</h1>
-        <form onSubmit={handleLogin} className="w-full max-w-xs space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button 
-            type="submit"
-            className="w-full bg-black text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
-          >
-            Entrar
-          </button>
-          <button 
-            onClick={() => setShowForm(null)} 
-            className="w-full bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-gray-300 transition-colors mt-2"
-          >
-            Volver
-          </button>
-        </form>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-100">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8">Bienvenido</h1>
-      <div className="w-full max-w-xs space-y-4">
-        <button 
-          onClick={() => setShowForm('user')} 
-          className="w-full bg-black text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-gray-800 transition-colors"
+    <div className="p-6 flex flex-col h-full bg-gray-50 justify-center">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Iniciar Sesión</h1>
+        <p className="text-base text-gray-500 mt-1">Ingresa a tu cuenta para continuar</p>
+      </div>
+
+      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+      <div className="space-y-4">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+        />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+        />
+      </div>
+
+      <div className="mt-8">
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-lg hover:bg-orange-600 transition-all duration-300 disabled:opacity-50"
         >
-          Entrar como Usuario
+          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
         </button>
-        <button 
-          onClick={() => setShowForm('admin')} 
-          className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors"
+        <button
+          onClick={() => onLogin('Guest User', 'guest')}
+          className="w-full py-3 mt-4 bg-gray-500 text-white font-bold rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300"
         >
-          Entrar como Administrador
+          Continuar como Invitado
         </button>
-        <button 
-          onClick={onGuestLogin} 
-          className="w-full bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-gray-300 transition-colors mt-2"
-        >
-          Entrar como Invitado
+      </div>
+
+      <div className="text-center mt-4">
+        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700">
+          Volver al inicio
         </button>
       </div>
     </div>
