@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estrella Service Request</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-in-out forwards;
+  }
+  @keyframes fadeInBubble {
+    from { opacity: 0; transform: translateY(5px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .animate-fade-in-bubble {
+    animation: fadeInBubble 0.3s ease-out forwards;
+  }
+  /* For horizontal scrolling */
+  .no-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+  .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+  }
+</style>
+  <script type="module" crossorigin src="/assets/index-DyBh4gmr.js"></script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
