@@ -1,17 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
-import { MenuIcon, ChevronDownIcon, UserCircleIcon, SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon } from './icons';
+import { useCategories } from '../hooks/useCategories';
+import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon } from './icons';
 import { Spinner } from './Spinner';
-
-const categories = [
-    { name: 'All', icon: '🔥' },
-    { name: 'Pizza', icon: '🍕' },
-    { name: 'Burger', icon: '🍔' },
-    { name: 'Sushi', icon: '🍣' },
-    { name: 'Wings', icon: '🍗' },
-    { name: 'Tacos', icon: '🌮' },
-];
 
 const CategoryChip: React.FC<{name: string, icon: string, isSelected?: boolean, onClick: () => void}> = ({name, icon, isSelected, onClick}) => (
     <div onClick={onClick} className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all duration-300 ${isSelected ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 shadow-sm border border-gray-200'}`}>
@@ -25,7 +18,7 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }
     <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-40 object-cover" />
     <div className="p-4">
       <h3 className="font-bold text-lg text-gray-900">{restaurant.name}</h3>
-      <p className="text-sm text-gray-500 mb-2">{restaurant.category}</p>
+      <p className="text-sm text-gray-500 mb-2">{restaurant.categories?.map(c => c.name).join(' - ')}</p>
       <div className="flex items-center gap-4 text-sm text-gray-700">
         <div className="flex items-center gap-1">
           <StarIcon className="w-4 h-4 text-yellow-500" />
@@ -43,12 +36,51 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }
   </button>
 );
 
-interface RestaurantsProps {
-  onSelectRestaurant: (restaurant: Restaurant) => void;
-}
+const RestaurantList: React.FC<{
+  loading: boolean;
+  error: string | null;
+  restaurants: Restaurant[];
+}> = ({ loading, error, restaurants }) => {
+  const navigate = useNavigate();
 
-export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) => {
-  const { restaurants, loading, error } = useRestaurants();
+  if (error) {
+    return (
+      <div className="text-center text-gray-500 p-4 mt-4 bg-gray-100 rounded-lg">
+        <p>No hay restaurantes disponibles por el momento.</p>
+        <p className="text-sm mt-2">Por favor, intenta de nuevo más tarde.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="flex justify-center py-10"><Spinner /></div>;
+  }
+
+  if (restaurants.length === 0) {
+    return (
+      <div className="text-center text-gray-500 p-4 mt-4 bg-gray-100 rounded-lg">
+        <p>No hay restaurantes disponibles por el momento.</p>
+        <p className="text-sm mt-2">Pronto añadiremos nuevos comercios.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6">
+      {restaurants.map((restaurant) => (
+        <RestaurantCard
+          key={restaurant.id}
+          restaurant={restaurant}
+          onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
+        />
+      ))}
+    </div>
+  );
+};
+
+export const Restaurants: React.FC = () => {
+  const { restaurants, loading: restaurantsLoading, error: restaurantsError } = useRestaurants();
+  const { categories, loading: categoriesLoading } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -63,7 +95,7 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
   const filteredRestaurants = useMemo(() => {
     if (!restaurants) return [];
     return restaurants.filter(restaurant => {
-      const categoryMatch = selectedCategory === 'All' || restaurant.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      const categoryMatch = selectedCategory === 'All' || restaurant.categories?.some(c => c.name === selectedCategory);
       const searchMatch = searchQuery.trim() === '' || 
         restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (restaurant.menu && restaurant.menu.some(item => item.name.toLowerCase().includes(searchQuery.toLowerCase())));
@@ -72,25 +104,7 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
   }, [restaurants, selectedCategory, searchQuery]);
 
   return (
-    <div>
-      <header className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <button className="p-2 rounded-full bg-white shadow-sm border border-gray-200"><MenuIcon className="w-6 h-6 text-gray-800"/></button>
-          <div>
-            <span className="text-xs text-gray-500">DELIVER TO</span>
-            <div className="flex items-center gap-1 font-bold text-orange-500">
-              <span>Halal Lab office</span>
-              <ChevronDownIcon className="w-4 h-4"/>
-            </div>
-          </div>
-          <div className="relative">
-            <UserCircleIcon className="w-10 h-10 text-gray-300"/>
-            <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-orange-500 border-2 border-white"></span>
-          </div>
-        </div>
-        <h1 className="text-2xl font-semibold text-gray-800">Hey Halal, <span className="font-bold">Good Afternoon!</span></h1>
-      </header>
-
+    <div className="p-4">
       <div className="px-4 mb-4">
           <div className="relative flex items-center">
               <input 
@@ -108,15 +122,19 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
 
       <div className="mb-6">
         <div className="flex gap-3 overflow-x-auto no-scrollbar px-4">
-            {categories.map((cat) => (
-              <CategoryChip 
-                key={cat.name} 
-                name={cat.name} 
-                icon={cat.icon} 
-                isSelected={selectedCategory === cat.name}
-                onClick={() => handleCategoryClick(cat.name)}
-              />
-            ))}
+            {categoriesLoading ? (
+              <p className="text-sm text-gray-400">Cargando categorías...</p>
+            ) : (
+              categories.map((cat) => (
+                <CategoryChip 
+                  key={cat.name} 
+                  name={cat.name} 
+                  icon={cat.icon} 
+                  isSelected={selectedCategory === cat.name}
+                  onClick={() => handleCategoryClick(cat.name)}
+                />
+              ))
+            )}
         </div>
       </div>
 
@@ -127,32 +145,11 @@ export const Restaurants: React.FC<RestaurantsProps> = ({ onSelectRestaurant }) 
             </h2>
         </div>
         
-        {loading ? (
-          <Spinner />
-        ) : error ? (
-          <div className="text-center text-red-500 col-span-1 py-10 bg-red-50 rounded-lg">
-            <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-            <h3 className="text-lg font-semibold mb-2">Error al Cargar</h3>
-            <p className="text-sm">{error}</p>
-            <p className="text-xs mt-4">Inténtalo de nuevo más tarde o contacta a soporte.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6">
-              {filteredRestaurants.length > 0 ? (
-                  filteredRestaurants.map((restaurant) => (
-                      <RestaurantCard
-                          key={restaurant.id}
-                          restaurant={restaurant}
-                          onSelect={() => onSelectRestaurant(restaurant)}
-                      />
-                  ))
-              ) : (
-                  <p className="text-center text-gray-500 col-span-1 py-10">
-                      No se encontraron resultados. Intenta con otra búsqueda.
-                  </p>
-              )}
-          </div>
-        )}
+        <RestaurantList
+          loading={restaurantsLoading}
+          error={restaurantsError}
+          restaurants={filteredRestaurants}
+        />
       </section>
     </div>
   );

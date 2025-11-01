@@ -1,10 +1,29 @@
-import { CartItem, Restaurant } from '../types';
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest } from '../types';
 import { supabase } from './supabase';
 
 /**
  * This file contains services to interact with external APIs,
  * including a mock order confirmation.
  */
+
+/**
+ * GET SERVICES
+ * Fetches the list of services from Supabase.
+ * @returns {Promise<Service[]>} - A promise that resolves with the list of services.
+ */
+export const getServices = async (): Promise<Service[]> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*');
+
+  if (error) {
+    console.error('Error fetching services:', error);
+    throw error;
+  }
+
+  return data;
+};
+
 
 /**
  * MOCK ORDER CONFIRMATION
@@ -92,4 +111,31 @@ export const deleteRestaurant = async (id: number): Promise<void> => {
     console.error('Error deleting restaurant:', error);
     throw error;
   }
+};
+
+/**
+ * CREATE SERVICE REQUEST
+ * Creates a new service request in Supabase.
+ * @param {ServiceRequest} request - The service request to create.
+ * @returns {Promise<ServiceRequest>} - A promise that resolves with the created service request.
+ */
+export const createServiceRequest = async (request: ServiceRequest): Promise<ServiceRequest> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("User not authenticated");
+    }
+
+    const requestWithUser = { ...request, user_id: user.id };
+
+    const { data, error } = await supabase
+        .from('service_requests')
+        .insert([requestWithUser])
+        .select();
+
+    if (error) {
+        console.error('Error creating service request:', error);
+        throw error;
+    }
+
+    return data[0];
 };

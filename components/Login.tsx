@@ -1,20 +1,53 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
-import { UserRole } from '../types';
+import { useAppContext } from '../context/AppContext';
+import { UserIcon, LockIcon } from './icons'; // Import icons
 
-interface LoginProps {
-  onLogin: (username: string, role: UserRole) => void;
-  onBack: () => void;
-}
-
-export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
+export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
-  const handleLogin = async () => {
+  const { handleLogin: onLogin } = useAppContext();
+  const navigate = useNavigate();
+
+  const handleRegisterSubmit = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (password !== confirmPassword) {
+        setError('Las contraseñas no coinciden.');
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else if (data.user) {
+        const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
+        onLogin(data.user.email, role);
+        navigate('/'); // Navigate home on successful registration
+      } else {
+        setError('Registro exitoso, por favor verifica tu correo electrónico para activar tu cuenta.');
+      }
+    } catch (error) {
+      setError('Ocurrió un error inesperado al registrarse.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLoginSubmit = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -24,72 +57,99 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
       });
 
       if (error) {
-        console.log(error);
         if (error.message === 'Invalid login credentials') {
           setError('Email o contraseña incorrectos. Por favor, inténtalo de nuevo.');
         } else {
           setError(error.message);
         }
       } else if (data.user) {
-        // For simplicity, we'll assume a user is either an admin or a user based on their email.
-        // In a real app, you would have a more robust role management system.
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
+        navigate('/'); // Navigate home on successful login
       }
     } catch (error) {
-      setError('An unexpected error occurred.');
+      setError('Ocurrió un error inesperado al iniciar sesión.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 flex flex-col h-full bg-gray-50 justify-center">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Iniciar Sesión</h1>
-        <p className="text-base text-gray-500 mt-1">Ingresa a tu cuenta para continuar</p>
-      </div>
+    <motion.div 
+      className="flex justify-center items-center h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="form flex flex-col gap-y-2 bg-white p-6 shadow-2xl rounded-3xl w-full max-w-md transform transition-all duration-300 hover:scale-105 overflow-y-auto max-h-[90vh]">
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-extrabold text-gray-900">{isRegistering ? 'Registrarse' : 'Iniciar Sesión'}</h1>
+          <p className="text-md text-gray-600 mt-1">{isRegistering ? 'Crea una cuenta nueva para acceder a nuestros servicios' : 'Ingresa a tu cuenta para continuar'}</p>
+        </div>
 
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        {error && <motion.p 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-100 text-red-700 p-3 rounded-lg text-center mb-3 text-sm font-medium border border-red-200"
+        >{error}</motion.p>}
 
-      <div className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
-      </div>
+        <div className="space-y-4">
+          <div className="inputForm relative border border-gray-300 rounded-xl h-[55px] flex items-center transition-all duration-200 ease-in-out focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+            <UserIcon className="absolute left-4 w-5 h-5 text-gray-400" />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input pl-12 pr-4 rounded-xl border-none w-full h-full focus:outline-none bg-transparent text-gray-800 placeholder-gray-500"
+            />
+          </div>
+          <div className="inputForm relative border border-gray-300 rounded-xl h-[55px] flex items-center transition-all duration-200 ease-in-out focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-500">
+            <LockIcon className="absolute left-4 w-5 h-5 text-gray-400" />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input pl-12 pr-4 rounded-xl border-none w-full h-full focus:outline-none bg-transparent text-gray-800 placeholder-gray-500"
+            />
+          </div>
+          {isRegistering && (
+            <div className="inputForm relative border border-gray-300 rounded-xl h-[55px] flex items-center transition-all duration-200 ease-in-out focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+              <LockIcon className="absolute left-4 w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                placeholder="Confirmar Contraseña"
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="input pl-12 pr-4 rounded-xl border-none w-full h-full focus:outline-none bg-transparent text-gray-800 placeholder-gray-500"
+              />
+            </div>
+          )}
+        </div>
 
-      <div className="mt-8">
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-lg hover:bg-orange-600 transition-all duration-300 disabled:opacity-50"
-        >
-          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-        </button>
-        <button
-          onClick={() => onLogin('Guest User', 'guest')}
-          className="w-full py-3 mt-4 bg-gray-500 text-white font-bold rounded-lg shadow-lg hover:bg-gray-600 transition-all duration-300"
-        >
-          Continuar como Invitado
-        </button>
+        <div className="mt-6 space-y-3">
+          <button
+            onClick={isRegistering ? handleRegisterSubmit : handleLoginSubmit}
+            disabled={loading}
+            className="button-submit bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-xl h-[55px] w-full cursor-pointer transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+          >
+            {loading ? (isRegistering ? 'Registrando...' : 'Iniciando sesión...') : (isRegistering ? 'Registrarse' : 'Iniciar Sesión')}
+          </button>
+          <button
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="btn w-full h-[45px] rounded-xl flex justify-center items-center font-medium gap-x-2.5 border border-gray-300 bg-white text-gray-700 text-base cursor-pointer transition-all duration-300 ease-in-out hover:border-blue-500 hover:text-blue-600 hover:shadow-md"
+          >
+            {isRegistering ? 'Ya tengo una cuenta' : 'Crear una cuenta nueva'}
+          </button>
+          <button
+            onClick={() => { onLogin('Guest User', 'guest'); navigate('/'); }}
+            className="btn w-full h-[45px] rounded-xl flex justify-center items-center font-medium gap-x-2.5 border border-gray-300 bg-white text-gray-700 text-base cursor-pointer transition-all duration-300 ease-in-out hover:border-blue-500 hover:text-blue-600 hover:shadow-md"
+          >
+            Continuar como Invitado
+          </button>
+        </div>
       </div>
-
-      <div className="text-center mt-4">
-        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700">
-          Volver al inicio
-        </button>
-      </div>
-    </div>
+    </motion.div>
   );
 };

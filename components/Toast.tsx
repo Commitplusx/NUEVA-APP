@@ -27,7 +27,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type }) => {
   const selectedStyle = toastStyles[type];
 
   return (
-    <div className="absolute top-5 left-1/2 -translate-x-1/2 w-auto animate-fade-in-down">
+    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-auto animate-fade-in-down z-50">
       <div className={`${selectedStyle.bg} text-white font-semibold py-3 px-6 rounded-full shadow-lg flex items-center space-x-2`}>
         {selectedStyle.icon}
         <span>{message}</span>

@@ -182,6 +182,25 @@ export const XCircleIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const CogIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.47.235.924.532 1.34.882l.798-.46c.51-.297 1.15-.04 1.448.46l.652 1.13c.297.51.04 1.15-.46 1.448l-.798.46c-.05.29-.088.588-.112.894l.149.894c-.09.542.248 1.045-.798 1.29l-1.093.63c-.542.315-1.21-.06-1.526-.46l-.46-.798c-.416.35-.87.647-1.34.882l-.149.894c-.09.542-.56.94-1.11-.94h-1.093c-.55 0-1.02-.398-1.11-.94l-.149-.894a6.986 6.986 0 01-1.34-.882l-.798.46c-.51.297-1.15-.04-1.448-.46l-.652-1.13c-.297-.51-.04-1.15.46-1.448l.798-.46c.05-.29.088.588.112-.894l-.149-.894c-.09-.542.248-1.045-.798-1.29l1.093-.63c.542-.315 1.21-.06 1.526.46l.46.798c.416-.35.87-.647 1.34-.882l.149-.894z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+);
+
+export const LogoutIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+);
+
+export const AdminIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 20.944a11.955 11.955 0 0118 0 12.02 12.02 0 00-2.382-8.96z" />
+    </svg>
+);
+
 
 // Ingredient Icons
 export const SaltIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12M12 12H2L4 4h16l2 8H12zM7 8v2M12 8v2M17 8v2" /></svg>);

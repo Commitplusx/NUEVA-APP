@@ -1,124 +1,105 @@
 import React, { useState } from 'react';
-import { CartItem, Page } from '../App';
-import { PlusIcon, MinusIcon, TrashIcon } from './icons';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeftIcon, CartIcon } from './icons';
+import { useAppContext } from '../context/AppContext';
 
-interface CartProps {
-  cartItems: CartItem[];
-  onUpdateCart: (cartItemId: string, newQuantity: number) => void;
-  onNavigate: (page: Page) => void;
-  onConfirmOrder: (phoneNumber: string) => void;
-}
-
-export const Cart: React.FC<CartProps> = ({ cartItems, onUpdateCart, onNavigate, onConfirmOrder }) => {
+const Cart: React.FC = () => {
+  const { cart: cartItems, handleUpdateCart, handleConfirmOrder } = useAppContext();
+  const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [consentChecked, setConsentChecked] = useState(false);
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const deliveryFee = subtotal > 0 ? 25.00 : 0; // Example delivery fee
-  const totalPrice = subtotal + deliveryFee;
+  const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  const isOrderValid = phoneNumber.trim().length >= 10 && consentChecked;
-
-  const handleConfirm = () => {
-    if (!isOrderValid) {
-        alert("Por favor, ingresa un número de WhatsApp válido y acepta recibir notificaciones.");
-        return;
+  const handlePhoneSubmit = () => {
+    if (phoneNumber.trim().length >= 10) {
+      handleConfirmOrder(phoneNumber.trim());
+    } else {
+      alert('Por favor, introduce un número de teléfono válido.');
     }
-    onConfirmOrder(phoneNumber);
   };
 
   return (
-    <div className="p-4 flex flex-col h-full">
-      <h1 className="text-2xl font-bold text-center mb-4">MI CARRITO</h1>
-      
+    <div className="p-4 bg-gray-50 min-h-full">
+      <div className="flex items-center gap-4 mb-6">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white shadow-sm">
+          <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+        </button>
+        <h1 className="text-xl font-bold text-gray-800">Mi Carrito</h1>
+      </div>
+
       {cartItems.length === 0 ? (
-        <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
-          <svg className="w-24 h-24 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-          <p className="text-lg font-semibold">Tu carrito está vacío</p>
-          <p>¡Añade productos de tus restaurantes favoritos!</p>
+        <div className="text-center py-20">
+          {/* <CartIcon className="w-16 h-16 mx-auto text-gray-300" /> */}
+          <p className="mt-4 text-gray-500">Tu carrito está vacío.</p>
           <button 
-            onClick={() => onNavigate('restaurants')}
-            className="mt-6 bg-orange-500 text-white font-bold py-3 px-6 rounded-xl hover:bg-orange-600 transition-colors shadow-lg"
+            onClick={() => navigate('/restaurants')} 
+            className="mt-6 px-6 py-2 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
           >
             Ver Restaurantes
           </button>
         </div>
       ) : (
-        <div className="flex-grow overflow-y-auto pr-2 space-y-3">
-          {cartItems.map((cartItem) => {
-            const originalIngredients = cartItem.product.ingredients?.map(i => i.name) || [];
-            const customizedIngredients = cartItem.customizedIngredients.map(i => i.name);
-            const removedIngredients = originalIngredients.filter(name => !customizedIngredients.includes(name));
-            
-            return (
-              <div key={cartItem.id} className="flex items-center bg-white p-3 rounded-lg border border-gray-200 shadow-sm gap-3">
-                <img src={cartItem.product.imageUrl} alt={cartItem.product.name} className="w-16 h-16 object-cover rounded-md flex-shrink-0" />
+        <div>
+          <div className="space-y-4 mb-6">
+            {cartItems.map(item => (
+              <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
+                <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
                 <div className="flex-grow">
-                  <p className="font-bold">{cartItem.product.name}</p>
-                   {removedIngredients.length > 0 && (
-                      <p className="text-xs text-red-600 font-medium">Sin: {removedIngredients.join(', ')}</p>
-                    )}
-                  <p className="text-sm text-gray-600">${cartItem.product.price.toFixed(2)}</p>
+                  <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
+                  {item.customizedIngredients && item.customizedIngredients.length > 0 && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Ingredientes: {item.customizedIngredients.map(ing => ing.name).join(', ')}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <button onClick={() => handleUpdateCart(item.id, item.quantity - 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">-</button>
+                    <span className="font-bold w-6 text-center">{item.quantity}</span>
+                    <button onClick={() => handleUpdateCart(item.id, item.quantity + 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">+</button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => onUpdateCart(cartItem.id, cartItem.quantity - 1)} className="p-1 rounded-full bg-gray-200 hover:bg-gray-300">
-                    {cartItem.quantity === 1 ? <TrashIcon className="w-4 h-4 text-red-600" /> : <MinusIcon className="w-4 h-4 text-gray-700"/>}
-                  </button>
-                  <span className="font-bold w-6 text-center">{cartItem.quantity}</span>
-                  <button onClick={() => onUpdateCart(cartItem.id, cartItem.quantity + 1)} className="p-1 rounded-full bg-gray-200 hover:bg-gray-300">
-                    <PlusIcon className="w-4 h-4 text-gray-700" />
-                  </button>
-                </div>
+                <p className="font-bold text-lg">${(item.product.price * item.quantity).toFixed(2)}</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
 
-      {cartItems.length > 0 && (
-        <div className="border-t pt-4 mt-4 space-y-4">
-            <div className="space-y-1 text-gray-700 font-medium">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Envío</span>
-                <span>${deliveryFee.toFixed(2)}</span>
-              </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="font-semibold">${total.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center text-xl font-bold border-t-2 border-dashed pt-3 mt-3">
-                <span>Total:</span>
-                <span>${totalPrice.toFixed(2)}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Envío</span>
+              <span className="font-semibold">$25.00</span>
             </div>
-             <input
-                type="tel"
-                placeholder="Tu número de WhatsApp"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-             />
-             <div className="flex items-center gap-2">
-                <input 
-                    type="checkbox" 
-                    id="whatsapp-consent" 
-                    checked={consentChecked}
-                    onChange={(e) => setConsentChecked(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                />
-                <label htmlFor="whatsapp-consent" className="text-xs text-gray-600">
-                    Acepto recibir la confirmación de mi pedido por WhatsApp.
-                </label>
-             </div>
-          <button
-            onClick={handleConfirm}
-            disabled={!isOrderValid}
-            className="w-full bg-orange-500 text-white font-bold py-4 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            FINALIZAR PEDIDO
-          </button>
+            <hr className="my-3" />
+            <div className="flex justify-between items-center font-bold text-xl">
+              <span>Total</span>
+              <span>${(total + 25).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h3 className="font-semibold mb-2">Confirmación por WhatsApp</h3>
+            <p className="text-sm text-gray-500 mb-3">Te enviaremos un mensaje para confirmar tu pedido.</p>
+            <input 
+              type="tel" 
+              placeholder="Tu número de teléfono"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <button 
+              onClick={handlePhoneSubmit}
+              className="w-full py-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition-all"
+            >
+              Confirmar Pedido
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 };
+
+export { Cart };

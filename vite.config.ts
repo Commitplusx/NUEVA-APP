@@ -10,10 +10,6 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL),
-        'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
