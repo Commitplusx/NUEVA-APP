@@ -1,15 +1,17 @@
-import React from 'react';
-import { Restaurant, MenuItem } from '../App';
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Restaurant, MenuItem } from '../types';
 import { ChevronLeftIcon } from './icons';
+import { Spinner } from './Spinner';
+import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
+import { OrderItemCustomizationModal } from './OrderItemCustomizationModal';
 
 interface RestaurantDetailProps {
-  restaurant: Restaurant;
-  onSelectItem: (item: MenuItem) => void;
   onBack: () => void;
 }
 
-const MenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void }> = ({ item, onSelect }) => (
-  <button onClick={onSelect} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
+const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => (
+  <button onClick={() => onSelect(item)} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
     {item.imageUrl && (
         <img src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg mr-4"/>
     )}
@@ -30,7 +32,34 @@ const MenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void }> = ({ item
 );
 
 
-export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, onSelectItem, onBack }) => {
+export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ onBack }) => {
+  const { id } = useParams<{ id: string }>();
+  const { restaurant, loading, error } = useRestaurantDetail(id || '');
+  const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState<MenuItem | null>(null);
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+
+  const handleMenuItemSelect = (item: MenuItem) => {
+    setSelectedMenuItemForCustomization(item);
+    setIsCustomizationModalOpen(true);
+  };
+
+  const handleCloseCustomizationModal = () => {
+    setIsCustomizationModalOpen(false);
+    setSelectedMenuItemForCustomization(null);
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
+  }
+
+  if (!restaurant) {
+    return <div className="flex justify-center items-center h-screen text-gray-500">Restaurant not found.</div>;
+  }
+
   const popularItems = restaurant.menu.filter(item => item.isPopular);
   const otherItems = restaurant.menu.filter(item => !item.isPopular);
 
@@ -53,7 +82,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, 
              <h2 className="text-2xl font-bold text-gray-800 mb-4">Los Más Populares</h2>
              <div className="space-y-4">
                 {popularItems.map(item => (
-                  <MenuItemCard key={item.id} item={item} onSelect={() => onSelectItem(item)} />
+                  <MenuItemCard key={item.id} item={item} onSelect={handleMenuItemSelect} />
                 ))}
              </div>
            </div>
@@ -62,10 +91,17 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ restaurant, 
          <h2 className="text-2xl font-bold text-gray-800 mb-4">Menú Completo</h2>
          <div className="space-y-4">
             {otherItems.map(item => (
-              <MenuItemCard key={item.id} item={item} onSelect={() => onSelectItem(item)} />
+              <MenuItemCard key={item.id} item={item} onSelect={handleMenuItemSelect} />
             ))}
          </div>
       </div>
+
+      {isCustomizationModalOpen && selectedMenuItemForCustomization && (
+        <OrderItemCustomizationModal
+          item={selectedMenuItemForCustomization}
+          onClose={handleCloseCustomizationModal}
+        />
+      )}
     </div>
   );
 };

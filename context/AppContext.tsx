@@ -15,6 +15,7 @@ interface AppContextType {
   toastType: ToastType;
   isSidebarOpen: boolean;
   cartItemCount: number;
+  isCartAnimating: boolean;
 
   // Actions
   toggleSidebar: () => void;
@@ -44,6 +45,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<ToastType>('success');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCartAnimating, setIsCartAnimating] = useState(false);
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -93,7 +95,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     await supabase.auth.signOut();
     setUser(null);
     setUserRole('guest');
-    showToast('Has cerrado sesión.', 'success');
+    showToast('Has cerrado sesión.', 'info');
   };
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
@@ -123,6 +125,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ? { ...cartItem, quantity: cartItem.quantity + quantity }
             : cartItem
         );
+      } else {
+        setIsCartAnimating(true);
+        setTimeout(() => setIsCartAnimating(false), 500); // Animation duration
       }
       return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients }];
     });
@@ -155,14 +160,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const value = {
-    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount,
+    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating,
     toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder
   };
 
   return (
     <AppContext.Provider value={value}>
       {children}
-      <Toast message={toastMessage} type={toastType} />
+      <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage(null)} />
     </AppContext.Provider>
   );
 };

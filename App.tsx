@@ -12,6 +12,10 @@ import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { RequestService } from './components/RequestService';
 import { useAppContext } from './context/AppContext';
+import { DashboardOverview } from './components/admin/DashboardOverview';
+import { ManageRestaurants } from './components/admin/ManageRestaurants';
+import { ManageCategories } from './components/admin/ManageCategories';
+import { ManageTariffs } from './components/admin/ManageTariffs';
 
 const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
@@ -26,7 +30,7 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
 );
 
 const App: React.FC = () => {
-  const { isSidebarOpen } = useAppContext();
+  const { isSidebarOpen, userRole } = useAppContext();
   const location = useLocation(); // use useLocation hook inside Router
   const hideHeaderPaths = ['/login'];
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
@@ -36,7 +40,7 @@ const App: React.FC = () => {
       {shouldShowHeader && <MainHeader />}
       <BottomNav />
       <AnimatePresence mode="wait">
-        {isSidebarOpen && <Sidebar />}
+        {isSidebarOpen && userRole !== 'admin' && <Sidebar />}
       </AnimatePresence>
       <main className="flex-grow overflow-y-auto pb-28">
         <AnimatePresence mode="wait">
@@ -46,7 +50,12 @@ const App: React.FC = () => {
             <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
             <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
             <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-            <Route path="/admin" element={<PageTransitionWrapper><Admin /></PageTransitionWrapper>} />
+            <Route path="/admin" element={<Admin />}>
+              <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
+              <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
+              <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
+              <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
+            </Route>
             <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
           </Routes>
         </AnimatePresence>

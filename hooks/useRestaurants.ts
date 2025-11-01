@@ -1,37 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
-import { Restaurant, Category, MenuItem } from '../types';
-
-// Combines data from different tables into a complete Restaurant object
-const denormalizeRestaurants = (
-  restaurants: Restaurant[], 
-  categories: Category[], 
-  restaurantCategories: { restaurant_id: number; category_id: number }[],
-  menuItems: MenuItem[]
-): Restaurant[] => {
-  
-  const categoryMap = new Map(categories.map(c => [c.id, c]));
-  const restaurantMap = new Map(restaurants.map(r => [r.id, { ...r, categories: [], menu: [] }]));
-
-  // Link categories to restaurants
-  for (const rc of restaurantCategories) {
-    const restaurant = restaurantMap.get(rc.restaurant_id);
-    const category = categoryMap.get(rc.category_id);
-    if (restaurant && category) {
-      restaurant.categories.push(category);
-    }
-  }
-
-  // Link menu items to restaurants
-  for (const item of menuItems) {
-    const restaurant = restaurantMap.get(item.restaurant_id);
-    if (restaurant) {
-      restaurant.menu.push(item);
-    }
-  }
-
-  return Array.from(restaurantMap.values());
-};
+import { Restaurant } from '../types';
+import { denormalizeRestaurants } from '../services/denormalize';
 
 export const useRestaurants = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);

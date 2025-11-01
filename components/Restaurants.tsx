@@ -1,20 +1,44 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { useCategories } from '../hooks/useCategories';
-import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon } from './icons';
-import { Spinner } from './Spinner';
+import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, PizzaIcon, BurgerIcon, TacoIcon, FoodIcon } from './icons';
+import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 
-const CategoryChip: React.FC<{name: string, icon: string, isSelected?: boolean, onClick: () => void}> = ({name, icon, isSelected, onClick}) => (
-    <div onClick={onClick} className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all duration-300 ${isSelected ? 'bg-orange-500 text-white' : 'bg-white text-gray-700 shadow-sm border border-gray-200'}`}>
-        <span>{icon}</span>
+const iconMap: { [key: string]: React.ReactElement } = {
+  default: <FoodIcon className="w-5 h-5" />,
+  pizza: <PizzaIcon className="w-5 h-5" />,
+  burger: <BurgerIcon className="w-5 h-5" />,
+  tacos: <TacoIcon className="w-5 h-5" />,
+  all: <FoodIcon className="w-5 h-5" />,
+};
+
+const getCategoryIcon = (categoryName: string) => {
+  const lowerCaseName = categoryName.toLowerCase();
+  for (const key in iconMap) {
+    if (lowerCaseName.includes(key)) {
+      return iconMap[key];
+    }
+  }
+  return iconMap.default;
+};
+
+const CategoryChip: React.FC<{name: string, icon: React.ReactNode, isSelected?: boolean, onClick: () => void}> = ({name, icon, isSelected, onClick}) => (
+    <div onClick={onClick} className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-full cursor-pointer transition-all duration-300 scroll-snap-align-start ${isSelected ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm border border-gray-200 hover:shadow-md'}`}>
+        {icon}
         <span className="font-semibold text-sm">{name}</span>
     </div>
 );
 
 const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => (
-  <button onClick={onSelect} className="w-full text-left bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 ease-in-out">
+  <motion.button 
+    onClick={onSelect} 
+    className="w-full text-left bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 ease-in-out"
+    whileHover={{ scale: 1.03, y: -5 }}
+    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+  >
     <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-40 object-cover" />
     <div className="p-4">
       <h3 className="font-bold text-lg text-gray-900">{restaurant.name}</h3>
@@ -33,7 +57,7 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }
         </div>
       </div>
     </div>
-  </button>
+  </motion.button>
 );
 
 const RestaurantList: React.FC<{
@@ -45,36 +69,60 @@ const RestaurantList: React.FC<{
 
   if (error) {
     return (
-      <div className="text-center text-gray-500 p-4 mt-4 bg-gray-100 rounded-lg">
-        <p>No hay restaurantes disponibles por el momento.</p>
-        <p className="text-sm mt-2">Por favor, intenta de nuevo más tarde.</p>
+      <div className="text-center text-red-500 col-span-1 py-10 bg-red-50 rounded-lg">
+        <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
+        <h3 className="text-lg font-semibold mb-2">Error al Cargar</h3>
+        <p className="text-sm">{error}</p>
       </div>
     );
   }
 
   if (loading) {
-    return <div className="flex justify-center py-10"><Spinner /></div>;
+    return (
+      <div className="grid grid-cols-1 gap-6">
+        {[...Array(3)].map((_, i) => <RestaurantCardSkeleton key={i} />)}
+      </div>
+    );
   }
 
   if (restaurants.length === 0) {
     return (
       <div className="text-center text-gray-500 p-4 mt-4 bg-gray-100 rounded-lg">
-        <p>No hay restaurantes disponibles por el momento.</p>
-        <p className="text-sm mt-2">Pronto añadiremos nuevos comercios.</p>
+        <p>No se encontraron restaurantes con esos criterios.</p>
+        <p className="text-sm mt-2">Intenta con otra búsqueda o categoría.</p>
       </div>
     );
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <motion.div 
+      className="grid grid-cols-1 gap-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {restaurants.map((restaurant) => (
-        <RestaurantCard
-          key={restaurant.id}
-          restaurant={restaurant}
-          onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
-        />
+        <motion.div key={restaurant.id} variants={itemVariants}>
+          <RestaurantCard
+            restaurant={restaurant}
+            onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
+          />
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };
 
@@ -103,6 +151,8 @@ export const Restaurants: React.FC = () => {
     });
   }, [restaurants, selectedCategory, searchQuery]);
 
+  const allCategories = [{ name: 'All', icon: 'All' }, ...categories.filter(c => c.name !== 'All')];
+
   return (
     <div className="p-4">
       <div className="px-4 mb-4">
@@ -121,15 +171,15 @@ export const Restaurants: React.FC = () => {
       </div>
 
       <div className="mb-6">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 scroll-snap-type-x-mandatory">
             {categoriesLoading ? (
               <p className="text-sm text-gray-400">Cargando categorías...</p>
             ) : (
-              categories.map((cat) => (
+              allCategories.map((cat) => (
                 <CategoryChip 
                   key={cat.name} 
-                  name={cat.name} 
-                  icon={cat.icon} 
+                  name={cat.name === 'All' ? 'Todos' : cat.name} 
+                  icon={getCategoryIcon(cat.name)}
                   isSelected={selectedCategory === cat.name}
                   onClick={() => handleCategoryClick(cat.name)}
                 />

@@ -43,7 +43,7 @@ export interface MenuItem {
 
   price: number;
 
-  imageUrl?: string;
+  image_url?: string;
 
   rating?: number;
 
@@ -51,7 +51,7 @@ export interface MenuItem {
 
   ingredients?: Ingredient[];
 
-  isPopular?: boolean;
+  is_popular?: boolean;
 
 }
 
@@ -63,13 +63,13 @@ export interface Restaurant {
 
   name: string;
 
-  imageUrl: string;
+  image_url: string;
 
   rating: number;
 
-  deliveryFee: string;
+  delivery_fee: number;
 
-  deliveryTime: string;
+  delivery_time: number;
 
   // Denormalized for easier access in the frontend
 

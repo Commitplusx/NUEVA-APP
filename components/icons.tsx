@@ -182,6 +182,14 @@ export const XCircleIcon: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const InfoIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+);
+
 export const CogIcon: React.FC<IconProps> = (props) => (
     <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.47.235.924.532 1.34.882l.798-.46c.51-.297 1.15-.04 1.448.46l.652 1.13c.297.51.04 1.15-.46 1.448l-.798.46c-.05.29-.088.588-.112.894l.149.894c-.09.542.248 1.045-.798 1.29l-1.093.63c-.542.315-1.21-.06-1.526-.46l-.46-.798c-.416.35-.87.647-1.34.882l-.149.894c-.09.542-.56.94-1.11-.94h-1.093c-.55 0-1.02-.398-1.11-.94l-.149-.894a6.986 6.986 0 01-1.34-.882l-.798.46c-.51.297-1.15-.04-1.448-.46l-.652-1.13c-.297-.51-.04-1.15.46-1.448l.798-.46c.05-.29.088.588.112-.894l-.149-.894c-.09-.542.248-1.045-.798-1.29l1.093-.63c.542-.315 1.21-.06 1.526.46l.46.798c.416-.35.87-.647 1.34-.882l.149-.894z" />
@@ -210,3 +218,15 @@ export const GarlicIcon: React.FC<IconProps> = (props) => (<svg {...props} viewB
 export const PeppersIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5,2c-2,0-3.5,1.5-3.5,3.5v.5c0,1.5,1,3,2.5,3s2.5-1.5,2.5-3v-.5C14,3.5,13,2,12.5,2Z" /><path d="M12,9c-3.5,0-6,2.5-6,6v3a4,4,0,0,0,4,4h4a4,4,0,0,0,4-4v-3C18,11.5,15.5,9,12,9Z" /></svg>);
 export const GingerIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.5 10.5C10.5 8.5 8.5 7.5 6 7.5c-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5h.5c2 0 3.5-1.5 3.5-3.5s-1.5-3.5-3.5-3.5" /><path d="M12.5 10.5c2 2 4 3 6.5 3 2.5 0 4.5-2 4.5-4.5s-2-4.5-4.5-4.5h-.5c-2 0-3.5 1.5-3.5 3.5s1.5 3.5 3.5 3.5" /></svg>);
 export const BroccoliIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12,2a4,4,0,0,0-4,4c0,1,1.5,2.5,4,2.5s4-1.5,4-2.5A4,4,0,0,0,12,2Z" /><path d="M12,8.5c-2,0-4,1-4,2.5s2,2.5,4,2.5,4-1,4-2.5S14,8.5,12,8.5Z" /><path d="M12,13.5v8" /><path d="M9,21.5h6" /></svg>);
+
+// Category Icons
+export const PizzaIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 0 0-7.5 16.5A10 10 0 0 0 12 22a10 10 0 0 0 7.5-3.5A10 10 0 0 0 12 2z"/><path d="M12 2v20"/><path d="M17.5 16.5a10 10 0 0 0-11 0"/><path d="M6.5 7.5a10 10 0 0 1 11 0"/></svg>);
+export const BurgerIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12H3"/><path d="M21 6H3"/><path d="M21 18H3"/><path d="M12 21a9 9 0 0 1 0-18 9 9 0 0 1 0 18z"/></svg>);
+export const TacoIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M5.2 12a8 8 0 0 1 13.6 0"/><path d="M5.2 12C8.4 8.8 15.6 8.8 18.8 12"/></svg>);
+
+// Admin Dashboard Icons
+export const BuildingStorefrontIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13"/><path d="M21 21H3"/><path d="M12 15a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v6h8v-6a2 2 0 0 0-2-2z"/><path d="M12 6H8a2 2 0 0 0-2 2v2"/><path d="M16 6h-4"/></svg>);
+export const TagIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>);
+export const CurrencyDollarIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>);
+export const DocumentTextIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>);
+export const ChartBarIcon: React.FC<IconProps> = (props) => (<svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20V16"/></svg>);

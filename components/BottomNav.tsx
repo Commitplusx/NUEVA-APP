@@ -1,20 +1,28 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon } from './icons';
+import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon, ChartBarIcon, BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
 
 const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, showCartCount?: boolean }> = ({ to, label, icon, showCartCount = false }) => {
   const location = useLocation();
   const isCurrent = location.pathname === to;
-  const { cartItemCount } = useAppContext();
+  const { cartItemCount, isCartAnimating } = useAppContext();
+
+  const cartAnimation = {
+    shake: {
+      rotate: [0, -15, 15, -15, 15, 0],
+      transition: { duration: 0.5 },
+    },
+  };
 
   return (
     <Link to={to} className="flex flex-col items-center justify-center w-full h-full relative">
       <motion.div
         className={`flex flex-col items-center justify-center w-full h-full pt-2 pb-1 ${isCurrent ? 'text-orange-500' : 'text-gray-500'}`}
         initial={false}
-        animate={{ scale: isCurrent ? 1.1 : 1, color: isCurrent ? 'rgb(249 115 22)' : 'rgb(107 114 128)' }}
+        animate={isCartAnimating && showCartCount ? 'shake' : ''}
+        variants={cartAnimation}
         whileHover={{ scale: 1.1, color: 'rgb(249 115 22)' }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -46,23 +54,25 @@ export const BottomNav: React.FC = () => {
     { to: '/request', label: 'Solicitar', icon: <PackageIcon className="w-6 h-6 mb-1" /> },
   ];
 
+  const adminPages = [
+    { to: '/admin', label: 'Resumen', icon: <ChartBarIcon className="w-6 h-6 mb-1" /> },
+    { to: '/admin/restaurants', label: 'Restaurantes', icon: <BuildingStorefrontIcon className="w-6 h-6 mb-1" /> },
+    { to: '/admin/categories', label: 'Categorías', icon: <TagIcon className="w-6 h-6 mb-1" /> },
+    { to: '/admin/tariffs', label: 'Tarifas', icon: <CurrencyDollarIcon className="w-6 h-6 mb-1" /> },
+  ];
+
   const cartPage = { to: '/cart', label: 'Carrito', icon: <CartIcon className="w-6 h-6 mb-1" />, showCartCount: true };
   const profilePage = { to: '/profile', label: 'Perfil', icon: <UserIcon className="w-6 h-6 mb-1" /> };
-  const adminPage = { to: '/admin', label: 'Admin', icon: <CogIcon className="w-6 h-6 mb-1" /> };
 
-  let pagesToRender = [...basePages];
+  let pagesToRender = [];
 
-  // Always add the cart page
-  pagesToRender.push(cartPage);
-
-  // Conditionally add the profile page if logged in
-  if (isLoggedIn) {
-    pagesToRender.push(profilePage);
-  }
-
-  // Conditionally add the admin page if admin
   if (userRole === 'admin') {
-    pagesToRender.push(adminPage);
+    pagesToRender = adminPages;
+  } else {
+    pagesToRender = [...basePages, cartPage];
+    if (isLoggedIn) {
+      pagesToRender.push(profilePage);
+    }
   }
 
   return (
