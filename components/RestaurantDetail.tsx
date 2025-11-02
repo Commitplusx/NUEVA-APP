@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Restaurant, MenuItem } from '../types';
 import { ChevronLeftIcon } from './icons';
 import { Spinner } from './Spinner';
 import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
 import { OrderItemCustomizationModal } from './OrderItemCustomizationModal';
 
-interface RestaurantDetailProps {
-  onBack: () => void;
-}
+
 
 const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => (
   <button onClick={() => onSelect(item)} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
@@ -32,8 +30,9 @@ const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => voi
 );
 
 
-export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ onBack }) => {
+export const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurantDetail(id || '');
   const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState<MenuItem | null>(null);
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
@@ -60,6 +59,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ onBack }) =>
     return <div className="flex justify-center items-center h-screen text-gray-500">Restaurant not found.</div>;
   }
 
+  console.log('RestaurantDetail: rendering imageUrl:', restaurant.imageUrl);
   const popularItems = restaurant.menu.filter(item => item.isPopular);
   const otherItems = restaurant.menu.filter(item => !item.isPopular);
 
@@ -71,7 +71,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ onBack }) =>
             <h1 className="text-white text-3xl font-bold drop-shadow-lg">{restaurant.name}</h1>
             <p className="text-white font-semibold drop-shadow-md">{restaurant.category}</p>
         </div>
-        <button onClick={onBack} className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110">
+        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110">
             <ChevronLeftIcon className="w-6 h-6 text-gray-800"/>
         </button>
       </div>
@@ -100,6 +100,7 @@ export const RestaurantDetail: React.FC<RestaurantDetailProps> = ({ onBack }) =>
         <OrderItemCustomizationModal
           item={selectedMenuItemForCustomization}
           onClose={handleCloseCustomizationModal}
+          restaurant={restaurant}
         />
       )}
     </div>

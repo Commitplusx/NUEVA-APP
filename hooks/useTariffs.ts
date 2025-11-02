@@ -18,7 +18,7 @@ export const useTariffs = () => {
           setError("La carga de tarifas está tardando más de lo esperado. Por favor, revisa tu conexión o inténtalo de nuevo más tarde.");
           setLoading(false);
         }
-      }, 1000); // 1 second timeout
+      }, 3000); // 3 second timeout
 
       try {
         setLoading(true);

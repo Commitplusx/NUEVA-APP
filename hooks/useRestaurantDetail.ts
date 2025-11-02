@@ -30,8 +30,11 @@ export const useRestaurantDetail = (id: string) => {
 
         const anyRejected = results.some(result => result.status === 'rejected');
         if (anyRejected) {
-          console.error('Error fetching restaurant detail data:', results.filter(r => r.status === 'rejected'));
-          throw new Error('Failed to fetch some restaurant detail data');
+          const rejectedReasons = results
+            .filter(r => r.status === 'rejected')
+            .map(r => (r as PromiseRejectedResult).reason);
+          console.error('Error fetching restaurant detail data:', rejectedReasons);
+          throw new Error(`Failed to fetch some restaurant detail data: ${rejectedReasons.map(r => r.message || r).join(', ')}`);
         }
 
         const getFulfilledData = (result: PromiseSettledResult<any>) =>
@@ -52,6 +55,7 @@ export const useRestaurantDetail = (id: string) => {
             fetchedRestaurantCategories,
             fetchedMenuItems
           );
+          console.log('useRestaurantDetail: denormalized restaurant imageUrl:', denormalized?.imageUrl);
           setRestaurant(denormalized);
           setError(null);
         }

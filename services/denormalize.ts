@@ -1,4 +1,15 @@
-import { Restaurant, Category, MenuItem } from '../types';
+export const getPublicImageUrl = (imagePath: string): string => {
+  console.log('getPublicImageUrl: received imagePath:', imagePath);
+  if (!imagePath || imagePath.startsWith('http')) {
+    console.log('getPublicImageUrl: imagePath is already a full URL or empty, returning as is.', imagePath);
+    return imagePath; // Already a full URL or empty
+  }
+  // Assuming 'restaurant-images' is the bucket name
+  const { data } = supabase.storage.from('restaurant-images').getPublicUrl(imagePath);
+  const publicUrlWithCacheBuster = `${data.publicUrl}?t=${new Date().getTime()}`;
+  console.log('getPublicImageUrl: constructed publicUrl with cache buster:', publicUrlWithCacheBuster);
+  return publicUrlWithCacheBuster;
+};
 
 // Combines data from different tables into a complete Restaurant object
 export const denormalizeRestaurants = (
@@ -9,7 +20,7 @@ export const denormalizeRestaurants = (
 ): Restaurant[] => {
   
   const categoryMap = new Map(categories.map(c => [c.id, c]));
-  const restaurantMap = new Map(restaurants.map(r => [r.id, { ...r, categories: [], menu: [] }]));
+  const restaurantMap = new Map(restaurants.map(r => [r.id, { ...r, imageUrl: r.image_url, categories: [], menu: [] }]));
 
   // Link categories to restaurants
   for (const rc of restaurantCategories) {
@@ -37,7 +48,10 @@ export const denormalizeRestaurants = (
     }
   }
 
-  return Array.from(restaurantMap.values());
+  return Array.from(restaurantMap.values()).map(r => ({
+    ...r,
+    imageUrl: getPublicImageUrl(r.imageUrl),
+  }));
 };
 
 // Helper function to denormalize restaurant data (similar to useRestaurants)
@@ -50,7 +64,7 @@ export const denormalizeRestaurant = (
   if (!restaurant) return null;
 
   const categoryMap = new Map(categories.map(c => [c.id, c]));
-  const restaurantWithDetails: Restaurant = { ...restaurant, categories: [], menu: [] };
+  const restaurantWithDetails: Restaurant = { ...restaurant, imageUrl: restaurant.image_url, categories: [], menu: [] };
 
   // Link categories to restaurant
   for (const rc of restaurantCategories) {
@@ -78,5 +92,9 @@ export const denormalizeRestaurant = (
     }
   }
 
-  return restaurantWithDetails;
+  return {
+    ...restaurantWithDetails,
+    imageUrl: getPublicImageUrl(restaurantWithDetails.imageUrl),
+  };
 };
+

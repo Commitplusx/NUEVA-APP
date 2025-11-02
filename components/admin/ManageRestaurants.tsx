@@ -5,7 +5,8 @@ import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCate
 import { Restaurant, Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
-import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon } from '../icons';
+import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon, UtensilsIcon } from '../icons';
+import { ManageMenuItems } from './ManageMenuItems';
 
 const RestaurantForm: React.FC<{
   restaurant: Restaurant | null;
@@ -27,10 +28,10 @@ const RestaurantForm: React.FC<{
     if (restaurant) {
       setName(restaurant.name);
       setCategory(restaurant.categories?.map(c => c.name).join(', ') || '');
-      setImageUrl(restaurant.imageUrl);
-      setImagePreview(restaurant.imageUrl);
-      setDeliveryFee(restaurant.deliveryFee);
-      setDeliveryTime(restaurant.deliveryTime);
+      setImageUrl(restaurant.image_url);
+      setImagePreview(restaurant.image_url);
+      setDeliveryFee(String(restaurant.delivery_fee));
+      setDeliveryTime(String(restaurant.delivery_time));
     } else {
       setName('');
       setCategory('');
@@ -71,10 +72,10 @@ const RestaurantForm: React.FC<{
 
       let savedRestaurant: Restaurant;
       if (restaurant) {
-        const restaurantData = { name, "imageUrl": finalImageUrl, "deliveryFee": fee, "deliveryTime": time, rating: restaurant.rating };
+        const restaurantData = { name, image_url: finalImageUrl, delivery_fee: fee, delivery_time: time, rating: restaurant.rating };
         savedRestaurant = await updateRestaurant(restaurant.id, restaurantData);
       } else {
-        const restaurantData = { name, "imageUrl": finalImageUrl, "deliveryFee": fee, "deliveryTime": time };
+        const restaurantData = { name, image_url: finalImageUrl, delivery_fee: fee, delivery_time: time };
         savedRestaurant = await addRestaurant(restaurantData);
       }
 
@@ -133,7 +134,8 @@ const RestaurantList: React.FC<{
   restaurants: Restaurant[];
   onEdit: (restaurant: Restaurant) => void;
   onDelete: (id: number) => void;
-}> = ({ restaurants, onEdit, onDelete }) => {
+  onManageMenu: (restaurant: Restaurant) => void;
+}> = ({ restaurants, onEdit, onDelete, onManageMenu }) => {
   if (restaurants.length === 0) {
     return <p className="text-center text-gray-500 py-10">No hay restaurantes para mostrar.</p>;
   }
@@ -143,13 +145,14 @@ const RestaurantList: React.FC<{
       {restaurants.map(restaurant => (
         <div key={restaurant.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex justify-between items-center hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
-            <img src={restaurant.imageUrl} alt={restaurant.name} className="w-20 h-20 rounded-md object-cover" />
+            <img src={restaurant.image_url} alt={restaurant.name} className="w-20 h-20 rounded-md object-cover" />
             <div>
               <p className="font-bold text-lg text-gray-800">{restaurant.name}</p>
               <p className="text-sm text-gray-600">{restaurant.categories?.map(c => c.name).join(', ')}</p>
             </div>
           </div>
           <div className="flex space-x-2">
+            <button onClick={() => onManageMenu(restaurant)} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors"><UtensilsIcon className="w-5 h-5" /></button>
             <button onClick={() => onEdit(restaurant)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
             <button onClick={() => onDelete(restaurant.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
           </div>
@@ -167,6 +170,9 @@ export const ManageRestaurants: React.FC = () => {
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [isMenuManageOpen, setIsMenuManageOpen] = useState(false);
+  const [selectedRestaurantForMenu, setSelectedRestaurantForMenu] = useState<Restaurant | null>(null);
+
   const handleAddNew = () => {
     setEditingRestaurant(null);
     setIsFormOpen(true);
@@ -175,6 +181,11 @@ export const ManageRestaurants: React.FC = () => {
   const handleEdit = (restaurant: Restaurant) => {
     setEditingRestaurant(restaurant);
     setIsFormOpen(true);
+  };
+
+  const handleManageMenu = (restaurant: Restaurant) => {
+    setSelectedRestaurantForMenu(restaurant);
+    setIsMenuManageOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -237,9 +248,18 @@ export const ManageRestaurants: React.FC = () => {
             restaurants={filteredRestaurants} 
             onEdit={handleEdit} 
             onDelete={handleDelete} 
+            onManageMenu={handleManageMenu}
           />
         )}
       </div>
+
+      {isMenuManageOpen && selectedRestaurantForMenu && (
+        <ManageMenuItems
+          restaurantId={selectedRestaurantForMenu.id}
+          restaurantName={selectedRestaurantForMenu.name}
+          onClose={() => setIsMenuManageOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon, ChartBarIcon, BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon } from './icons';
+import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon, ChartBarIcon, BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, LogoutIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
 const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, showCartCount?: boolean }> = ({ to, label, icon, showCartCount = false }) => {
   const location = useLocation();
@@ -45,7 +46,8 @@ const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, show
 };
 
 export const BottomNav: React.FC = () => {
-  const { cartItemCount, userRole } = useAppContext();
+  const { cartItemCount, userRole, handleLogout } = useAppContext();
+  const navigate = useNavigate();
   const isLoggedIn = userRole !== 'guest';
 
   const basePages = [
@@ -81,6 +83,19 @@ export const BottomNav: React.FC = () => {
         {pagesToRender.map((page) => (
           <NavItem key={page.to} {...page} />
         ))}
+        {userRole === 'admin' && (
+          <button
+            onClick={() => {
+              handleLogout();
+              navigate('/login');
+            }}
+            className="flex flex-col items-center justify-center w-full h-full pt-2 pb-1 text-red-500"
+            // Add similar motion props if desired
+          >
+            <LogoutIcon className="w-6 h-6 mb-1" />
+            <span className="text-xs font-medium">Salir</span>
+          </button>
+        )}
       </div>
     </div>
   );

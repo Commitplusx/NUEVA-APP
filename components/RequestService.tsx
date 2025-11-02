@@ -5,6 +5,7 @@ import { Tariff, ServiceRequest } from '../types';
 import { createServiceRequest } from '../services/api';
 import { useTariffs } from '../hooks/useTariffs';
 import { Spinner } from './Spinner';
+import { ComingSoonModal } from './ComingSoonModal';
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -42,6 +43,8 @@ export const RequestService: React.FC = () => {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [description, setDescription] = useState('');
+
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   // State for scheduling
   const [isScheduling, setIsScheduling] = useState(false);
@@ -138,50 +141,53 @@ export const RequestService: React.FC = () => {
     const selectedTariff = tariffs.find(t => t.id === selectedTariffId);
     return (
         <div className="p-4 space-y-4 animate-fade-in">
-            <h1 className="text-2xl font-bold text-center">CONFIRMA TU SOLICITUD</h1>
-            <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm space-y-4">
+            <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">CONFIRMA TU SOLICITUD</h1>
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
                 <div>
-                    <div className="flex items-center text-gray-700">
-                        <Icons.LocationIcon className="w-5 h-5 mr-3 text-green-500 flex-shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-xs font-bold text-gray-500">DE</p>
-                            <p className="font-semibold">{origin}</p>
+                    <h2 className="text-lg font-bold text-gray-800 mb-3">Detalles del Servicio</h2>
+                    <div className="space-y-4">
+                        <div className="flex items-center text-gray-700">
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-green-500 flex-shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-xs font-bold text-gray-500">ORIGEN</p>
+                                <p className="font-semibold text-gray-900">{origin}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="h-4 w-px bg-gray-300 ml-2.5"></div>
-                    <div className="flex items-center text-gray-700">
-                        <Icons.LocationIcon className="w-5 h-5 mr-3 text-red-500 flex-shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-xs font-bold text-gray-500">A</p>
-                            <p className="font-semibold">{destination}</p>
+                        <div className="h-4 w-px bg-gray-300 ml-2.5"></div>
+                        <div className="flex items-center text-gray-700">
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-red-500 flex-shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-xs font-bold text-gray-500">DESTINO</p>
+                                <p className="font-semibold text-gray-900">{destination}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-3">
-                    <p className="text-xs font-bold text-gray-500">DESCRIPCIÓN</p>
-                    <p className="text-sm">{description}</p>
+                <div className="border-t border-gray-200 pt-6">
+                    <h2 className="text-lg font-bold text-gray-800 mb-3">Descripción</h2>
+                    <p className="text-sm text-gray-700">{description}</p>
                 </div>
                 
                 {selectedTariff && (
-                  <div className="border-t border-gray-200 pt-3">
-                      <p className="text-xs font-bold text-gray-500">TARIFA SELECCIONADA</p>
-                      <p className="text-sm font-bold capitalize">{selectedTariff.name} - ${selectedTariff.price}</p>
+                  <div className="border-t border-gray-200 pt-6">
+                      <h2 className="text-lg font-bold text-gray-800 mb-3">Tarifa Seleccionada</h2>
+                      <p className="text-base font-bold capitalize text-gray-900">{selectedTariff.name} - ${selectedTariff.price}</p>
                   </div>
                 )}
 
                 {confirmedSchedule && (
-                    <div className="border-t border-gray-200 pt-3 bg-green-50 p-2 rounded-md">
-                        <p className="text-xs font-bold text-green-800">PROGRAMADO</p>
-                        <p className="text-sm font-semibold text-green-900">{getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
+                    <div className="border-t border-gray-200 pt-6 bg-green-50 p-4 rounded-lg">
+                        <h2 className="text-lg font-bold text-green-800 mb-3">Recogida Programada</h2>
+                        <p className="text-base font-semibold text-green-900">{getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-4 pt-6">
                 <button
                     onClick={() => setStep('details')}
-                    className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors"
+                    className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors shadow-sm"
                 >
                     <Icons.EditIcon className="w-5 h-5" />
                     Modificar
@@ -237,32 +243,63 @@ export const RequestService: React.FC = () => {
       </section>
 
       {!isScheduling && (
-        <section className="space-y-3 animate-fade-in">
-           <div className="relative flex items-center">
-               <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-               <input type="text" placeholder="Origen (ej: Centro, Plaza)" value={origin} onChange={(e) => setOrigin(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
-           </div>
-           <div className="relative flex items-center">
-               <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-               <input type="text" placeholder="Destino (ej: Orilla, Fuera)" value={destination} onChange={(e) => setDestination(e.target.value)} className="w-full py-3 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" />
-           </div>
-           <div className="h-40 bg-gray-200 rounded-lg overflow-hidden">
-              <iframe
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                src="https://www.openstreetmap.org/export/embed.html?bbox=-92.275%2C16.242%2C-92.255%2C16.252&layer=mapnik">
-              </iframe>
-           </div>
-            <textarea placeholder="Descripción del paquete o mandado..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black h-20 resize-none"></textarea>
+        <section className="space-y-4 animate-fade-in">
+          <div>
+            <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
+            <div className="relative flex items-center">
+                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+                <input 
+                  id="origin" 
+                  type="text" 
+                  placeholder="Ej: Centro, Plaza" 
+                  value={origin} 
+                  onChange={(e) => setOrigin(e.target.value)} 
+                  className="w-full py-3 pl-10 pr-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+            <div className="relative flex items-center">
+                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+                <input 
+                  id="destination" 
+                  type="text" 
+                  placeholder="Ej: Orilla, Fuera" 
+                  value={destination} 
+                  onChange={(e) => setDestination(e.target.value)} 
+                  className="w-full py-3 pl-10 pr-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
+                />
+            </div>
+          </div>
+                     <div className="relative h-40 bg-gray-200 rounded-lg overflow-hidden border border-gray-300 shadow-sm">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          allowFullScreen
+                          src="https://www.openstreetmap.org/export/embed.html?bbox=-92.275%2C16.242%2C-92.255%2C16.252&layer=mapnik">
+                        </iframe>
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white text-center p-4">
+                          <p className="text-sm font-semibold">Mapa de referencia. La selección interactiva de puntos estará disponible pronto.</p>
+                        </div>
+                     </div>          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Descripción del paquete o mandado</label>
+            <textarea 
+              id="description" 
+              placeholder="Ej: Paquete pequeño, documentos importantes, etc."
+              value={description} 
+              onChange={(e) => setDescription(e.target.value)} 
+              className="w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm h-24 resize-none"
+            ></textarea>
+          </div>
        </section>
       )}
 
       <section className="grid grid-cols-2 gap-3">
-        <button onClick={() => setIsScheduling(!isScheduling)} className="bg-gray-700 text-white text-xs font-bold py-3 rounded-md hover:bg-black transition-colors">
-          {isScheduling ? 'VOLVER A DETALLES' : (confirmedSchedule ? 'REPROGRAMAR' : 'PROGRAMAR RECOGIDA')}
+        <button onClick={() => setShowComingSoonModal(true)} className="bg-gray-700 text-white text-xs font-bold py-3 rounded-md hover:bg-black transition-colors">
+          PROGRAMAR (Próximamente)
         </button>
         <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="bg-green-600 text-white text-center text-xs font-bold py-3 rounded-md hover:bg-green-700 transition-colors">
           CONTACTAR SOPORTE
@@ -309,13 +346,20 @@ export const RequestService: React.FC = () => {
             </div>
           )}
           <button
-            onClick={handleProceedToConfirmation}
+            onClick={() => setShowComingSoonModal(true)}
             className="bg-red-600 text-white w-full py-4 rounded-md font-bold hover:bg-red-700 transition-colors shadow-lg"
           >
             CONTINUAR
           </button>
         </section>
       )}
+
+      <ComingSoonModal
+        isOpen={showComingSoonModal}
+        onClose={() => setShowComingSoonModal(false)}
+        title="¡Programación de Recogida!"
+        message="Esta funcionalidad para programar la recogida estará disponible muy pronto. Estamos trabajando para mejorar tu experiencia."
+      />
     </div>
   );
 };

@@ -1,21 +1,26 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { MenuIcon, UserCircleIcon } from './icons';
 
 export const MainHeader: React.FC = () => {
   const { toggleSidebar, user } = useAppContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div className="bg-gradient-to-br from-orange-500 to-red-600 p-4 shadow-lg sticky top-0 z-10">
       <div className="flex justify-between items-center">
-        <button 
-          onClick={toggleSidebar} 
-          className="p-2"
-        >
-          <MenuIcon className="w-6 h-6 text-white" />
-        </button>
+        {location.pathname !== '/' ? (
+          <button 
+            onClick={toggleSidebar} 
+            className="p-2"
+          >
+            <MenuIcon className="w-6 h-6 text-white" />
+          </button>
+        ) : (
+          <div className="w-10 h-10" />
+        )}
         
         <h1 className="text-xl font-bold text-white">Delivery</h1>
 

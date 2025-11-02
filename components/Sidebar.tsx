@@ -4,64 +4,121 @@ import { motion } from 'framer-motion';
 import { useAppContext } from '../context/AppContext';
 import { UserCircleIcon, XCircleIcon, HomeIcon, ShoppingIcon, PackageIcon, CogIcon, LogoutIcon } from './icons';
 
-const sidebarVariants = {
-  hidden: { 
-    clipPath: 'circle(0% at 2.5rem 2.5rem)',
-    transition: { duration: 0.5, ease: 'easeInOut' }
-  },
-  visible: { 
-    clipPath: 'circle(150% at 2.5rem 2.5rem)',
-    transition: { duration: 0.5, ease: 'easeInOut' }
-  }
+const backdropVariants = {
+
+  hidden: { opacity: 0 },
+
+  visible: { opacity: 1 }
+
 };
+
+
+
+const sidebarPanelVariants = {
+
+  hidden: { x: "-100%" },
+
+  visible: { x: "0%" }
+
+};
+
+
 
 const navContainerVariants = {
+
   hidden: { opacity: 0 },
+
   visible: {
+
     opacity: 1,
+
     transition: {
+
       delay: 0.3, // Wait for the main reveal animation to start
+
       staggerChildren: 0.08, // Animate each child with this delay
+
     },
+
   },
+
 };
+
+
 
 const navItemVariants = {
+
   hidden: { opacity: 0, y: -15 },
+
   visible: { opacity: 1, y: 0 },
+
 };
 
+
+
 const Sidebar: React.FC = () => {
-  const { 
-    toggleSidebar, 
-    user, 
-    userRole, 
-    handleLogout 
+
+  const {
+
+    toggleSidebar,
+
+    user,
+
+    userRole,
+
+    handleLogout
+
   } = useAppContext();
+
   const navigate = useNavigate();
+
+
 
   console.log('Sidebar render - user:', user, 'userRole:', userRole);
 
+
+
   const handleLogoutClick = () => {
+
     handleLogout();
+
     toggleSidebar();
+
     navigate('/login'); // Navigate to login page on logout
+
   };
 
+
+
   return (
-    <motion.div 
+
+    <motion.div
+
       className="fixed inset-0 bg-black bg-opacity-50 z-40"
+
       onClick={toggleSidebar}
-      variants={sidebarVariants}
+
+      variants={backdropVariants}
+
       initial="hidden"
+
       animate="visible"
+
       exit="hidden"
+
     >
-      <div 
-        className="fixed top-0 left-0 w-72 h-full bg-white shadow-lg z-50 p-6 flex flex-col"
+
+      <motion.div
+
+        className="fixed top-0 left-0 w-1/2 h-screen overflow-y-auto bg-white shadow-lg z-50 p-6 pb-28 flex flex-col"
+
         onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex-shrink-0">
+
+        variants={sidebarPanelVariants}
+
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+
+      >        <div className="flex-shrink-0">
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-3">
               <UserCircleIcon className="w-10 h-10 text-gray-400" />
@@ -127,7 +184,7 @@ const Sidebar: React.FC = () => {
             </button>
           )}
         </motion.div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 };

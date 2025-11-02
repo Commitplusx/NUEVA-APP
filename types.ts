@@ -93,6 +93,8 @@ export interface CartItem {
 
   customizedIngredients: Ingredient[];
 
+  restaurant: Restaurant;
+
 }
 
 

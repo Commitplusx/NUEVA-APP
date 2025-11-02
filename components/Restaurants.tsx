@@ -26,39 +26,59 @@ const getCategoryIcon = (categoryName: string) => {
 };
 
 const CategoryChip: React.FC<{name: string, icon: React.ReactNode, isSelected?: boolean, onClick: () => void}> = ({name, icon, isSelected, onClick}) => (
-    <div onClick={onClick} className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-full cursor-pointer transition-all duration-300 scroll-snap-align-start ${isSelected ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm border border-gray-200 hover:shadow-md'}`}>
+    <motion.div 
+      onClick={onClick} 
+      className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-full cursor-pointer transition-all duration-300 scroll-snap-align-start ${isSelected ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm border border-gray-200 hover:shadow-md'}`}
+      whileTap={{ scale: 0.95 }}
+    >
         {icon}
         <span className="font-semibold text-sm">{name}</span>
-    </div>
+    </motion.div>
 );
 
-const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => (
-  <motion.button 
-    onClick={onSelect} 
-    className="w-full text-left bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300 ease-in-out"
-    whileHover={{ scale: 1.03, y: -5 }}
-    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-  >
-    <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-40 object-cover" />
-    <div className="p-4">
-      <h3 className="font-bold text-lg text-gray-900">{restaurant.name}</h3>
-      <p className="text-sm text-gray-500 mb-2">{restaurant.categories?.map(c => c.name).join(' - ')}</p>
-      <div className="flex items-center gap-4 text-sm text-gray-700">
-        <div className="flex items-center gap-1">
-          <StarIcon className="w-4 h-4 text-yellow-500" />
-          <span className="font-bold">{restaurant.rating}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="font-bold text-green-600">{restaurant.deliveryFee}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <ClockIcon className="w-4 h-4 text-gray-500" />
-          <span className="font-semibold">{restaurant.deliveryTime}</span>
+const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
+  console.log('RestaurantCard: rendering imageUrl:', restaurant.imageUrl);
+  return (
+    <motion.button 
+      onClick={onSelect} 
+      className="w-full text-left bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 transition-all duration-300 ease-in-out"
+      whileHover={{ scale: 1.03, y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    >
+      <div className="relative w-full h-40 bg-gray-200">
+        {restaurant.imageUrl ? (
+          <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
+        )}
+        <div className="absolute top-2 right-2 bg-yellow-400 text-white text-sm font-bold px-3 py-1 rounded-full flex items-center shadow-md">
+          <StarIcon className="w-4 h-4 text-white mr-1" />
+          {restaurant.rating}
         </div>
       </div>
-    </div>
-  </motion.button>
-);
+      <div className="p-4">
+        <h3 className="font-bold text-lg text-gray-900 mb-1">{restaurant.name}</h3>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {restaurant.categories?.map(c => (
+            <span key={c.name} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+              {c.name}
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center justify-between text-sm text-gray-700 mt-3">
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-green-600">{restaurant.deliveryFee}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ClockIcon className="w-4 h-4 text-gray-500" />
+            <span className="font-semibold">{restaurant.deliveryTime}</span>
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
+};
+
 
 const RestaurantList: React.FC<{
   loading: boolean;
@@ -112,7 +132,8 @@ const RestaurantList: React.FC<{
       className="grid grid-cols-1 gap-6"
       variants={containerVariants}
       initial="hidden"
-      animate="visible"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
     >
       {restaurants.map((restaurant) => (
         <motion.div key={restaurant.id} variants={itemVariants}>
@@ -167,6 +188,16 @@ export const Restaurants: React.FC = () => {
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <SearchIcon className="w-5 h-5"/>
               </div>
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
           </div>
       </div>
 

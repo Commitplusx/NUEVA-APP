@@ -38,6 +38,7 @@ export const useRestaurants = () => {
         getFulfilledData(restaurantCategoryResult),
         getFulfilledData(menuItemsResult)
       );
+      console.log('useRestaurants: denormalized restaurants (first imageUrl):', denormalized[0]?.imageUrl);
 
       if (denormalized.length === 0) {
         console.log('fetchRestaurants: No restaurants found, setting error.');
@@ -66,7 +67,7 @@ export const useRestaurants = () => {
           setError("La carga está tardando más de lo esperado. Por favor, revisa tu conexión o inténtalo de nuevo más tarde.");
           setLoading(false);
         }
-      }, 1000); // 1 second timeout
+      }, 3000); // 3 second timeout
 
       await fetchRestaurants(); // This call inherently sets and clears loading
       if (isMounted) {

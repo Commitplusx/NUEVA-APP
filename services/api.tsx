@@ -1,5 +1,6 @@
 import { CartItem, Restaurant, Service, Tariff, ServiceRequest } from '../types';
 import { supabase } from './supabase';
+import { getPublicImageUrl } from './denormalize';
 
 /**
  * This file contains services to interact with external APIs,
@@ -72,29 +73,38 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
  * @param {Omit<Restaurant, 'id' | 'rating' | 'menu'>} restaurant - The restaurant to add.
  * @returns {Promise<Restaurant>} - A promise that resolves with the added restaurant.
  */
-export const addRestaurant = async (restaurant: any): Promise<Restaurant> => {
+export const addRestaurant = async (restaurant: Omit<Restaurant, 'id' | 'rating' | 'menu' | 'categories'>): Promise<Restaurant> => {
+  const restaurantToInsert = { ...restaurant };
+  if (restaurantToInsert.imageUrl) {
+    restaurantToInsert.imageUrl = getPublicImageUrl(restaurantToInsert.imageUrl);
+  }
   const { data, error } = await supabase
     .from('restaurants')
-    .insert([restaurant])
+    .insert([restaurantToInsert])
     .select();
 
   if (error) {
-    console.error('Error adding restaurant:', JSON.stringify(error, null, 2));
+    console.error('Error adding restaurant:', error);
     throw error;
   }
 
   return data[0];
 };
 
-export const updateRestaurant = async (id: number, updates: any): Promise<Restaurant> => {
+export const updateRestaurant = async (id: number, updates: Partial<Omit<Restaurant, 'categories'>>): Promise<Restaurant> => {
+  const updatesToApply = { ...updates };
+  if (updatesToApply.imageUrl) {
+    updatesToApply.imageUrl = getPublicImageUrl(updatesToApply.imageUrl);
+  }
+  console.log('Updating restaurant with imageUrl:', updatesToApply.imageUrl);
   const { data, error } = await supabase
     .from('restaurants')
-    .update(updates)
+    .update(updatesToApply)
     .eq('id', id)
     .select();
 
   if (error) {
-    console.error('Error updating restaurant:', JSON.stringify(error, null, 2));
+    console.error('Error updating restaurant:', error);
     throw error;
   }
 
@@ -139,19 +149,21 @@ export const deleteRestaurant = async (id: number): Promise<void> => {
 
 export const uploadImage = async (file: File): Promise<string> => {
   const fileName = `${Date.now()}-${file.name}`;
+  console.log('Uploading image with fileName:', fileName);
   const { data, error } = await supabase.storage
     .from('restaurant-images')
     .upload(fileName, file);
 
-  if (error) {
+  if (error && error.message) {
     console.error('Error uploading image:', error);
-    throw new Error('Error al subir la imagen.');
+    throw new Error('Error al subir la imagen: ' + error.message);
   }
 
   const { data: publicUrlData } = supabase.storage
     .from('restaurant-images')
     .getPublicUrl(data.path);
 
+  console.log('Image uploaded, public URL:', publicUrlData.publicUrl);
   return publicUrlData.publicUrl;
 };
 
@@ -163,8 +175,16 @@ export const getCategories = async (): Promise<Category[]> => {
 };
 
 export const addCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
-  const { data, error } = await supabase.from('categories').insert([category]).select();
-  if (error) throw error;
+  const { data, error } = await supabase
+    .from('categories')
+    .insert([category])
+    .select();
+
+  if (error) {
+    console.error('Error adding restaurant:', error);
+    throw error;
+  }
+
   return data[0];
 };
 
@@ -200,6 +220,49 @@ export const updateTariff = async (id: number, updates: Partial<Tariff>): Promis
 
 export const deleteTariff = async (id: number): Promise<void> => {
   const { error } = await supabase.from('tariffs').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// --- Menu Item Services ---
+export const getMenuItems = async (restaurantId: number): Promise<MenuItem[]> => {
+  const { data, error } = await supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId);
+  if (error) throw error;
+  return data;
+};
+
+export const addMenuItem = async (item: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
+  const itemToInsert = { ...item };
+  if (itemToInsert.image_url) {
+    itemToInsert.image_url = getPublicImageUrl(itemToInsert.image_url);
+  }
+  const { data, error } = await supabase
+    .from('menu_items')
+    .insert([itemToInsert])
+    .select();
+
+  if (error) {
+    console.error('Error adding menu item:', error);
+    throw error;
+  }
+
+  return data[0];
+};
+
+export const updateMenuItem = async (id: number, updates: Partial<MenuItem>): Promise<MenuItem> => {
+  const updatesToApply = { ...updates };
+  if (updatesToApply.image_url) {
+    updatesToApply.image_url = getPublicImageUrl(updatesToApply.image_url);
+  }
+  const { data, error } = await supabase.from('menu_items').update(updatesToApply).eq('id', id).select();
+  if (error) {
+    console.error('Error updating menu item:', error);
+    throw error;
+  }
+  return data[0];
+};
+
+export const deleteMenuItem = async (id: number): Promise<void> => {
+  const { error } = await supabase.from('menu_items').delete().eq('id', id);
   if (error) throw error;
 };
 
