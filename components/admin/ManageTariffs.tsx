@@ -3,7 +3,12 @@ import { useAdminTariffs } from '../../hooks/useAdminTariffs';
 import { Tariff } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
-import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon } from '../icons';
+import * as Icons from '../icons';
+
+const IconComponent: React.FC<{ iconName: string }> = ({ iconName }) => {
+    const Icon = Icons[iconName as keyof typeof Icons];
+    return Icon ? <Icon className="w-6 h-6 text-gray-600" /> : <Icons.WrenchIcon className="w-6 h-6 text-gray-600" />;
+};
 
 const TariffForm: React.FC<{
   tariff: Tariff | null;
@@ -83,13 +88,16 @@ const TariffList: React.FC<{
     <div className="space-y-4">
       {tariffs.map(tariff => (
         <div key={tariff.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex justify-between items-center hover:shadow-md transition-shadow">
-          <div>
-            <p className="font-bold text-lg text-gray-800">{tariff.name}</p>
-            <p className="text-sm text-gray-600">Precio: ${tariff.price.toFixed(2)}</p>
+          <div className="flex items-center gap-3">
+            <IconComponent iconName={tariff.icon} />
+            <div>
+              <p className="font-bold text-lg text-gray-800">{tariff.name}</p>
+              <p className="text-sm text-gray-600">Precio: ${tariff.price.toFixed(2)}</p>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <button onClick={() => onEdit(tariff)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
-            <button onClick={() => onDelete(tariff.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
+          <div className="flex flex-col space-y-2">
+            <button onClick={() => onEdit(tariff)} className="p-2.5 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><Icons.EditIcon className="w-5 h-5" /></button>
+            <button onClick={() => onDelete(tariff.id)} className="p-2.5 text-red-600 hover:bg-red-100 rounded-full transition-colors"><Icons.TrashIcon className="w-5 h-5" /></button>
           </div>
         </div>
       ))}
@@ -102,6 +110,7 @@ export const ManageTariffs: React.FC = () => {
   const { showToast } = useAppContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTariff, setEditingTariff] = useState<Tariff | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleAddNew = () => {
     setEditingTariff(null);
@@ -125,15 +134,28 @@ export const ManageTariffs: React.FC = () => {
     }
   };
 
+  const filteredTariffs = tariffs.filter(t =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div>
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-between items-center mb-4">
+        <div className="w-1/2">
+          <input 
+            type="text"
+            placeholder="Buscar tarifa..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
         <button 
           onClick={handleAddNew}
           className="flex items-center gap-2 bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
         >
-          <PlusIcon className="w-5 h-5" />
-          Agregar Tarifa
+          <Icons.PlusIcon className="w-5 h-5" />
+          <span>Agregar</span>
         </button>
       </div>
 
@@ -156,7 +178,7 @@ export const ManageTariffs: React.FC = () => {
           </div>
         ) : (
           <TariffList 
-            tariffs={tariffs} 
+            tariffs={filteredTariffs} 
             onEdit={handleEdit} 
             onDelete={handleDelete} 
           />

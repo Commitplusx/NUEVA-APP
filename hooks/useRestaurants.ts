@@ -3,103 +3,106 @@ import { supabase } from '../services/supabase';
 import { Restaurant } from '../types';
 import { denormalizeRestaurants } from '../services/denormalize';
 
-export const useRestaurants = () => {
+const PAGE_SIZE = 8;
+
+interface UseRestaurantsProps {
+  searchQuery?: string;
+  categoryName?: string;
+}
+
+export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProps) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchRestaurants = useCallback(async () => {
-    console.log('fetchRestaurants: setting loading to true, error to null');
-    setLoading(true);
+  const fetchPage = useCallback(async (pageToFetch: number, isNewFilter: boolean) => {
+    if (pageToFetch === 0) setLoading(true);
+    else setLoadingMore(true);
     setError(null);
+
     try {
-      const results = await Promise.allSettled([
-        supabase.from('restaurants').select('*'),
+      const from = pageToFetch * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      let restaurantIdsForCategory: number[] | null = null;
+
+      if (categoryName && categoryName !== 'All') {
+        const { data: catData, error: catError } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('name', categoryName)
+          .single();
+        if (catError) throw catError;
+
+        const { data: restCatData, error: restCatError } = await supabase
+          .from('restaurant_categories')
+          .select('restaurant_id')
+          .eq('category_id', catData.id);
+        if (restCatError) throw restCatError;
+        
+        restaurantIdsForCategory = restCatData.map(rc => rc.restaurant_id);
+        if (restaurantIdsForCategory.length === 0) {
+            setRestaurants([]);
+            setHasMore(false);
+            return;
+        }
+      }
+
+      let query = supabase.from('restaurants').select('*');
+
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+
+      if (restaurantIdsForCategory) {
+        query = query.in('id', restaurantIdsForCategory);
+      }
+
+      const { data: restaurantsData, error: restaurantsError } = await query.range(from, to);
+      if (restaurantsError) throw restaurantsError;
+
+      const [categoriesResult, restaurantCategoriesResult, menuItemsResult] = await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('restaurant_categories').select('*'),
-        supabase.from('menu_items').select('*')
+        supabase.from('menu_items').select('*'),
       ]);
 
-      const [restaurantResult, categoryResult, restaurantCategoryResult, menuItemsResult] = results;
-
-      const anyRejected = results.some(result => result.status === 'rejected');
-      if (anyRejected) {
-        console.error('Error fetching data:', results.filter(r => r.status === 'rejected'));
-        throw new Error('Failed to fetch some restaurant data'); // Throw to be caught by outer catch
-      }
-
-      // If all fulfilled, extract data
-      const getFulfilledData = (result: PromiseSettledResult<any>) =>
-        result.status === 'fulfilled' ? result.value.data : [];
-
       const denormalized = denormalizeRestaurants(
-        getFulfilledData(restaurantResult),
-        getFulfilledData(categoryResult),
-        getFulfilledData(restaurantCategoryResult),
-        getFulfilledData(menuItemsResult)
+        restaurantsData || [],
+        categoriesResult.data || [],
+        restaurantCategoriesResult.data || [],
+        menuItemsResult.data || []
       );
-      console.log('useRestaurants: denormalized restaurants (first imageUrl):', denormalized[0]?.imageUrl);
 
-      if (denormalized.length === 0) {
-        console.log('fetchRestaurants: No restaurants found, setting error.');
-        setError('No se encontraron restaurantes. Por favor, agrega algunos o verifica la configuración de tu base de datos.');
-      } else {
-        setRestaurants(denormalized);
-        setError(null); // Clear error on successful fetch
-      }
-    } catch (err) {
-      setError('No se pudieron cargar los restaurantes. Por favor, verifica tu conexión o inténtalo de nuevo más tarde.');
+      setRestaurants(prev => (pageToFetch === 0 || isNewFilter) ? denormalized : [...prev, ...denormalized]);
+      setHasMore(restaurantsData.length === PAGE_SIZE);
+
+    } catch (err: any) {
+      setError('No se pudieron cargar los restaurantes.');
+      setRestaurants([]); // Clear restaurants on error
       console.error(err);
     } finally {
       setLoading(false);
-      console.log('fetchRestaurants: finished, loading set to false. Current error:', error);
+      setLoadingMore(false);
     }
-  }, []);
+  }, [searchQuery, categoryName]);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    let isMounted = true; // Flag to track if the component is mounted
+    setRestaurants([]);
+    setPage(0);
+    setHasMore(true);
+    fetchPage(0, true);
+  }, [searchQuery, categoryName, fetchPage]);
 
-    const fetchDataWithTimeout = async () => {
-      // Start a timeout to force an error state if fetch takes too long
-      timeoutId = setTimeout(() => {
-        if (isMounted) { // Only set error if component is still mounted
-          setError("La carga está tardando más de lo esperado. Por favor, revisa tu conexión o inténtalo de nuevo más tarde.");
-          setLoading(false);
-        }
-      }, 3000); // 3 second timeout
+  const loadMore = () => {
+    if (loading || loadingMore || !hasMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchPage(nextPage, false);
+  };
 
-      await fetchRestaurants(); // This call inherently sets and clears loading
-      if (isMounted) {
-        clearTimeout(timeoutId); // Clear the timeout if fetchRestaurants completes normally
-      }
-    };
-
-    fetchDataWithTimeout();
-
-    // Set up a single subscription
-    const channel = supabase
-    .channel('db-changes')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'restaurants' }, payload => {
-      console.log('New restaurant added, refetching...');
-      fetchRestaurants();
-    })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurants' }, payload => {
-      console.log('Restaurant updated, refetching...');
-      fetchRestaurants();
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'restaurants' }, payload => {
-      console.log('Restaurant deleted, refetching...');
-      fetchRestaurants();
-    })
-    .subscribe();
-
-    return () => {
-      isMounted = false; // Set to false when component unmounts
-      clearTimeout(timeoutId);
-      supabase.removeChannel(channel);
-    };
-  }, [fetchRestaurants]); // fetchRestaurants is stable due to useCallback
-
-  return { restaurants, loading, error, fetchRestaurants };
+  return { restaurants, loading, loadingMore, error, hasMore, loadMore };
 };

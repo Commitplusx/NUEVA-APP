@@ -5,30 +5,31 @@ import { ChevronLeftIcon } from './icons';
 import { Spinner } from './Spinner';
 import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
 import { OrderItemCustomizationModal } from './OrderItemCustomizationModal';
+import { getTransformedImageUrl } from '../services/image';
 
-
-
-const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => (
-  <button onClick={() => onSelect(item)} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
-    {item.imageUrl && (
-        <img src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg mr-4"/>
-    )}
-    <div className="flex-1 pr-2">
-      <div className="flex items-center">
-        {item.isPopular && <span className="text-xs font-bold text-orange-500 mr-2 bg-orange-100 px-2 py-0.5 rounded-full">🔥 Popular</span>}
+const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => {
+  const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 100, 100);
+  return (
+    <button onClick={() => onSelect(item)} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
+      {optimizedImageUrl && (
+          <img src={optimizedImageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg mr-4"/>
+      )}
+      <div className="flex-1 pr-2">
+        <div className="flex items-center">
+          {item.isPopular && <span className="text-xs font-bold text-orange-500 mr-2 bg-orange-100 px-2 py-0.5 rounded-full">🔥 Popular</span>}
+        </div>
+        <h3 className="font-bold text-gray-800 mt-1">{item.name}</h3>
+        <p className="text-sm text-gray-500 my-1 line-clamp-2">{item.description}</p>
+        <p className="font-bold text-lg text-orange-500">${item.price.toFixed(2)}</p>
       </div>
-      <h3 className="font-bold text-gray-800 mt-1">{item.name}</h3>
-      <p className="text-sm text-gray-500 my-1 line-clamp-2">{item.description}</p>
-      <p className="font-bold text-lg text-orange-500">${item.price.toFixed(2)}</p>
-    </div>
-    <div className="text-orange-500">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-    </div>
-  </button>
-);
-
+      <div className="text-orange-500">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+      </div>
+    </button>
+  );
+};
 
 export const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -59,14 +60,14 @@ export const RestaurantDetail: React.FC = () => {
     return <div className="flex justify-center items-center h-screen text-gray-500">Restaurant not found.</div>;
   }
 
-  console.log('RestaurantDetail: rendering imageUrl:', restaurant.imageUrl);
   const popularItems = restaurant.menu.filter(item => item.isPopular);
   const otherItems = restaurant.menu.filter(item => !item.isPopular);
+  const headerImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 800, 480);
 
   return (
     <div className="bg-gray-50">
       <div className="relative">
-        <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-48 object-cover" />
+        <img src={headerImageUrl} alt={restaurant.name} className="w-full h-48 object-cover" />
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
             <h1 className="text-white text-3xl font-bold drop-shadow-lg">{restaurant.name}</h1>
             <p className="text-white font-semibold drop-shadow-md">{restaurant.category}</p>

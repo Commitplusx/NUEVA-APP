@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useCategories } from '../../hooks/useCategories';
-import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories } from '../../services/api';
+import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage } from '../../services/api';
 import { Restaurant, Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
@@ -96,9 +96,8 @@ const RestaurantForm: React.FC<{
       showToast(restaurant ? 'Restaurante actualizado!' : 'Restaurante agregado!', 'success');
       onSave();
     } catch (error: any) {
-      console.error('Error saving restaurant:', error.message);
-      console.error('Full error object:', JSON.stringify(error, null, 2));
-      showToast('Error al guardar el restaurante.', 'error');
+      console.error('Error saving restaurant:', error);
+      showToast(getErrorMessage(error), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -106,18 +105,18 @@ const RestaurantForm: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-lg">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">{restaurant ? 'Editar' : 'Agregar'} Restaurante</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" placeholder="Nombre" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <input type="text" placeholder="Categorías (separadas por coma)" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Restaurante</label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <input type="text" placeholder="Nombre" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <input type="text" placeholder="Categorías (separadas por coma)" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
             <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
-            {imagePreview && <img src={imagePreview} alt="Preview" className="mt-4 w-32 h-32 object-cover rounded-lg" />}
+            {imagePreview && <img src={imagePreview} alt="Preview" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
           </div>
-          <input type="text" placeholder="Costo de Envío" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <input type="text" placeholder="Tiempo de Entrega" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <input type="text" placeholder="Costo de Envío" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <input type="text" placeholder="Tiempo de Entrega" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onCancel} className="px-6 py-2 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
             <button type="submit" disabled={isSaving} className="px-6 py-2 text-white font-semibold bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-400">
@@ -143,18 +142,20 @@ const RestaurantList: React.FC<{
   return (
     <div className="space-y-4">
       {restaurants.map(restaurant => (
-        <div key={restaurant.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex justify-between items-center hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-4">
-            <img src={restaurant.image_url} alt={restaurant.name} className="w-20 h-20 rounded-md object-cover" />
-            <div>
-              <p className="font-bold text-lg text-gray-800">{restaurant.name}</p>
-              <p className="text-sm text-gray-600">{restaurant.categories?.map(c => c.name).join(', ')}</p>
+        <div key={restaurant.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center gap-4">
+              <img src={restaurant.image_url} alt={restaurant.name} className="w-20 h-20 rounded-md object-cover" />
+              <div>
+                <p className="font-bold text-lg text-gray-800">{restaurant.name}</p>
+                <p className="text-sm text-gray-600">{restaurant.categories?.map(c => c.name).join(', ')}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex space-x-2">
-            <button onClick={() => onManageMenu(restaurant)} className="p-2 text-green-600 hover:bg-green-100 rounded-full transition-colors"><UtensilsIcon className="w-5 h-5" /></button>
-            <button onClick={() => onEdit(restaurant)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
-            <button onClick={() => onDelete(restaurant.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
+            <div className="flex flex-col space-y-2">
+              <button onClick={() => onManageMenu(restaurant)} className="p-2.5 bg-green-500 text-white rounded-full transition-colors hover:bg-green-600 shadow-sm"><UtensilsIcon className="w-5 h-5" /></button>
+              <button onClick={() => onEdit(restaurant)} className="p-2.5 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
+              <button onClick={() => onDelete(restaurant.id)} className="p-2.5 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
+            </div>
           </div>
         </div>
       ))}

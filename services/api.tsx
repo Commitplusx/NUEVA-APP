@@ -2,6 +2,19 @@ import { CartItem, Restaurant, Service, Tariff, ServiceRequest } from '../types'
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 
+// Helper function to extract a user-friendly error message from Supabase errors
+export const getErrorMessage = (error: any): string => {
+  if (error && error.message) {
+    // Supabase errors often have a 'message' property
+    if (error.code && error.code === '23505') {
+      // Unique constraint violation (e.g., duplicate entry)
+      return 'Ya existe un registro con esta información. Por favor, verifica los datos.';
+    }
+    return error.message;
+  }
+  return 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.';
+};
+
 /**
  * This file contains services to interact with external APIs,
  * including a mock order confirmation.
@@ -224,8 +237,12 @@ export const deleteTariff = async (id: number): Promise<void> => {
 };
 
 // --- Menu Item Services ---
-export const getMenuItems = async (restaurantId: number): Promise<MenuItem[]> => {
-  const { data, error } = await supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId);
+export const getMenuItems = async (restaurantId?: number): Promise<MenuItem[]> => {
+  let query = supabase.from('menu_items').select('*');
+  if (restaurantId) {
+    query = query.eq('restaurant_id', restaurantId);
+  }
+  const { data, error } = await query;
   if (error) throw error;
   return data;
 };

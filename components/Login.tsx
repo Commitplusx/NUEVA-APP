@@ -36,7 +36,11 @@ export const Login: React.FC = () => {
       } else if (data.user) {
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
-        navigate('/'); // Navigate home on successful registration
+        if (role === 'admin') {
+          navigate('/'); // Navigate to home on successful admin registration
+        } else {
+          navigate('/'); // Navigate home on successful user registration
+        }
       } else {
         setError('Registro exitoso, por favor verifica tu correo electrónico para activar tu cuenta.');
       }
@@ -65,7 +69,11 @@ export const Login: React.FC = () => {
       } else if (data.user) {
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
-        navigate('/'); // Navigate home on successful login
+        if (role === 'admin') {
+          navigate('/'); // Navigate to home on successful admin login
+        } else {
+          navigate('/'); // Navigate home on successful user login
+        }
       }
     } catch (error) {
       setError('Ocurrió un error inesperado al iniciar sesión.');

@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Restaurant } from '../types';
 import { StarIcon, ClockIcon } from './icons';
+import { getTransformedImageUrl } from '../services/image';
 
 export const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
-  console.log('RestaurantCard: rendering imageUrl:', restaurant.imageUrl);
+  const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
+
   return (
     <motion.button 
       onClick={onSelect} 
@@ -13,8 +15,8 @@ export const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => 
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
       <div className="relative w-full h-40 bg-gray-200">
-        {restaurant.imageUrl ? (
-          <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+        {optimizedImageUrl ? (
+          <img src={optimizedImageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
         )}

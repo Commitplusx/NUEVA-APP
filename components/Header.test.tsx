@@ -1,15 +1,39 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Header } from './Header';
+import { useAppContext } from '../context/AppContext';
+
+// Mockear el hook useAppContext
+jest.mock('../context/AppContext', () => ({
+  useAppContext: jest.fn(),
+}));
+
+const mockedUseAppContext = useAppContext as jest.Mock;
 
 describe('Header', () => {
-  it('renders the header with the logo and menu button', () => {
+  beforeEach(() => {
+    // Proporcionar valores de mock por defecto para cada prueba
+    mockedUseAppContext.mockReturnValue({
+      user: 'Test User',
+      cartItemCount: 3,
+      isCartAnimating: false,
+      toggleSidebar: jest.fn(),
+    });
+  });
+
+  it('renders the header with user info and cart count', () => {
     render(<Header />);
     
-    // Check for the logo text
-    expect(screen.getByText('ESTRELLA')).toBeInTheDocument();
+    // Verificar que el nombre de usuario (o un saludo) se renderiza
+    expect(screen.getByText(/Test User/i)).toBeInTheDocument();
     
-    // Check for the menu button
+    // Verificar que el contador del carrito se muestra
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('renders the menu button', () => {
+    render(<Header />);
+    // Verificar que el botón de menú (o de usuario) está presente
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 });

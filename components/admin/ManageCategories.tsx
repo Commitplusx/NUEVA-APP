@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
+import { getErrorMessage } from '../../services/api';
 import { Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
@@ -83,9 +84,9 @@ const CategoryList: React.FC<{
             <p className="font-bold text-lg text-gray-800">{category.name}</p>
             <p className="text-sm text-gray-600">Ícono: {category.icon}</p>
           </div>
-          <div className="flex space-x-2">
-            <button onClick={() => onEdit(category)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
-            <button onClick={() => onDelete(category.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
+          <div className="flex flex-col space-y-2">
+            <button onClick={() => onEdit(category)} className="p-2.5 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
+            <button onClick={() => onDelete(category.id)} className="p-2.5 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
           </div>
         </div>
       ))}

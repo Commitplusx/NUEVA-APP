@@ -5,9 +5,9 @@ import Lottie from "lottie-react";
 import { FoodIcon, ShoppingIcon, DeliveryBoxIcon, UserCircleIcon, ArrowRightIcon, ChevronDownIcon, RestaurantIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
 import { ServiceCard } from './ServiceCard';
-import deliveryAnimation from './animations/delivery-animation.json';
-import foodAnimation from './animations/food-animation.json';
-import deliveryManAnimation from './animations/delivery-man-animation.json';
+import secondPageAnimation from './animations/2dapagina.json';
+import firstPageAnimation from './animations/1ra.json';
+import thirdPageAnimation from './animations/3ra.json';
 
 interface ServiceData {
   icon: React.ReactElement;
@@ -56,7 +56,7 @@ const sectionVariants = {
 };
 
 export const Home: React.FC = () => {
-  const { user: username } = useAppContext();
+  const { user: username, userRole } = useAppContext();
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -120,11 +120,11 @@ export const Home: React.FC = () => {
               className="relative p-6 w-full h-full flex flex-col justify-center items-center text-center"
             >
               <div className="flex justify-between items-center w-full max-w-md absolute top-6 px-6">
-                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {username || 'invitado'}!</h1>
+                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {userRole === 'admin' ? 'Administrador' : username || 'invitado'}!</h1>
                 <UserCircleIcon className="w-8 h-8 text-gray-800" />
               </div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                <Lottie animationData={deliveryManAnimation} loop={true} style={{ width: 150, height: 150 }} />
+                <Lottie animationData={firstPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
               <motion.h2 
                 className="text-5xl font-extrabold leading-tight mb-4 mt-8 text-gray-800"
@@ -166,7 +166,7 @@ export const Home: React.FC = () => {
               className="px-4 py-8 w-full h-full flex flex-col justify-center"
             >
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                <Lottie animationData={deliveryAnimation} loop={true} style={{ width: 150, height: 150 }} />
+                <Lottie animationData={secondPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
               <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">Nuestros Servicios</h2>
               <p className="text-gray-600 text-lg mb-8 max-w-md text-center">
@@ -187,7 +187,7 @@ export const Home: React.FC = () => {
               className="px-4 py-8 pb-16 w-full h-full flex flex-col justify-center items-center text-center"
             >
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                <Lottie animationData={foodAnimation} loop={true} style={{ width: 150, height: 150 }} />
+                <Lottie animationData={thirdPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
               <motion.h2 
                 className="text-5xl font-extrabold leading-tight mb-8 mt-8 text-gray-800"
@@ -197,17 +197,31 @@ export const Home: React.FC = () => {
               >
                 Descubre un mundo de sabores
               </motion.h2>
-              <motion.button
-                onClick={() => navigate('/restaurants')}
-                className="bg-orange-500 text-white font-bold py-4 px-8 rounded-full flex items-center justify-center gap-2 group hover:bg-orange-600 transition-colors shadow-lg"
-                whileTap={{ scale: 0.95 }}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-              >
-                <span>Explorar Restaurantes</span>
-                <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </motion.button>
+              {userRole !== 'admin' ? (
+                <motion.button
+                  onClick={() => navigate('/restaurants')}
+                  className="bg-orange-500 text-white font-bold py-4 px-8 rounded-full flex items-center justify-center gap-2 group hover:bg-orange-600 transition-colors shadow-lg"
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  <span>Explorar Restaurantes</span>
+                  <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={() => navigate('/admin')}
+                  className="bg-blue-600 text-white font-bold py-4 px-8 rounded-full flex items-center justify-center gap-2 group hover:bg-blue-700 transition-colors shadow-lg"
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  <span>Ir al Dashboard</span>
+                  <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </motion.button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

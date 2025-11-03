@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export const getPublicImageUrl = (imagePath: string): string => {
   console.log('getPublicImageUrl: received imagePath:', imagePath);
   if (!imagePath || imagePath.startsWith('http')) {
