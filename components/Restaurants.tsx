@@ -41,7 +41,7 @@ const CategoryChip: React.FC<{name: string, icon: React.ReactNode, isSelected?: 
 );
 
 const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
-  const optimizedImageUrl = getTransformedImageUrl(restaurant.image_url || '', 400, 300);
+  const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
   return (
     <motion.button 
       onClick={onSelect} 
@@ -71,11 +71,14 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }
         </div>
         <div className="flex items-center justify-between text-sm text-gray-700 mt-3">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-green-600">{restaurant.delivery_fee}</span>
+            <span className="text-sm text-gray-700">Entrega: </span>
+            <span className="font-bold text-green-600">
+              {typeof restaurant.delivery_fee === 'number' ? `$${restaurant.delivery_fee.toFixed(2)}` : 'N/A'}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <ClockIcon className="w-4 h-4 text-gray-500" />
-            <span className="font-semibold">{restaurant.delivery_time}</span>
+            <span className="font-semibold text-sm text-gray-700">{restaurant.delivery_time} min</span>
           </div>
         </div>
       </div>

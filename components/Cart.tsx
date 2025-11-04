@@ -98,7 +98,13 @@ export const Cart: React.FC = () => {
       <div className="space-y-4 mb-6">
         {cartItems.map(item => (
           <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
+            {item.product.imageUrl ? (
+              <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
+            ) : (
+              <div className="w-20 h-20 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-2">
+                No Image
+              </div>
+            )}
             <div className="flex-grow">
               <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
               <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
@@ -179,24 +185,43 @@ export const Cart: React.FC = () => {
   );
 
   const renderConfirmationStep = () => (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-4">
-        <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
-        <div className="text-sm">
-            <p><strong>Nombre:</strong> {userDetails.name}</p>
-            <p><strong>Dirección:</strong> {userDetails.address}, {userDetails.neighborhood}, {userDetails.postalCode}</p>
-            <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-4">
+            <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
+            <div className="text-sm">
+                <p><strong>Nombre:</strong> {userDetails.name}</p>
+                <p><strong>Dirección:</strong> {userDetails.address}, {userDetails.neighborhood}, {userDetails.postalCode}</p>
+                <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+            </div>
+            <hr/>
+            <div className="space-y-3">
+                {cartItems.map(item => (
+                    <div key={item.id} className="flex items-center gap-3">
+                        {item.product.imageUrl ? (
+                            <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
+                        ) : (
+                            <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
+                                No Image
+                            </div>
+                        )}
+                        <div className="flex-grow">
+                            <p className="font-semibold text-gray-800">{item.product.name}</p>
+                            <p className="text-sm text-gray-500">{item.quantity} x ${item.product.price.toFixed(2)}</p>
+                        </div>
+                        <p className="font-bold text-md">${(item.product.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                ))}
+            </div>
+            <hr/>
+            <div>
+                <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
+                <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
+                <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-4">
+                <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
+                <button onClick={handleFinalOrderConfirmation} className="bg-green-500 text-white font-bold py-3 rounded-lg">Confirmar Pedido</button>
+            </div>
         </div>
-        <hr/>
-        <div>
-            <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
-            <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
-            <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4 pt-4">
-            <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-            <button onClick={handleFinalOrderConfirmation} className="bg-green-500 text-white font-bold py-3 rounded-lg">Confirmar Pedido</button>
-        </div>
-    </div>
   );
 
   return (
