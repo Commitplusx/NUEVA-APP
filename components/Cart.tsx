@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, CartIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const Cart: React.FC = () => {
+  useThemeColor('#f97316');
   const { cart: cartItems, handleUpdateCart, handleConfirmOrder } = useAppContext();
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState('');

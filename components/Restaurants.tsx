@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { useCategories } from '../hooks/useCategories';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, PizzaIcon, BurgerIcon, TacoIcon, FoodIcon } from './icons';
 import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
@@ -163,6 +164,8 @@ export const Restaurants: React.FC = () => {
     categoryName: selectedCategory,
   });
 
+  useThemeColor('#f97316');
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -172,27 +175,6 @@ export const Restaurants: React.FC = () => {
       clearTimeout(handler);
     };
   }, [searchQuery]);
-
-  useEffect(() => {
-    const themeColorMetaTag = document.querySelector("meta[name='theme-color']");
-    const originalThemeColor = themeColorMetaTag ? themeColorMetaTag.getAttribute('content') : null;
-
-    let metaTag = themeColorMetaTag;
-    if (!metaTag) {
-      metaTag = document.createElement('meta');
-      metaTag.setAttribute('name', 'theme-color');
-      document.head.appendChild(metaTag);
-    }
-    metaTag.setAttribute('content', '#f97316');
-
-    return () => {
-      if (originalThemeColor) {
-        metaTag?.setAttribute('content', originalThemeColor);
-      } else {
-        metaTag?.remove();
-      }
-    };
-  }, []);
 
   const allCategories = [{ name: 'All', icon: 'All' }, ...categories.filter(c => c.name !== 'All')];
 

@@ -4,6 +4,7 @@ import * as Icons from './icons';
 import { Tariff, ServiceRequest } from '../types';
 import { createServiceRequest } from '../services/api';
 import { useTariffs } from '../hooks/useTariffs';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { Spinner } from './Spinner';
 import { ComingSoonModal } from './ComingSoonModal';
 
@@ -78,6 +79,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
 };
 
 export const RequestService: React.FC = () => {
+  useThemeColor('#f97316');
   const [step, setStep] = useState<Step>('details');
   const { tariffs, loading, error } = useTariffs();
   const [selectedTariffId, setSelectedTariffId] = useState<number | null>(null);
