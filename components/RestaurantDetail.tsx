@@ -4,6 +4,7 @@ import { Restaurant, MenuItem } from '../types';
 import { ChevronLeftIcon } from './icons';
 import { Spinner } from './Spinner';
 import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderItemCustomizationModal } from './OrderItemCustomizationModal';
 import { getTransformedImageUrl } from '../services/image';
 
@@ -32,6 +33,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => voi
 };
 
 export const RestaurantDetail: React.FC = () => {
+  useThemeColor('#f97316');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurantDetail(id || '');

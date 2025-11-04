@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Restaurant, MenuItem, Ingredient } from '../App';
+import { useThemeColor } from '../hooks/useThemeColor';
 import { ChevronLeftIcon, StarIcon, MinusIcon, PlusIcon, LocationIcon } from './icons';
 
 interface ProductDetailProps {
@@ -26,6 +27,7 @@ const IngredientToggleButton: React.FC<{ ingredient: Ingredient; isSelected: boo
 
 
 export const ProductDetail: React.FC<ProductDetailProps> = ({ item, restaurant, onAddToCart, onBack }) => {
+  useThemeColor('#f97316');
   const [quantity, setQuantity] = useState(1);
   const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>(item.ingredients || []);
 
