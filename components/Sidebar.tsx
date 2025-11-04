@@ -168,6 +168,14 @@ const Sidebar: React.FC = () => {
                 </Link>
               </motion.li>
             )}
+            {user && (
+              <motion.li className="mb-4" variants={navItemVariants}>
+                <Link to="/profile" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
+                  <UserCircleIcon className="w-6 h-6" />
+                  <span>Mi Perfil</span>
+                </Link>
+              </motion.li>
+            )}
           </motion.ul>
         </nav>
 

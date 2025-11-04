@@ -8,8 +8,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../services/supabase';
-import { confirmarPedido } from '../services/api';
-import { Restaurant, MenuItem, CartItem, Ingredient, UserRole } from '../types';
+import { confirmarPedido, getTariffs } from '../services/api';
+import { Restaurant, MenuItem, CartItem, Ingredient, UserRole, Tariff, OrderUserDetails } from '../types';
 import { Toast, ToastType } from '../components/Toast';
 
 /**
@@ -28,6 +28,7 @@ interface AppContextType {
   cartItemCount: number;
   isCartAnimating: boolean;
   isCustomizationModalOpen: boolean;
+  baseFee: number;
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
   toggleSidebar: () => void;
@@ -41,7 +42,7 @@ interface AppContextType {
   handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => void;
   handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
   handleRemoveFromCart: (cartItemId: string) => void;
-  handleConfirmOrder: (phoneNumber: string) => Promise<void>;
+  handleConfirmOrder: (userDetails: OrderUserDetails) => Promise<void>;
   setIsCustomizationModalOpen: (isOpen: boolean) => void;
 }
 
@@ -70,6 +71,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCartAnimating, setIsCartAnimating] = useState(false);
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [baseFee, setBaseFee] = useState(45); // Default value in case fetch fails
+
+  useEffect(() => {
+    const fetchBaseFee = async () => {
+      try {
+        const tariffs = await getTariffs();
+        const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
+        if (baseTariff) {
+          setBaseFee(baseTariff.price);
+        } else {
+            console.warn('"Tarifa Base" not found in database, using default value.');
+        }
+      } catch (error) {
+        console.error("Failed to fetch tariffs:", error);
+      }
+    };
+
+    fetchBaseFee();
+  }, []);
 
   /**
    * @function useEffect
@@ -245,9 +265,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
    * Muestra un Toast de éxito o error.
    * @param {string} phoneNumber - El número de teléfono del usuario para la confirmación.
    */
-  const handleConfirmOrder = async (phoneNumber: string) => {
+  const handleConfirmOrder = async (userDetails: OrderUserDetails) => {
     try {
-      await confirmarPedido(cart, phoneNumber);
+      await confirmarPedido(cart, userDetails);
       showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
       setCart([]); // Vaciar el carrito después de confirmar el pedido
     } catch (error) {
@@ -261,7 +281,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Objeto de valor que se proporcionará a los consumidores del contexto
   const value = {
-    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, isCustomizationModalOpen,
+    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, isCustomizationModalOpen, baseFee,
     toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen
   };
 

@@ -43,7 +43,7 @@ export interface MenuItem {
 
   price: number;
 
-  image_url?: string;
+  imageUrl?: string;
 
   rating?: number;
 
@@ -51,7 +51,7 @@ export interface MenuItem {
 
   ingredients?: Ingredient[];
 
-  is_popular?: boolean;
+  isPopular?: boolean;
 
 }
 
@@ -63,13 +63,13 @@ export interface Restaurant {
 
   name: string;
 
-  image_url: string;
+  imageUrl: string;
 
   rating: number;
 
-  delivery_fee: number;
+  deliveryFee: number;
 
-  delivery_time: number;
+  deliveryTime: number;
 
   // Denormalized for easier access in the frontend
 
@@ -147,7 +147,9 @@ export interface ServiceRequest {
 
     description: string;
 
-    tariff_id: number;
+    price?: number;
+
+    distance?: number;
 
     user_id?: string;
 
@@ -157,4 +159,19 @@ export interface ServiceRequest {
 
 }
 
+export interface Profile {
+  user_id: string;
+  full_name?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface OrderUserDetails {
+  name: string;
+  address: string;
+  postalCode: string;
+  neighborhood: string;
+  phone: string;
+}
 

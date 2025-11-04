@@ -18,6 +18,12 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignore non-GET requests and requests to Supabase API
+  if (event.request.method !== 'GET' || event.request.url.includes('supabase')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

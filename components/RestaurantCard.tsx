@@ -4,8 +4,12 @@ import { Restaurant } from '../types';
 import { StarIcon, ClockIcon } from './icons';
 import { getTransformedImageUrl } from '../services/image';
 
+import { useAppContext } from '../context/AppContext';
+
 export const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
+  const { baseFee } = useAppContext();
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
+  const displayDeliveryFee = Math.max(restaurant.deliveryFee, baseFee);
 
   return (
     <motion.button 
@@ -36,7 +40,7 @@ export const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => 
         </div>
         <div className="flex items-center justify-between text-sm text-gray-700 mt-3">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-green-600">{restaurant.deliveryFee}</span>
+            <span className="font-bold text-green-600">${displayDeliveryFee.toFixed(2)}</span>
           </div>
           <div className="flex items-center gap-1">
             <ClockIcon className="w-4 h-4 text-gray-500" />

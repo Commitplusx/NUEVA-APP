@@ -1,6 +1,48 @@
-import { CartItem, Restaurant, Service, Tariff, ServiceRequest } from '../types';
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
+
+// --- Profile Services ---
+export const getProfile = async (): Promise<Profile | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
+    console.error('Error fetching profile:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateProfile = async (profile: Partial<Profile>): Promise<Profile> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const updates = {
+    ...profile,
+    user_id: user.id,
+    updated_at: new Date(),
+  };
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(updates)
+    .select();
+
+  if (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+
+  return data[0];
+};
 
 // Helper function to extract a user-friendly error message from Supabase errors
 export const getErrorMessage = (error: any): string => {
@@ -47,9 +89,9 @@ export const getServices = async (): Promise<Service[]> => {
  * @param {string} phoneNumber - The user's WhatsApp number.
  * @returns {Promise<{success: boolean}>} - A promise that resolves if the order is confirmed.
  */
-export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Promise<{success: boolean}> => {
+export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails): Promise<{success: boolean}> => {
   console.log("Simulating order confirmation...");
-  if (!phoneNumber || cart.length === 0) {
+  if (!userDetails.phone || cart.length === 0) {
       console.error("Order confirmation failed: Phone number and cart items are required.");
       throw new Error("Phone number and cart items are required.");
   }
@@ -57,7 +99,7 @@ export const confirmarPedido = async (cart: CartItem[], phoneNumber: string): Pr
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  console.log('Order confirmed for:', { phoneNumber, cart });
+  console.log('Order confirmed for:', { userDetails, cart });
   // Return a success message
   return { success: true };
 };
@@ -314,5 +356,31 @@ export const createServiceRequest = async (request: ServiceRequest): Promise<Ser
         throw error;
     }
 
-    return data[0];
+  return data[0];
+};
+
+// --- Geocoding Service ---
+export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+  if (!address) return null;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Nominatim API returned status ${response.status}`);
+    }
+    const data = await response.json();
+    if (data && data.length > 0) {
+      const { lat, lon } = data[0];
+      return { lat: parseFloat(lat), lng: parseFloat(lon) };
+    }
+    return null;
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    return null;
+  }
 };
