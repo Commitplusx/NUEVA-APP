@@ -10,7 +10,7 @@ interface UseRestaurantsProps {
   categoryName?: string;
 }
 
-export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProps) => {
+export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProps = {}) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
