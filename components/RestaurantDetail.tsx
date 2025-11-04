@@ -47,7 +47,9 @@ export const RestaurantDetail: React.FC = () => {
 
   const handleCloseCustomizationModal = () => {
     setIsCustomizationModalOpen(false);
-    setSelectedMenuItemForCustomization(null);
+    setTimeout(() => {
+      setSelectedMenuItemForCustomization(null);
+    }, 300); // Match the modal's exit animation duration
   };
 
   if (loading) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MenuItem, Ingredient } from '../types';
 import { useAppContext } from '../context/AppContext';
 import { XCircleIcon, PlusIcon, MinusIcon, CartIcon, CheckCircleIcon } from './icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useSpring, useMotionValueEvent } from 'framer-motion';
 
 interface OrderItemCustomizationModalProps {
   item: MenuItem;
@@ -40,6 +40,16 @@ export const OrderItemCustomizationModal: React.FC<OrderItemCustomizationModalPr
   const [customizedIngredients, setCustomizedIngredients] = useState(ingredients || []);
 
   const total = item.price * quantity;
+  const springTotal = useSpring(total, { stiffness: 400, damping: 30 });
+  const [displayedTotal, setDisplayedTotal] = useState(total);
+
+  useMotionValueEvent(springTotal, "change", (latest) => {
+    setDisplayedTotal(latest);
+  });
+
+  useEffect(() => {
+    springTotal.set(total);
+  }, [total, springTotal]);
 
   useEffect(() => {
     setIsCustomizationModalOpen(true);
@@ -158,12 +168,16 @@ export const OrderItemCustomizationModal: React.FC<OrderItemCustomizationModalPr
             </div>
 
             <motion.button
+              key={total} // Key changes when total changes, forcing re-render and animation
+              initial={{ scale: 0.98, opacity: 0.8 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
               onClick={handleAddToCartClick}
               className="w-full bg-orange-500 text-white py-4 rounded-xl text-lg font-bold flex items-center justify-center gap-2 shadow-lg hover:bg-orange-600 hover:shadow-xl transition-all duration-200"
               whileTap={{ scale: 0.95 }}
             >
               <CartIcon className="w-6 h-6" />
-              <span>Añadir por ${(total).toFixed(2)}</span>
+              <span>Añadir por ${displayedTotal.toFixed(2)}</span>
             </motion.button>
           </div>
         </motion.div>

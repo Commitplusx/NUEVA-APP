@@ -61,8 +61,8 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {shouldShowHeader && <MainHeader />}
-      {shouldShowBottomNav && <BottomNav />}
       <AnimatePresence mode="wait">
+        {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
       <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
