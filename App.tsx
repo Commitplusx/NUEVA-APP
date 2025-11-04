@@ -74,9 +74,7 @@ const App: React.FC = () => {
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
               <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
-              <Route element={<UserRouteGuard />}>
-                <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-              </Route>
+              <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
               <Route path="/admin" element={<Admin />}>
                 <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
                 <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />

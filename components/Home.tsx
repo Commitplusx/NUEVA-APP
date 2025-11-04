@@ -2,7 +2,7 @@ import React, { useState, TouchEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
-import { FoodIcon, ShoppingIcon, DeliveryBoxIcon, UserCircleIcon, ArrowRightIcon, ChevronDownIcon, RestaurantIcon } from './icons';
+import { FoodIcon, ShoppingIcon, DeliveryBoxIcon, UserCircleIcon, ArrowRightIcon, ChevronDownIcon, ChevronUpIcon, RestaurantIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
 import { ServiceCard } from './ServiceCard';
 import secondPageAnimation from './animations/2dapagina.json';
@@ -116,7 +116,7 @@ export const Home: React.FC = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: "tween", duration: 0.4 }}
               className="relative p-6 w-full h-full flex flex-col justify-center items-center text-center"
             >
               <div className="flex justify-between items-center w-full max-w-md absolute top-6 px-6">
@@ -145,10 +145,10 @@ export const Home: React.FC = () => {
               <motion.div 
                 className="absolute bottom-10 flex flex-col items-center text-gray-400"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
+                animate={{ opacity: 1, y: [0, -5, 0] }}
+                transition={{ delay: 1, duration: 1.5, repeat: Infinity, repeatType: "loop" }}
               >
-                <span className="text-xs mb-1">Desliza</span>
+                <span className="text-xs mb-1">Desliza hacia arriba</span>
                 <ChevronDownIcon className="w-6 h-6" />
               </motion.div>
             </motion.div>
@@ -162,9 +162,17 @@ export const Home: React.FC = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="px-4 py-8 w-full h-full flex flex-col justify-center"
+              transition={{ type: "tween", duration: 0.4 }}
+              className="relative px-4 py-8 w-full h-full flex flex-col justify-center"
             >
+              <motion.div
+                className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, y: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
+              >
+                <ChevronUpIcon className="w-6 h-6" />
+              </motion.div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={secondPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
@@ -172,6 +180,14 @@ export const Home: React.FC = () => {
               <p className="text-gray-600 text-lg mb-8 max-w-md text-center">
                 Te ofrecemos una amplia gama de servicios para hacerte la vida más fácil.
               </p>
+              <motion.div
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, y: [0, -5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
+              >
+                <ChevronDownIcon className="w-6 h-6" />
+              </motion.div>
             </motion.div>
           )}
 
@@ -183,9 +199,17 @@ export const Home: React.FC = () => {
               initial="hidden"
               animate="visible"
               exit="exit"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="px-4 py-8 pb-16 w-full h-full flex flex-col justify-center items-center text-center"
+              transition={{ type: "tween", duration: 0.4 }}
+              className="relative px-4 py-8 pb-16 w-full h-full flex flex-col justify-center items-center text-center"
             >
+              <motion.div
+                className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, y: [0, 5, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
+              >
+                <ChevronUpIcon className="w-6 h-6" />
+              </motion.div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={thirdPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>

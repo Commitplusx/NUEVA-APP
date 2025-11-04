@@ -9,7 +9,7 @@ export const MainHeader: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="bg-gradient-to-br from-orange-500 to-red-600 p-4 shadow-lg sticky top-0 z-10">
+    <div className="bg-orange-500 p-4 shadow-lg sticky top-0 z-10">
       <div className="flex justify-between items-center">
         {location.pathname !== '/' ? (
           <button 
