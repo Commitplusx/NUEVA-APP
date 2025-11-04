@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuItem, Ingredient } from '../types';
 import { useAppContext } from '../context/AppContext';
 import { XCircleIcon, PlusIcon, MinusIcon, CartIcon, CheckCircleIcon } from './icons';
 import { motion, AnimatePresence } from 'framer-motion';
-// ... (rest of the file)
+
+interface OrderItemCustomizationModalProps {
+  item: MenuItem;
+  onClose: () => void;
+}
 
 const IngredientToggle: React.FC<{ ingredient: Ingredient; isEnabled: boolean; onToggle: () => void; }> = ({ ingredient, isEnabled, onToggle }) => {
   return (
@@ -30,12 +34,17 @@ const IngredientToggle: React.FC<{ ingredient: Ingredient; isEnabled: boolean; o
 
 export const OrderItemCustomizationModal: React.FC<OrderItemCustomizationModalProps> = ({ item, onClose }) => {
   const [quantity, setQuantity] = useState(1);
-  const { handleAddToCart: contextAddToCart } = useAppContext();
+  const { handleAddToCart: contextAddToCart, setIsCustomizationModalOpen } = useAppContext();
 
   const ingredients = Array.isArray(item.ingredients) ? item.ingredients : [];
   const [customizedIngredients, setCustomizedIngredients] = useState(ingredients || []);
 
   const total = item.price * quantity;
+
+  useEffect(() => {
+    setIsCustomizationModalOpen(true);
+    return () => setIsCustomizationModalOpen(false);
+  }, [setIsCustomizationModalOpen]);
 
   const handleIngredientToggle = (ingredient: Ingredient) => {
     setCustomizedIngredients(prev =>
@@ -47,6 +56,7 @@ export const OrderItemCustomizationModal: React.FC<OrderItemCustomizationModalPr
 
   const handleAddToCartClick = () => {
     contextAddToCart(item, quantity, customizedIngredients);
+    setIsCustomizationModalOpen(false); // Ensure modal state is reset
     onClose();
   };
 
@@ -103,7 +113,29 @@ export const OrderItemCustomizationModal: React.FC<OrderItemCustomizationModalPr
           </div>
 
           {/* Footer */}
-          <div className="flex-shrink-0 mt-auto p-4 pt-2 pb-24 bg-white shadow-lg rounded-b-2xl md:rounded-b-2xl">
+          <div className="flex-shrink-0 mt-auto p-4 pt-2 pb-6 bg-white shadow-lg rounded-b-2xl md:rounded-b-2xl">
+            {customizedIngredients.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-gray-600 mb-2">Tu selección:</h4>
+                <div className="flex flex-wrap gap-2">
+                  <AnimatePresence>
+                    {customizedIngredients.map(ing => (
+                      <motion.span
+                        key={ing.name}
+                        layout
+                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-sm bg-green-100 text-green-800 font-medium px-3 py-1 rounded-full border border-green-200"
+                      >
+                        {ing.name}
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
               <p className="font-semibold text-gray-600">Cantidad</p>
               <div className="flex items-center rounded-full border border-gray-300 bg-white">

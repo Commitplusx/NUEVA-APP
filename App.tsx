@@ -52,11 +52,11 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
  * Gestiona la visibilidad de la cabecera y el sidebar basándose en la ruta actual y el rol del usuario.
  */
 const App: React.FC = () => {
-  const { isSidebarOpen, userRole } = useAppContext();
+  const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
   const location = useLocation();
   const hideHeaderPaths = ['/login', '/'];
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
-  const shouldShowBottomNav = location.pathname !== '/';
+  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">

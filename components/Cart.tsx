@@ -49,9 +49,13 @@ const Cart: React.FC = () => {
                 <div className="flex-grow">
                   <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
                   {item.customizedIngredients && item.customizedIngredients.length > 0 && (
-                    <p className="text-xs text-gray-600 mt-1">
-                      Ingredientes: {item.customizedIngredients.map(ing => ing.name).join(', ')}
-                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {item.customizedIngredients.map(ing => (
+                        <span key={ing.name} className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                          {ing.name}
+                        </span>
+                      ))}
+                    </div>
                   )}
                   <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
                   <div className="flex items-center gap-3 mt-2">

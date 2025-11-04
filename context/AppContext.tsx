@@ -27,6 +27,7 @@ interface AppContextType {
   isSidebarOpen: boolean;
   cartItemCount: number;
   isCartAnimating: boolean;
+  isCustomizationModalOpen: boolean;
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
   toggleSidebar: () => void;
@@ -41,6 +42,7 @@ interface AppContextType {
   handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
   handleRemoveFromCart: (cartItemId: string) => void;
   handleConfirmOrder: (phoneNumber: string) => Promise<void>;
+  setIsCustomizationModalOpen: (isOpen: boolean) => void;
 }
 
 /**
@@ -67,6 +69,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toastType, setToastType] = useState<ToastType>('success');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCartAnimating, setIsCartAnimating] = useState(false);
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
 
   /**
    * @function useEffect
@@ -258,8 +261,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Objeto de valor que se proporcionará a los consumidores del contexto
   const value = {
-    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating,
-    toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder
+    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, isCustomizationModalOpen,
+    toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen
   };
 
   return (

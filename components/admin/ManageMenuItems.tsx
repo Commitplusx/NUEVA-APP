@@ -25,7 +25,8 @@ const MenuItemForm: React.FC<{
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPopular, setIsPopular] = useState(false);
-  const [ingredientsInput, setIngredientsInput] = useState(''); // JSON string or comma-separated
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredientName, setIngredientName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -36,8 +37,7 @@ const MenuItemForm: React.FC<{
       setImageUrl(menuItem.image_url || '');
       setImagePreview(menuItem.image_url || '');
       setIsPopular(menuItem.is_popular || false);
-      // Convert ingredients array to a JSON string for editing
-      setIngredientsInput(menuItem.ingredients ? JSON.stringify(menuItem.ingredients) : '');
+      setIngredients(menuItem.ingredients || []);
     } else {
       setName('');
       setDescription('');
@@ -46,7 +46,7 @@ const MenuItemForm: React.FC<{
       setImageFile(null);
       setImagePreview(null);
       setIsPopular(false);
-      setIngredientsInput('');
+      setIngredients([]);
     }
   }, [menuItem]);
 
@@ -57,6 +57,17 @@ const MenuItemForm: React.FC<{
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
+  };
+
+  const handleAddIngredient = () => {
+    if (ingredientName.trim() && !ingredients.some(ing => ing.name === ingredientName.trim())) {
+      setIngredients([...ingredients, { name: ingredientName.trim(), icon: 'FoodIcon' }]);
+      setIngredientName('');
+    }
+  };
+
+  const handleRemoveIngredient = (name: string) => {
+    setIngredients(ingredients.filter(ing => ing.name !== name));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,20 +86,6 @@ const MenuItemForm: React.FC<{
         finalImageUrl = await uploadImage(imageFile);
       }
 
-      let parsedIngredients: Ingredient[] = [];
-      if (ingredientsInput) {
-        try {
-          // Try to parse as JSON array of objects
-          parsedIngredients = JSON.parse(ingredientsInput);
-          if (!Array.isArray(parsedIngredients) || !parsedIngredients.every(i => typeof i.name === 'string' && typeof i.icon === 'string')) {
-            throw new Error('Invalid JSON format for ingredients.');
-          }
-        } catch (jsonError) {
-          // Fallback to comma-separated string
-          parsedIngredients = ingredientsInput.split(',').map(name => ({ name: name.trim(), icon: 'FoodIcon' }));
-        }
-      }
-
       const itemData = {
         restaurant_id: restaurantId,
         name,
@@ -96,7 +93,7 @@ const MenuItemForm: React.FC<{
         price: parsedPrice,
         image_url: finalImageUrl,
         is_popular: isPopular,
-        ingredients: parsedIngredients,
+        ingredients: ingredients,
       };
 
       if (menuItem) {
@@ -133,8 +130,27 @@ const MenuItemForm: React.FC<{
             <label htmlFor="isPopular" className="text-sm font-medium text-gray-700">¿Es Popular?</label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes (JSON Array o separados por coma)</label>
-            <textarea placeholder='Ej: [{"name": "Tomate", "icon": "PeppersIcon"}, {"name": "Queso", "icon": "SaltIcon"}] o Tomate, Queso' value={ingredientsInput} onChange={e => setIngredientsInput(e.target.value)} className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 h-24 resize-none"></textarea>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
+            <div className="flex items-center gap-2 mb-2">
+              <input 
+                type="text" 
+                placeholder="Añadir ingrediente" 
+                value={ingredientName} 
+                onChange={e => setIngredientName(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+              <button type="button" onClick={handleAddIngredient} className="px-4 py-2 text-white font-semibold bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">Añadir</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {ingredients.map(ing => (
+                <div key={ing.name} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-1 rounded-full">
+                  <span>{ing.name}</span>
+                  <button type="button" onClick={() => handleRemoveIngredient(ing.name)} className="text-red-500 hover:text-red-700">
+                    <XCircleIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onCancel} className="px-6 py-2 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
