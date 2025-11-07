@@ -1,4 +1,4 @@
-import React, { useState, TouchEvent, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
@@ -59,42 +59,25 @@ export const Home: React.FC = () => {
   const { user: username, userRole } = useAppContext();
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
-  const [direction, setDirection] = useState(0);
-
-  const minSwipeDistance = 50;
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
+
+    const interval = setInterval(() => {
+      setCurrentSection(prevSection => {
+        if (prevSection < 2) {
+          return prevSection + 1;
+        }
+        clearInterval(interval);
+        return prevSection;
+      });
+    }, 3000); // Cambia cada 3 segundos
+
     return () => {
       document.body.style.overflow = 'auto';
+      clearInterval(interval); // Limpiar el intervalo al desmontar el componente
     };
   }, []);
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    setTouchEnd(0);
-    setTouchStart(e.targetTouches[0].clientY);
-  };
-
-  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    setTouchEnd(e.targetTouches[0].clientY);
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isSwipeUp = distance > minSwipeDistance;
-    const isSwipeDown = distance < -minSwipeDistance;
-
-    if (isSwipeUp) {
-      setDirection(1);
-      setCurrentSection(prev => Math.min(prev + 1, 2));
-    } else if (isSwipeDown) {
-      setDirection(-1);
-      setCurrentSection(prev => Math.max(prev - 1, 0));
-    }
-  };
 
   return (
     <motion.div 
@@ -102,16 +85,13 @@ export const Home: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       <div style={{ perspective: '1000px', position: 'relative', width: '100%', height: '100%' }}>
-        <AnimatePresence mode="wait" custom={direction}>
+        <AnimatePresence mode="wait" custom={1}>
           {currentSection === 0 && (
             <motion.div
               key="welcome"
-              custom={direction}
+              custom={1}
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
@@ -142,22 +122,13 @@ export const Home: React.FC = () => {
               >
                 Todo lo que necesitas, a la puerta de tu casa en minutos.
               </motion.p>
-              <motion.div 
-                className="absolute bottom-10 flex flex-col items-center text-gray-400"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, y: [0, -5, 0] }}
-                transition={{ delay: 1, duration: 1.5, repeat: Infinity, repeatType: "loop" }}
-              >
-                <span className="text-xs mb-1">Desliza hacia arriba</span>
-                <ChevronDownIcon className="w-6 h-6" />
-              </motion.div>
             </motion.div>
           )}
 
           {currentSection === 1 && (
             <motion.div
               key="services"
-              custom={direction}
+              custom={1}
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
@@ -165,14 +136,6 @@ export const Home: React.FC = () => {
               transition={{ type: "tween", duration: 0.4 }}
               className="relative px-4 py-8 w-full h-full flex flex-col justify-center"
             >
-              <motion.div
-                className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, y: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
-              >
-                <ChevronUpIcon className="w-6 h-6" />
-              </motion.div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={secondPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
@@ -180,21 +143,13 @@ export const Home: React.FC = () => {
               <p className="text-gray-600 text-lg mb-8 max-w-md text-center">
                 Te ofrecemos una amplia gama de servicios para hacerte la vida más fácil.
               </p>
-              <motion.div
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, y: [0, -5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
-              >
-                <ChevronDownIcon className="w-6 h-6" />
-              </motion.div>
             </motion.div>
           )}
 
           {currentSection === 2 && (
             <motion.div
               key="explore"
-              custom={direction}
+              custom={1}
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
@@ -202,14 +157,6 @@ export const Home: React.FC = () => {
               transition={{ type: "tween", duration: 0.4 }}
               className="relative px-4 py-8 pb-16 w-full h-full flex flex-col justify-center items-center text-center"
             >
-              <motion.div
-                className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col items-center text-gray-400"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, y: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatType: "loop" }}
-              >
-                <ChevronUpIcon className="w-6 h-6" />
-              </motion.div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={thirdPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>

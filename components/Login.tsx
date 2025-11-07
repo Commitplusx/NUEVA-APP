@@ -70,9 +70,9 @@ export const Login: React.FC = () => {
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
         if (role === 'admin') {
-          navigate('/'); // Navigate to home on successful admin login
+          navigate('/restaurants'); // Navigate to home on successful admin login
         } else {
-          navigate('/'); // Navigate home on successful user login
+          navigate('/restaurants'); // Navigate home on successful user login
         }
       }
     } catch (error) {
