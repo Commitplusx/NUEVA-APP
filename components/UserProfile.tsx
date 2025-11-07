@@ -4,11 +4,13 @@ import { Profile } from '../types';
 import { Spinner } from './Spinner';
 import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
+import { Avatar } from './Avatar';
 
 export const UserProfile: React.FC = () => {
   const { user } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -22,17 +24,7 @@ export const UserProfile: React.FC = () => {
       try {
         setLoading(true);
         const userProfile = await getProfile();
-        if (userProfile) {
-          setProfile(userProfile);
-        } else {
-          // Si no hay perfil, inicializamos uno para que el usuario pueda crearlo
-          setProfile({
-            id: user.id,
-            full_name: '',
-            address: '',
-            // Otros campos que pueda tener el perfil
-          });
-        }
+        setProfile(userProfile);
       } catch (err) {
         setError('Error al cargar el perfil. Por favor, intenta de nuevo.');
         console.error(err);
@@ -46,22 +38,22 @@ export const UserProfile: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prevProfile => {
-      if (!prevProfile) {
-        // Esto no debería ocurrir si la lógica de fetchProfile es correcta,
-        // pero es una salvaguarda.
-        return {
-          id: user!.id,
-          full_name: '',
-          address: '',
-          [name]: value,
-        };
-      }
-      return {
-        ...prevProfile,
-        [name]: value,
-      };
-    });
+    setProfile(prev => (prev ? { ...prev, [name]: value } : null));
+  };
+
+  const handleAvatarUpload = async (filePath: string) => {
+    if (!profile) return;
+    try {
+      setUploading(true);
+      const updatedProfile = { ...profile, avatar_url: filePath };
+      await updateProfile(updatedProfile);
+      setProfile(updatedProfile);
+      setToast({ message: 'Avatar actualizado con éxito', type: 'success' });
+    } catch (err) {
+      setToast({ message: 'Error al actualizar el avatar', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,59 +66,101 @@ export const UserProfile: React.FC = () => {
       setToast({ message: 'Perfil actualizado con éxito', type: 'success' });
     } catch (err) {
       setToast({ message: 'Error al actualizar el perfil', type: 'error' });
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading && !profile) {
     return <Spinner />;
   }
 
   if (error) {
-    return <div className="text-red-500 text-center">{error}</div>;
+    return <div className="text-red-500 text-center p-4">{error}</div>;
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Perfil de {user}</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-            Nombre Completo
-          </label>
-          <input
-            type="text"
-            id="full_name"
-            name="full_name"
-            value={profile?.full_name || ''}
-            onChange={handleInputChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
+      <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
+        <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
+          <div className="flex flex-col items-center pb-8">
+            <Avatar
+              url={profile?.avatar_url || null}
+              size={120}
+              onUpload={handleAvatarUpload}
+              loading={uploading}
+            />
+            <h1 className="text-3xl font-bold text-gray-800 mt-4">{profile?.full_name || 'Nombre de usuario'}</h1>
+            <p className="text-gray-500">{user?.email}</p>
+            {user?.created_at && (
+              <p className="text-sm text-gray-400 mt-1">
+                Miembro desde {new Date(user.created_at).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                Nombre Completo
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  id="full_name"
+                  name="full_name"
+                  value={profile?.full_name || ''}
+                  onChange={handleInputChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Correo Electrónico
+              </label>
+              <div className="mt-1">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={user?.email || ''}
+                  readOnly
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                Dirección
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  id="address"
+                  name="address"
+                  value={profile?.address || ''}
+                  onChange={handleInputChange}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading || uploading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </form>
         </div>
-        <div className="mb-4">
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-            Dirección
-          </label>
-          <input
-            type="text"
-            id="address"
-            name="address"
-            value={profile?.address || ''}
-            onChange={handleInputChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          {loading ? 'Guardando...' : 'Guardar Cambios'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

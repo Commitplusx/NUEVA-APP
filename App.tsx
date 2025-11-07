@@ -5,7 +5,7 @@
  * y Framer Motion para las transiciones de página.
  */
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MainHeader } from './components/MainHeader';
@@ -59,6 +59,37 @@ const App: React.FC = () => {
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
   const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen;
 
+  // Estado para el evento de instalación de PWA
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!installPrompt) {
+      return;
+    }
+    installPrompt.prompt();
+    installPrompt.userChoice.then((choiceResult: { outcome: string }) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('El usuario aceptó la instalación');
+      } else {
+        console.log('El usuario rechazó la instalación');
+      }
+      setInstallPrompt(null);
+    });
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {shouldShowHeader && <MainHeader />}
@@ -87,6 +118,15 @@ const App: React.FC = () => {
           </Suspense>
         </AnimatePresence>
       </main>
+      {installPrompt && (
+        <button
+          onClick={handleInstallClick}
+          className="fixed bottom-20 right-4 bg-blue-500 text-white py-2 px-4 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 z-50"
+          aria-label="Instalar aplicación"
+        >
+          Instalar App
+        </button>
+      )}
     </div>
   );
 };
