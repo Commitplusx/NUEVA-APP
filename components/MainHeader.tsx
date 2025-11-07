@@ -1,12 +1,16 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { MenuIcon, UserCircleIcon } from './icons';
+import { CartIcon, MenuIcon, UserCircleIcon } from './icons';
 
 export const MainHeader: React.FC = () => {
-  const { toggleSidebar, user } = useAppContext();
+  const { toggleSidebar, user, cartItemCount } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleCartClick = () => {
+    navigate('/cart');
+  };
 
   return (
     <div className="bg-orange-500 p-4 shadow-lg sticky top-0 z-10">
@@ -24,18 +28,28 @@ export const MainHeader: React.FC = () => {
         
         <h1 className="text-xl font-bold text-white">Delivery</h1>
 
-        {/* Conditionally render the login button */}
-        {!user ? (
-          <button 
-            onClick={() => navigate('/login')} 
-            className="p-2"
-          >
-            <UserCircleIcon className="w-8 h-8 text-white" />
-          </button>
-        ) : (
-          // Placeholder to keep the title centered
-          <div className="w-12 h-12" />
-        )}
+        <div className="flex items-center space-x-4">
+          {user ? (
+            <div className="flex items-center space-x-4">
+              <span className="text-white font-semibold hidden sm:block">{user.split('@')[0]}</span>
+              <button onClick={handleCartClick} className="relative p-2">
+                <CartIcon className="w-7 h-7 text-white" />
+                {cartItemCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => navigate('/login')} 
+              className="p-2"
+            >
+              <UserCircleIcon className="w-8 h-8 text-white" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

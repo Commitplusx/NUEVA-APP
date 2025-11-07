@@ -145,6 +145,34 @@ CREATE POLICY "Allow admin full access for menu_items" ON public.menu_items FOR 
 
 
 -- --------------------------------------------------------
+-- Tabla: profiles
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name text,
+  address text,
+  updated_at timestamp with time zone
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow users to view their own profile"
+ON public.profiles
+FOR SELECT
+USING (auth.uid() = id);
+
+CREATE POLICY "Allow users to insert their own profile"
+ON public.profiles
+FOR INSERT
+WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Allow users to update their own profile"
+ON public.profiles
+FOR UPDATE
+USING (auth.uid() = id);
+
+
+-- --------------------------------------------------------
 -- Inserción de datos iniciales
 -- --------------------------------------------------------
 
@@ -203,3 +231,26 @@ VALUES
 (403, 4, 'Papas Fritas', 60, 4.5, 500, false, 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?q=80&w=2070&auto=format&fit=crop', 'Papas a la francesa doradas a la perfección, crujientes por fuera y suaves por dentro.', '[{"name": "Papa", "icon": "BroccoliIcon"}, {"name": "Sal", "icon": "SaltIcon"}]')
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name;
+
+-- --------------------------------------------------------
+-- Función y Trigger para crear perfil de usuario automáticamente
+-- --------------------------------------------------------
+
+-- Función para crear un perfil para un nuevo usuario
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id)
+  VALUES (new.id);
+  RETURN new;
+END;
+$$;
+
+-- Trigger para ejecutar la función después de que se inserte un nuevo usuario
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

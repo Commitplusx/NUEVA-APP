@@ -27,7 +27,7 @@ export const updateProfile = async (profile: Partial<Profile>): Promise<Profile>
 
   const updates = {
     ...profile,
-    user_id: user.id,
+    id: user.id,
     updated_at: new Date(),
   };
 
