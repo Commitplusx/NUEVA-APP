@@ -75,6 +75,7 @@ const Sidebar: React.FC = () => {
 
 
   console.log('Sidebar render - user:', user, 'userRole:', userRole);
+  console.log('Sidebar render - full user object:', user);
 
 
 
@@ -123,8 +124,12 @@ const Sidebar: React.FC = () => {
             <div className="flex items-center gap-3">
               <UserCircleIcon className="w-10 h-10 text-gray-400" />
               <div>
-                <p className="font-bold text-gray-800">{user || 'Invitado'}</p>
-                <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+                <p className="font-bold text-gray-800">
+                  {user?.email || (user ? 'Usuario' : 'Invitado')}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {userRole === 'guest' ? 'Invitado' : userRole}
+                </p>
               </div>
             </div>
             <button 
@@ -142,26 +147,26 @@ const Sidebar: React.FC = () => {
             initial="hidden"
             animate="visible"
           >
-            <motion.li className="mb-4" variants={navItemVariants}>
+            <motion.li key="home" className="mb-4" variants={navItemVariants}>
               <Link to="/" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
                 <HomeIcon className="w-6 h-6" />
                 <span>Inicio</span>
               </Link>
             </motion.li>
-            <motion.li className="mb-4" variants={navItemVariants}>
+            <motion.li key="restaurants" className="mb-4" variants={navItemVariants}>
               <Link to="/restaurants" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
                 <ShoppingIcon className="w-6 h-6" />
                 <span>Restaurantes</span>
               </Link>
             </motion.li>
-            <motion.li className="mb-4" variants={navItemVariants}>
+            <motion.li key="request-service" className="mb-4" variants={navItemVariants}>
               <Link to="/request" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
                 <PackageIcon className="w-6 h-6" />
                 <span>Solicitar Servicio</span>
               </Link>
             </motion.li>
             {userRole === 'admin' && (
-              <motion.li className="mb-4" variants={navItemVariants}>
+              <motion.li key="admin-panel" className="mb-4" variants={navItemVariants}>
                 <Link to="/admin" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
                   <CogIcon className="w-6 h-6" />
                   <span>Admin Panel</span>
@@ -169,7 +174,7 @@ const Sidebar: React.FC = () => {
               </motion.li>
             )}
             {user && (
-              <motion.li className="mb-4" variants={navItemVariants}>
+              <motion.li key="my-profile" className="mb-4" variants={navItemVariants}>
                 <Link to="/profile" onClick={toggleSidebar} className="flex items-center gap-3 text-gray-700 hover:text-orange-500 font-semibold">
                   <UserCircleIcon className="w-6 h-6" />
                   <span>Mi Perfil</span>

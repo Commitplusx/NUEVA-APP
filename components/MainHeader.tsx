@@ -31,7 +31,7 @@ export const MainHeader: React.FC = () => {
         <div className="flex items-center space-x-4">
           {user ? (
             <div className="flex items-center space-x-4">
-              <span className="text-white font-semibold hidden sm:block">{user.split('@')[0]}</span>
+              <span className="text-white font-semibold hidden sm:block">{user?.user_metadata?.full_name || user?.email || ''}</span>
               <button onClick={handleCartClick} className="relative p-2">
                 <CartIcon className="w-7 h-7 text-white" />
                 {cartItemCount > 0 && (

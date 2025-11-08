@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Lottie from 'lottie-react';
+import profileAnimation from '../components/animations/profile.json';
 import { getProfile, updateProfile } from '../services/api';
 import { Profile } from '../types';
 import { Spinner } from './Spinner';
@@ -13,6 +15,8 @@ export const UserProfile: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [editedFullName, setEditedFullName] = useState('');
+  const [editedAddress, setEditedAddress] = useState('');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -25,6 +29,8 @@ export const UserProfile: React.FC = () => {
         setLoading(true);
         const userProfile = await getProfile();
         setProfile(userProfile);
+        setEditedFullName(userProfile?.full_name || '');
+        setEditedAddress(userProfile?.address || '');
       } catch (err) {
         setError('Error al cargar el perfil. Por favor, intenta de nuevo.');
         console.error(err);
@@ -38,14 +44,18 @@ export const UserProfile: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => (prev ? { ...prev, [name]: value } : null));
+    if (name === 'full_name') {
+      setEditedFullName(value);
+    } else if (name === 'address') {
+      setEditedAddress(value);
+    }
   };
 
   const handleAvatarUpload = async (filePath: string) => {
     if (!profile) return;
     try {
       setUploading(true);
-      const updatedProfile = { ...profile, avatar_url: filePath };
+      const updatedProfile = { ...profile, avatar: filePath };
       await updateProfile(updatedProfile);
       setProfile(updatedProfile);
       setToast({ message: 'Avatar actualizado con éxito', type: 'success' });
@@ -62,7 +72,13 @@ export const UserProfile: React.FC = () => {
 
     try {
       setLoading(true);
-      await updateProfile(profile);
+      const updatedProfileData = {
+        ...profile,
+        full_name: editedFullName,
+        address: editedAddress,
+      };
+      await updateProfile(updatedProfileData);
+      setProfile(updatedProfileData); // Update the main profile state after successful save
       setToast({ message: 'Perfil actualizado con éxito', type: 'success' });
     } catch (err) {
       setToast({ message: 'Error al actualizar el perfil', type: 'error' });
@@ -85,12 +101,18 @@ export const UserProfile: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
         <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
           <div className="flex flex-col items-center pb-8">
-            <Avatar
-              url={profile?.avatar_url || null}
-              size={120}
-              onUpload={handleAvatarUpload}
-              loading={uploading}
-            />
+            {profile?.avatar ? (
+              <Avatar
+                url={profile?.avatar || null}
+                size={120}
+                onUpload={handleAvatarUpload}
+                loading={uploading}
+              />
+            ) : (
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                <Lottie animationData={profileAnimation} loop={true} style={{ width: 120, height: 120 }} />
+              </div>
+            )}
             <h1 className="text-3xl font-bold text-gray-800 mt-4">{profile?.full_name || 'Nombre de usuario'}</h1>
             <p className="text-gray-500">{user?.email}</p>
             {user?.created_at && (
@@ -110,7 +132,7 @@ export const UserProfile: React.FC = () => {
                   type="text"
                   id="full_name"
                   name="full_name"
-                  value={profile?.full_name || ''}
+                  value={editedFullName}
                   onChange={handleInputChange}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
@@ -127,8 +149,8 @@ export const UserProfile: React.FC = () => {
                   id="email"
                   name="email"
                   value={user?.email || ''}
-                  readOnly
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm cursor-not-allowed"
+                  readOnly // Make email read-only
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-100"
                 />
               </div>
             </div>
@@ -142,7 +164,7 @@ export const UserProfile: React.FC = () => {
                   type="text"
                   id="address"
                   name="address"
-                  value={profile?.address || ''}
+                  value={editedAddress}
                   onChange={handleInputChange}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />

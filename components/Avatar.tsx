@@ -20,14 +20,18 @@ export const Avatar: React.FC<AvatarProps> = ({ url, size, onUpload, loading: is
 
   const downloadImage = async (path: string) => {
     try {
+      console.log('Attempting to download image from path:', path);
       const { data, error } = await supabase.storage.from('avatars').download(path);
       if (error) {
+        console.error('Error downloading image:', error);
         throw error;
       }
+      console.log('Image downloaded successfully. Data:', data);
       const url = URL.createObjectURL(data);
       setAvatarUrl(url);
+      console.log('Avatar URL set to:', url);
     } catch (error) {
-      console.error('Error downloading image: ', error);
+      console.error('Error downloading image in catch block: ', error);
     }
   };
 
@@ -35,22 +39,33 @@ export const Avatar: React.FC<AvatarProps> = ({ url, size, onUpload, loading: is
     try {
       setUploading(true);
       if (!event.target.files || event.target.files.length === 0) {
+        console.log('No file selected for upload.'); // Added log
         throw new Error('You must select an image to upload.');
       }
 
       const file = event.target.files[0];
+      console.log('File selected:', file);
+      console.log('File type:', file.type);
+      console.log('File size:', file.size);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
+      console.log('Generated filePath:', filePath);
 
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+      const { data, error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
 
       if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        console.error('Supabase upload error message:', uploadError.message);
+        console.error('Supabase upload error status:', uploadError.status);
+        console.error('Supabase upload response data:', data);
         throw uploadError;
       }
 
+      console.log('File uploaded successfully to:', filePath); // Added log
       onUpload(filePath);
     } catch (error) {
+      console.error('General upload error:', error); // Added log
       alert(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setUploading(false);

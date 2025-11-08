@@ -6,18 +6,19 @@
  * para acceder a este estado y a las funciones para modificarlo.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../services/supabase';
-import { confirmarPedido, getTariffs } from '../services/api';
+import { confirmarPedido, getTariffs, getProfile } from '../services/api';
 import { Restaurant, MenuItem, CartItem, Ingredient, UserRole, Tariff, OrderUserDetails } from '../types';
 import { Toast, ToastType } from '../components/Toast';
+import { User } from '@supabase/supabase-js';
 
 /**
  * @interface AppContextType
  * @description Define la forma de los datos y acciones disponibles a través del contexto de la aplicación.
  */
 interface AppContextType {
-  user: string | null;
+  user: User | null;
   userRole: UserRole;
   selectedRestaurant: Restaurant | null;
   selectedMenuItem: MenuItem | null;
@@ -27,7 +28,7 @@ interface AppContextType {
   isSidebarOpen: boolean;
   cartItemCount: number;
   isCartAnimating: boolean;
-  isCustomizationModalOpen: boolean;
+  profile: Profile | null;
   baseFee: number;
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
@@ -61,7 +62,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
  */
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Estados locales para gestionar la información global de la aplicación
-  const [user, setUser] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>('guest');
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
@@ -99,9 +100,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUser(session.user.email || null);
+        setUser(session.user || null);
         setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
         console.log('AppContext: Auth state changed - User logged in:', session.user.email);
+        console.log('AppContext: session.user object:', session.user);
       } else {
         setUser(null);
         setUserRole('guest');
@@ -112,7 +114,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Verificación inicial de la sesión al cargar la aplicación
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        setUser(session.user.email || null);
+        setUser(session.user || null);
         setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
       }
     });
@@ -152,7 +154,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
    * @param {UserRole} role - El rol del usuario (e.g., 'admin', 'user').
    */
   const handleLogin = (username: string, role: UserRole) => {
-    setUser(username);
     setUserRole(role);
     setIsSidebarOpen(false); // Cerrar el sidebar al iniciar sesión
     showToast(`¡Bienvenido, ${username}!`, 'success');

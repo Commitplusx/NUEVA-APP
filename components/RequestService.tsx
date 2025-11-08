@@ -93,27 +93,11 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
 };
 
 export const RequestService: React.FC = () => {
+  // This comment is added to trigger a re-build and re-evaluation of the component.
   useThemeColor('#f97316');
   const { showToast, baseFee } = useAppContext();
-  const [step, setStep] = useState<Step>('details');
-  
-  // Profile and Address State
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [description, setDescription] = useState('');
-  
-  // Calculation State
-  const [distance, setDistance] = useState<number | null>(null);
-  const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-
-  // UI State
-  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
-  const [isScheduling, setIsScheduling] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [scheduleTime, setScheduleTime] = useState('');
-  const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date; time: string } | null>(null);
+  const [step, setStep] = useState<Step>('details');
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -140,7 +124,7 @@ export const RequestService: React.FC = () => {
       }
     };
     fetchProfile();
-  }, [showToast]);
+  }, []);
 
   // Debounced distance and price calculation
   const calculateDistanceAndPrice = useCallback(async (originProfile: Profile, destAddress: string) => {

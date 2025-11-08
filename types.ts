@@ -160,12 +160,13 @@ export interface ServiceRequest {
 }
 
 export interface Profile {
-  id: string;
+  user_id: string;
   full_name?: string;
   address?: string;
   lat?: number;
   lng?: number;
-  avatar_url?: string;
+  avatar?: string;
+  email?: string; // Added email field
 }
 
 export interface OrderUserDetails {

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 
 // --- Profile Services ---
-export const getProfile = async (): Promise<Profile | null> => {
+export const getProfile = async (): Promise<Profile> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -11,11 +11,22 @@ export const getProfile = async (): Promise<Profile | null> => {
     .from('profiles')
     .select('*')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
     console.error('Error fetching profile:', error);
+    console.error('Supabase fetch error details:', error.message, error.details, error.hint); // Added detailed logging
     throw error;
+  }
+
+  // If no profile is found, return a default profile object with the user_id
+  if (!data) {
+    return {
+      user_id: user.id,
+      full_name: '',
+      address: '',
+      avatar: '',
+    };
   }
 
   return data;
@@ -25,19 +36,31 @@ export const updateProfile = async (profile: Partial<Profile>): Promise<Profile>
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const updates = {
+  const updates: Partial<Profile> = {
     ...profile,
-    id: user.id,
-    updated_at: new Date(),
+    user_id: user.id,
+    updated_at: new Date().toISOString(),
   };
+
+  // Ensure 'avatar_url' is not sent, as the column is now 'avatar'
+  if ('avatar_url' in updates) {
+    delete (updates as any).avatar_url;
+  }
+
+  // Explicitly remove 'avatar' from updates as per new requirement
+  if ('avatar' in updates) {
+    delete (updates as any).avatar;
+  }
 
   const { data, error } = await supabase
     .from('profiles')
-    .upsert(updates)
+    .upsert(updates, { onConflict: 'user_id' }) // Specify onConflict for upsert
     .select();
 
   if (error) {
     console.error('Error updating profile:', error);
+    console.error('Supabase update error details:', error.message, error.details, error.hint);
+    console.error('Supabase update error object:', error); // Added this line
     throw error;
   }
 
