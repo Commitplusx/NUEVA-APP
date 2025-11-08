@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import Lottie from 'lottie-react';
+import profileAnimation from '../components/animations/profile.json';
 import { getProfile, updateProfile } from '../services/api';
 import { Profile } from '../types';
 import { Spinner } from './Spinner';
 import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
-import { CameraIcon, MailIcon, UserIcon, LocationIcon } from './icons';
+import { MailIcon, UserIcon, LocationIcon } from './icons';
 
 export const UserProfile: React.FC = () => {
   const { user } = useAppContext();
@@ -102,12 +104,18 @@ export const UserProfile: React.FC = () => {
           <div className="bg-gradient-to-r from-orange-500 to-yellow-400 h-32" />
           <div className="px-6 pb-8 -mt-16">
             <div className="flex justify-center">
-              <Avatar
-                url={profile?.avatar || null}
-                size={128}
-                onUpload={handleAvatarUpload}
-                loading={uploading}
-              />
+              {profile?.avatar ? (
+                <Avatar
+                  url={profile.avatar}
+                  size={128}
+                  onUpload={handleAvatarUpload}
+                  loading={uploading}
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <Lottie animationData={profileAnimation} loop={true} style={{ width: 120, height: 120 }} />
+                </div>
+              )}
             </div>
             <div className="text-center mt-4">
               <h1 className="text-2xl font-bold text-gray-800">{profile?.full_name || 'Nombre de Usuario'}</h1>
@@ -159,7 +167,7 @@ export const UserProfile: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading || uploading}
-                  className="w-full py-3 bg-orange-500 hover:bg-orange-60ax-w-2xl mx-auto0 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg disabled:bg-orange-300"
+                  className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg disabled:bg-orange-300"
                 >
                   {loading ? 'Guardando...' : 'Guardar Cambios'}
                 </button>

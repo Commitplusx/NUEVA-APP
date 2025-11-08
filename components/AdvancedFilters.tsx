@@ -7,8 +7,6 @@ import { Category } from '../types';
 export interface Filters {
   sortBy: string;
   categories: string[];
-  priceRange: number[];
-  openNow: boolean;
 }
 
 interface AdvancedFiltersProps {
@@ -48,8 +46,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ isOpen, onClose, onAp
     const clearedFilters = {
       sortBy: 'rating',
       categories: [],
-      priceRange: [],
-      openNow: false,
     };
     setFilters(clearedFilters);
     onApply(clearedFilters); // Apply cleared filters immediately or wait for explicit apply? Applying for now.
