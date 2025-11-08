@@ -98,6 +98,17 @@ export const RequestService: React.FC = () => {
   const { showToast, baseFee } = useAppContext();
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<Step>('details');
+  const [origin, setOrigin] = useState<string>('');
+  const [destination, setDestination] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [distance, setDistance] = useState<number | null>(null);
+  const [shippingCost, setShippingCost] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [scheduleTime, setScheduleTime] = useState<string>('');
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
