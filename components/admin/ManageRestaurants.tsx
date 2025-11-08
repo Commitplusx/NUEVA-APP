@@ -113,7 +113,7 @@ const RestaurantForm: React.FC<{
           <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
             <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
             <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
-            {imagePreview && <img src={imagePreview} alt="Preview" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
+            {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
           </div>
           <input type="text" placeholder="Costo de Envío" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
           <input type="text" placeholder="Tiempo de Entrega" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
