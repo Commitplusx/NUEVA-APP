@@ -7,6 +7,7 @@ import { Spinner } from './Spinner';
 import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
+import { MailIcon, UserIcon, LocationIcon } from './icons';
 
 export const UserProfile: React.FC = () => {
   const { user } = useAppContext();
@@ -78,7 +79,7 @@ export const UserProfile: React.FC = () => {
         address: editedAddress,
       };
       await updateProfile(updatedProfileData);
-      setProfile(updatedProfileData); // Update the main profile state after successful save
+      setProfile(updatedProfileData);
       setToast({ message: 'Perfil actualizado con éxito', type: 'success' });
     } catch (err) {
       setToast({ message: 'Error al actualizar el perfil', type: 'error' });
@@ -88,7 +89,7 @@ export const UserProfile: React.FC = () => {
   };
 
   if (loading && !profile) {
-    return <Spinner />;
+    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
   }
 
   if (error) {
@@ -96,91 +97,83 @@ export const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 p-4">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div className="sm:mx-auto sm:w-full sm:max-w-2xl">
-        <div className="bg-white py-8 px-4 shadow-lg rounded-lg sm:px-10">
-          <div className="flex flex-col items-center pb-8">
-            {profile?.avatar ? (
-              <Avatar
-                url={profile?.avatar || null}
-                size={120}
-                onUpload={handleAvatarUpload}
-                loading={uploading}
-              />
-            ) : (
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                <Lottie animationData={profileAnimation} loop={true} style={{ width: 120, height: 120 }} />
-              </div>
-            )}
-            <h1 className="text-3xl font-bold text-gray-800 mt-4">{profile?.full_name || 'Nombre de usuario'}</h1>
-            <p className="text-gray-500">{user?.email}</p>
-            {user?.created_at && (
-              <p className="text-sm text-gray-400 mt-1">
-                Miembro desde {new Date(user.created_at).toLocaleDateString()}
-              </p>
-            )}
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-orange-500 to-yellow-400 h-32" />
+          <div className="px-6 pb-8 -mt-16">
+            <div className="flex justify-center">
+              {profile?.avatar ? (
+                <Avatar
+                  url={profile.avatar}
+                  size={128}
+                  onUpload={handleAvatarUpload}
+                  loading={uploading}
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <Lottie animationData={profileAnimation} loop={true} style={{ width: 120, height: 120 }} />
+                </div>
+              )}
+            </div>
+            <div className="text-center mt-4">
+              <h1 className="text-2xl font-bold text-gray-800">{profile?.full_name || 'Nombre de Usuario'}</h1>
+              <p className="text-gray-500">{user?.email}</p>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-                Nombre Completo
-              </label>
-              <div className="mt-1">
+          <div className="px-6 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="relative">
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   id="full_name"
                   name="full_name"
                   value={editedFullName}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Nombre Completo"
                 />
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Correo Electrónico
-              </label>
-              <div className="mt-1">
+              <div className="relative">
+                <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   id="email"
                   name="email"
                   value={user?.email || ''}
-                  readOnly // Make email read-only
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-100"
+                  readOnly
+                  className="w-full pl-12 pr-4 py-3 bg-gray-100 text-gray-500 rounded-lg border border-gray-200 cursor-not-allowed"
                 />
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                Dirección
-              </label>
-              <div className="mt-1">
+              <div className="relative">
+                <LocationIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   id="address"
                   name="address"
                   value={editedAddress}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Tu dirección"
                 />
               </div>
-            </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading || uploading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          </form>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading || uploading}
+                  className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg disabled:bg-orange-300"
+                >
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

@@ -1,44 +1,14 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
-import { useCategories } from '../hooks/useCategories';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, PizzaIcon, BurgerIcon, TacoIcon, FoodIcon } from './icons';
+import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, SlidersIcon } from './icons';
 import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
 import { getTransformedImageUrl } from '../services/image';
-
-// (Icon and CategoryChip components remain the same)
-const iconMap: { [key: string]: React.ReactElement } = {
-  default: <FoodIcon className="w-5 h-5" />,
-  pizza: <PizzaIcon className="w-5 h-5" />,
-  burger: <BurgerIcon className="w-5 h-5" />,
-  tacos: <TacoIcon className="w-5 h-5" />,
-  all: <FoodIcon className="w-5 h-5" />,
-};
-
-const getCategoryIcon = (categoryName: string) => {
-  const lowerCaseName = categoryName.toLowerCase();
-  for (const key in iconMap) {
-    if (lowerCaseName.includes(key)) {
-      return iconMap[key];
-    }
-  }
-  return iconMap.default;
-};
-
-const CategoryChip: React.FC<{name: string, icon: React.ReactNode, isSelected?: boolean, onClick: () => void}> = ({name, icon, isSelected, onClick}) => (
-    <motion.div 
-      onClick={onClick} 
-      className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-full cursor-pointer transition-all duration-300 scroll-snap-align-start ${isSelected ? 'bg-orange-500 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm border border-gray-200 hover:shadow-md'}`}
-      whileTap={{ scale: 0.95 }}
-    >
-        {icon}
-        <span className="font-semibold text-sm">{name}</span>
-    </motion.div>
-);
+import AdvancedFilters, { Filters } from './AdvancedFilters';
 
 const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
@@ -95,7 +65,7 @@ const RestaurantList: React.FC<{
   loadMore: () => void;
 }> = ({ restaurants, loading, loadingMore, hasMore, error, loadMore }) => {
   const navigate = useNavigate();
-  const observer = useRef<IntersectionObserver>();
+  const observer = React.useRef<IntersectionObserver>();
 
   const lastRestaurantElementRef = useCallback(node => {
     if (loading) return;
@@ -157,14 +127,19 @@ const RestaurantList: React.FC<{
 };
 
 export const Restaurants: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    sortBy: 'rating',
+    categories: [],
+    priceRange: [],
+    openNow: false,
+  });
 
-  const { categories, loading: categoriesLoading } = useCategories();
   const { restaurants, loading, loadingMore, hasMore, error, loadMore } = useRestaurants({
     searchQuery: debouncedSearchQuery,
-    categoryName: selectedCategory,
+    filters,
   });
 
   useThemeColor('#f97316');
@@ -172,48 +147,35 @@ export const Restaurants: React.FC = () => {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 300); // 300ms debounce delay
+    }, 300);
 
     return () => {
       clearTimeout(handler);
     };
   }, [searchQuery]);
 
-  const allCategories = [{ name: 'All', icon: 'All' }, ...categories.filter(c => c.name !== 'All')];
+  const handleApplyFilters = (newFilters: Filters) => {
+    setFilters(newFilters);
+  };
 
   return (
     <div className="p-4">
-      <div className="px-4 mb-4">
-          <div className="relative flex items-center">
-              <input 
-                type="text" 
-                placeholder="Busca tu restaurante..." 
-                className="w-full py-3 pl-10 pr-4 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <SearchIcon className="w-5 h-5"/>
-              </div>
-          </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 scroll-snap-type-x-mandatory">
-            {categoriesLoading ? (
-              <p className="text-sm text-gray-400">Cargando categorías...</p>
-            ) : (
-              allCategories.map((cat) => (
-                <CategoryChip 
-                  key={cat.name} 
-                  name={cat.name === 'All' ? 'Todos' : cat.name} 
-                  icon={getCategoryIcon(cat.name)}
-                  isSelected={selectedCategory === cat.name}
-                  onClick={() => setSelectedCategory(cat.name)}
-                />
-              ))
-            )}
+      <div className="px-4 mb-4 flex gap-2">
+        <div className="relative flex-grow">
+            <input
+              type="text"
+              placeholder="Busca tu restaurante..."
+              className="w-full py-3 pl-10 pr-4 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <SearchIcon className="w-5 h-5"/>
+            </div>
         </div>
+        <button onClick={() => setIsFiltersOpen(true)} className="p-3 bg-white border border-gray-200 rounded-full" aria-label="Filtros y Ordenación">
+          <SlidersIcon className="w-5 h-5 text-gray-600"/>
+        </button>
       </div>
 
       <section className="px-4">
@@ -224,7 +186,7 @@ export const Restaurants: React.FC = () => {
         </div>
         
         <RestaurantList
-          restaurants={restaurants} // Pass the server-filtered restaurants directly
+          restaurants={restaurants}
           loading={loading}
           loadingMore={loadingMore}
           hasMore={hasMore}
@@ -232,6 +194,13 @@ export const Restaurants: React.FC = () => {
           loadMore={loadMore}
         />
       </section>
+
+      <AdvancedFilters
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        onApply={handleApplyFilters}
+        initialFilters={filters}
+      />
     </div>
   );
 };

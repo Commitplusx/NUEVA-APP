@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { Restaurant } from '../types';
 import { denormalizeRestaurants } from '../services/denormalize';
+import { Filters } from '../components/AdvancedFilters';
 
 const PAGE_SIZE = 8;
 
 interface UseRestaurantsProps {
   searchQuery?: string;
-  categoryName?: string;
+  filters: Filters;
 }
 
-export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProps = {}) => {
+export const useRestaurants = ({ searchQuery, filters }: UseRestaurantsProps) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -27,24 +28,25 @@ export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProp
       const from = pageToFetch * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      let restaurantIdsForCategory: number[] | null = null;
+      let restaurantIdsForCategories: number[] | null = null;
 
-      if (categoryName && categoryName !== 'All') {
+      if (filters.categories && filters.categories.length > 0) {
         const { data: catData, error: catError } = await supabase
           .from('categories')
           .select('id')
-          .eq('name', categoryName)
-          .single();
+          .in('name', filters.categories);
         if (catError) throw catError;
+
+        const categoryIds = catData.map(c => c.id);
 
         const { data: restCatData, error: restCatError } = await supabase
           .from('restaurant_categories')
           .select('restaurant_id')
-          .eq('category_id', catData.id);
+          .in('category_id', categoryIds);
         if (restCatError) throw restCatError;
         
-        restaurantIdsForCategory = restCatData.map(rc => rc.restaurant_id);
-        if (restaurantIdsForCategory.length === 0) {
+        restaurantIdsForCategories = [...new Set(restCatData.map(rc => rc.restaurant_id))];
+        if (restaurantIdsForCategories.length === 0) {
             setRestaurants([]);
             setHasMore(false);
             return;
@@ -57,8 +59,17 @@ export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProp
         query = query.ilike('name', `%${searchQuery}%`);
       }
 
-      if (restaurantIdsForCategory) {
-        query = query.in('id', restaurantIdsForCategory);
+      if (restaurantIdsForCategories) {
+        query = query.in('id', restaurantIdsForCategories);
+      }
+
+      // Sorting
+      if (filters.sortBy) {
+        const isDescending = filters.sortBy === 'rating';
+        query = query.order(filters.sortBy, { ascending: !isDescending });
+      } else {
+        // Default sort
+        query = query.order('rating', { ascending: false });
       }
 
       const { data: restaurantsData, error: restaurantsError } = await query.range(from, to);
@@ -88,14 +99,14 @@ export const useRestaurants = ({ searchQuery, categoryName }: UseRestaurantsProp
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [searchQuery, categoryName]);
+  }, [searchQuery, filters]);
 
   useEffect(() => {
     setRestaurants([]);
     setPage(0);
     setHasMore(true);
     fetchPage(0, true);
-  }, [searchQuery, categoryName, fetchPage]);
+  }, [searchQuery, filters, fetchPage]);
 
   const loadMore = () => {
     if (loading || loadingMore || !hasMore) return;
