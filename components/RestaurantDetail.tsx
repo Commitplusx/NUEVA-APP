@@ -37,19 +37,11 @@ export const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurantDetail(id || '');
-  const [selectedMenuItemForCustomization, setSelectedMenuItemForCustomization] = useState<MenuItem | null>(null);
-  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleMenuItemSelect = (item: MenuItem) => {
-    setSelectedMenuItemForCustomization(item);
-    setIsCustomizationModalOpen(true);
-  };
-
-  const handleCloseCustomizationModal = () => {
-    setIsCustomizationModalOpen(false);
-    setTimeout(() => {
-      setSelectedMenuItemForCustomization(null);
-    }, 300); // Match the modal's exit animation duration
+    // Navigate to full product detail page instead of opening the modal
+    navigate(`/restaurants/${id}/menu/${item.id}`);
   };
 
   if (loading) {
@@ -101,13 +93,7 @@ export const RestaurantDetail: React.FC = () => {
          </div>
       </div>
 
-      {isCustomizationModalOpen && selectedMenuItemForCustomization && (
-        <OrderItemCustomizationModal
-          item={selectedMenuItemForCustomization}
-          onClose={handleCloseCustomizationModal}
-          restaurant={restaurant}
-        />
-      )}
+      {/* Product customization is now a dedicated page at /restaurants/:id/menu/:itemId */}
     </div>
   );
 };
