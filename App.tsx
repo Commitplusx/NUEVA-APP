@@ -100,6 +100,17 @@ const App: React.FC = () => {
         <MainHeader />
       </div>
 
+      {/* Fixed back button when viewing product detail pages */}
+      {isProductDetail && (
+        <button
+          onClick={() => navigate(-1)}
+          className="fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110"
+          aria-label="Volver"
+        >
+          <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+        </button>
+      )}
+
       <AnimatePresence mode="wait">
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
