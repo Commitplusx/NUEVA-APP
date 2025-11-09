@@ -96,10 +96,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Keep header mounted but visually hidden (no layout space) on product detail pages */}
-      <div className={`fixed top-0 left-0 w-full z-40 ${isProductDetail ? 'pointer-events-none' : ''}`} style={{ display: isProductDetail ? 'none' : 'block' }} aria-hidden={isProductDetail}>
-        <MainHeader />
-      </div>
+      {/* Render the header only when not on product detail pages */}
+      {shouldShowHeader && (
+        <div className="fixed top-0 left-0 w-full z-40">
+          <MainHeader />
+        </div>
+      )}
 
       {/* Fixed back button when viewing product detail pages (outside header) */}
       {isProductDetail && (
