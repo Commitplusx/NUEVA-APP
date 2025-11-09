@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 
+import { SaltIcon } from '../components/icons';
+
 export const getPublicImageUrl = (imagePath: string): string => {
   console.log('getPublicImageUrl: received imagePath:', imagePath);
   if (!imagePath || imagePath.startsWith('http')) {
@@ -99,4 +101,3 @@ export const denormalizeRestaurant = (
     imageUrl: getPublicImageUrl(restaurantWithDetails.imageUrl),
   };
 };
-
