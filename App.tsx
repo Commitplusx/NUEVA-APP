@@ -57,6 +57,7 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
 const App: React.FC = () => {
   const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const hideHeaderPaths = ['/login', '/'];
   const isProductDetail = /^\/restaurants\/[^\/]+\/menu\/[^\/]+$/.test(location.pathname);
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname) && !isProductDetail;
