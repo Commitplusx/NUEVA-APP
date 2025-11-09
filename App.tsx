@@ -20,6 +20,7 @@ import { Spinner } from './components/Spinner';
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
 const Restaurants = lazy(() => import('./components/Restaurants').then(module => ({ default: module.Restaurants })));
 const RestaurantDetail = lazy(() => import('./components/RestaurantDetail').then(module => ({ default: module.RestaurantDetail })));
+const MenuItemPage = lazy(() => import('./components/MenuItemPage').then(module => ({ default: module.MenuItemPage })));
 const Cart = lazy(() => import('./components/Cart').then(module => ({ default: module.Cart })));
 const Admin = lazy(() => import('./components/Admin').then(module => ({ default: module.Admin })));
 const Login = lazy(() => import('./components/Login').then(module => ({ default: module.Login })));
@@ -105,6 +106,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
+              <Route path="/restaurants/:id/menu/:itemId" element={<PageTransitionWrapper><MenuItemPage /></PageTransitionWrapper>} />
               <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
               <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
               <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
