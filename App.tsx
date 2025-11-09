@@ -104,7 +104,26 @@ const App: React.FC = () => {
       {/* Fixed back button when viewing product detail pages (outside header) */}
       {isProductDetail && (
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            try {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                const parts = location.pathname.split('/');
+                const restaurantId = parts[2];
+                if (restaurantId) {
+                  navigate(`/restaurants/${restaurantId}`);
+                } else {
+                  navigate('/restaurants');
+                }
+              }
+            } catch (err) {
+              // fallback
+              const parts = location.pathname.split('/');
+              const restaurantId = parts[2];
+              navigate(restaurantId ? `/restaurants/${restaurantId}` : '/');
+            }
+          }}
           className="fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110"
           aria-label="Volver"
         >
