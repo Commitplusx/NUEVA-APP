@@ -6,12 +6,13 @@
  */
 
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MainHeader } from './components/MainHeader';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { useAppContext } from './context/AppContext';
+import { ChevronLeftIcon } from './components/icons';
 import { AppProvider } from './context/AppContext';
 import UserRouteGuard from './components/UserRouteGuard';
 import { Spinner } from './components/Spinner';
