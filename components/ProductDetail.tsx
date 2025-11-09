@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Restaurant, MenuItem, Ingredient } from '../App';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { ChevronLeftIcon, StarIcon, MinusIcon, PlusIcon, LocationIcon } from './icons';
+import { getTransformedImageUrl } from '../services/image';
 
 interface ProductDetailProps {
   item: MenuItem;
