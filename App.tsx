@@ -57,8 +57,9 @@ const App: React.FC = () => {
   const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
   const location = useLocation();
   const hideHeaderPaths = ['/login', '/'];
-  const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
-  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen;
+  const isProductDetail = /^\/restaurants\/[^^\/]+\/menu\/[^^\/]+$/.test(location.pathname);
+  const shouldShowHeader = !hideHeaderPaths.includes(location.pathname) && !isProductDetail;
+  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductDetail;
 
   // Estado para el evento de instalación de PWA
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -93,7 +94,11 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {shouldShowHeader && <MainHeader />}
+      {/* Keep header mounted but hide it visually on product detail pages to preserve lifecycle and animations */}
+      <div className={`transform transition-all duration-300 ease-in-out ${isProductDetail ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`} aria-hidden={isProductDetail}>
+        <MainHeader />
+      </div>
+
       <AnimatePresence mode="wait">
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
