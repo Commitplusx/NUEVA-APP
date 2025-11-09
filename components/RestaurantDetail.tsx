@@ -5,7 +5,6 @@ import { ChevronLeftIcon } from './icons';
 import { Spinner } from './Spinner';
 import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { OrderItemCustomizationModal } from './OrderItemCustomizationModal';
 import { getTransformedImageUrl } from '../services/image';
 
 const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => {
@@ -37,7 +36,6 @@ export const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurantDetail(id || '');
-  const navigate = useNavigate();
 
   const handleMenuItemSelect = (item: MenuItem) => {
     // Navigate to full product detail page instead of opening the modal
