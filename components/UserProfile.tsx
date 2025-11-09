@@ -7,6 +7,7 @@ import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { PaymentMethod } from './PaymentMethod';
 
 const MenuDots: React.FC<{ className?: string }> = (props) => (
   <svg {...props} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -120,6 +121,7 @@ export const UserProfile: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -160,6 +162,10 @@ export const UserProfile: React.FC = () => {
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
+  }
+
+  if (showPaymentMethod) {
+    return <PaymentMethod onBack={() => setShowPaymentMethod(false)} />;
   }
 
   return (
@@ -253,7 +259,7 @@ export const UserProfile: React.FC = () => {
         <MenuItem
           icon={<CreditCardIcon />}
           label="Payment Method"
-          onClick={comingSoon}
+          onClick={() => setShowPaymentMethod(true)}
           iconColor="text-blue-500"
           iconBgColor="bg-blue-50"
         />
