@@ -21,7 +21,7 @@ const IngredientToggleButton: React.FC<{ ingredient: Ingredient; isSelected: boo
         }`}
         aria-pressed={isSelected}
     >
-        <ingredient.icon className={`w-8 h-8 mb-1 ${isSelected ? 'text-orange-500' : 'text-gray-400'}`} />
+        {(() => { const Icon = ingredient.icon as React.FC<any>; return <Icon className={`w-8 h-8 mb-1 ${isSelected ? 'text-orange-500' : 'text-gray-400'}`} /> })()}
         <span className={`text-xs font-medium ${isSelected ? 'text-gray-700' : 'text-gray-500 line-through'}`}>{ingredient.name}</span>
     </button>
 );
