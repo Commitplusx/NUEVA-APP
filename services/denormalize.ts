@@ -1,5 +1,8 @@
 import { supabase } from './supabase';
 
+import { SaltIcon } from '../components/icons';
+import { supabase } from './supabase';
+
 export const getPublicImageUrl = (imagePath: string): string => {
   console.log('getPublicImageUrl: received imagePath:', imagePath);
   if (!imagePath || imagePath.startsWith('http')) {
@@ -43,7 +46,7 @@ export const denormalizeRestaurants = (
           item.ingredients = JSON.parse(item.ingredients);
         } catch (error) {
           // If parsing fails, assume it's a comma-separated string
-          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: 'default_icon' }));
+          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
       restaurant.menu.push(item);
@@ -87,7 +90,7 @@ export const denormalizeRestaurant = (
           item.ingredients = JSON.parse(item.ingredients);
         } catch (error) {
           // If parsing fails, assume it's a comma-separated string
-          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: 'default_icon' }));
+          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
       restaurantWithDetails.menu.push(item);
@@ -99,4 +102,3 @@ export const denormalizeRestaurant = (
     imageUrl: getPublicImageUrl(restaurantWithDetails.imageUrl),
   };
 };
-

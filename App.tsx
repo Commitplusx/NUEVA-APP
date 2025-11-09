@@ -6,12 +6,13 @@
  */
 
 import React, { Suspense, lazy, useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MainHeader } from './components/MainHeader';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { useAppContext } from './context/AppContext';
+import { ChevronLeftIcon } from './components/icons';
 import { AppProvider } from './context/AppContext';
 import UserRouteGuard from './components/UserRouteGuard';
 import { Spinner } from './components/Spinner';
@@ -20,6 +21,7 @@ import { Spinner } from './components/Spinner';
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
 const Restaurants = lazy(() => import('./components/Restaurants').then(module => ({ default: module.Restaurants })));
 const RestaurantDetail = lazy(() => import('./components/RestaurantDetail').then(module => ({ default: module.RestaurantDetail })));
+const MenuItemPage = lazy(() => import('./components/MenuItemPage').then(module => ({ default: module.MenuItemPage })));
 const Cart = lazy(() => import('./components/Cart').then(module => ({ default: module.Cart })));
 const Admin = lazy(() => import('./components/Admin').then(module => ({ default: module.Admin })));
 const Login = lazy(() => import('./components/Login').then(module => ({ default: module.Login })));
@@ -55,9 +57,11 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
 const App: React.FC = () => {
   const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const hideHeaderPaths = ['/login', '/'];
-  const shouldShowHeader = !hideHeaderPaths.includes(location.pathname);
-  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen;
+  const isProductDetail = /^\/restaurants\/[^\/]+\/menu\/[^\/]+$/.test(location.pathname);
+  const shouldShowHeader = !hideHeaderPaths.includes(location.pathname) && !isProductDetail;
+  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductDetail;
 
   // Estado para el evento de instalación de PWA
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -92,12 +96,48 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {shouldShowHeader && <MainHeader />}
+      {/* Render the header only when not on product detail pages */}
+      {shouldShowHeader && (
+        <div className="fixed top-0 left-0 w-full z-40">
+          <MainHeader />
+        </div>
+      )}
+
+      {/* Fixed back button when viewing product detail pages (outside header) */}
+      {isProductDetail && (
+        <button
+          onClick={() => {
+            try {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                const parts = location.pathname.split('/');
+                const restaurantId = parts[2];
+                if (restaurantId) {
+                  navigate(`/restaurants/${restaurantId}`);
+                } else {
+                  navigate('/restaurants');
+                }
+              }
+            } catch (err) {
+              // fallback
+              const parts = location.pathname.split('/');
+              const restaurantId = parts[2];
+              navigate(restaurantId ? `/restaurants/${restaurantId}` : '/');
+            }
+          }}
+          className="fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110"
+          aria-label="Volver"
+        >
+          <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+        </button>
+      )}
+
       <AnimatePresence mode="wait">
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
-      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''} ${shouldShowHeader ? 'pt-16' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
             <Routes location={location} key={location.pathname}>
@@ -105,6 +145,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
+              <Route path="/restaurants/:id/menu/:itemId" element={<PageTransitionWrapper><MenuItemPage /></PageTransitionWrapper>} />
               <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
               <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
               <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />

@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 
+import { supabase } from './supabase';
+
 /**
  * Generates a public URL for a Supabase Storage object with image transformations.
  * @param path The path of the image in the bucket.
