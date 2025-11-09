@@ -96,8 +96,8 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Keep header mounted but positioned fixed so hiding it doesn't reserve layout space */}
-      <div className={`fixed top-0 left-0 w-full z-40 transform transition-all duration-300 ease-in-out ${isProductDetail ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`} aria-hidden={isProductDetail}>
+      {/* Keep header mounted but visually hidden (no layout space) on product detail pages */}
+      <div className={`fixed top-0 left-0 w-full z-40 ${isProductDetail ? 'pointer-events-none' : ''}`} style={{ display: isProductDetail ? 'none' : 'block' }} aria-hidden={isProductDetail}>
         <MainHeader />
       </div>
 
