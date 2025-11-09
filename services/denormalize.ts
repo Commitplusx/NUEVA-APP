@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 
 import { SaltIcon } from '../components/icons';
+import { supabase } from './supabase';
 
 export const getPublicImageUrl = (imagePath: string): string => {
   console.log('getPublicImageUrl: received imagePath:', imagePath);
