@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
 import { Header } from './Header';
 import { useAppContext } from '../context/AppContext';
 
@@ -22,7 +23,11 @@ describe('Header', () => {
   });
 
   it('renders the header with user info and cart count', () => {
-    render(<Header />);
+    render(
+      <BrowserRouter>
+        <Header />
+      </BrowserRouter>
+    );
     
     // Verificar que el nombre de usuario (o un saludo) se renderiza
     expect(screen.getByText(/Test User/i)).toBeInTheDocument();
@@ -32,7 +37,11 @@ describe('Header', () => {
   });
 
   it('renders the menu button', () => {
-    render(<Header />);
+    render(
+        <BrowserRouter>
+            <Header />
+        </BrowserRouter>
+    );
     // Verificar que el botón de menú (o de usuario) está presente
     expect(screen.getByRole('button')).toBeInTheDocument();
   });

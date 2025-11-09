@@ -42,6 +42,27 @@ export interface Restaurant {
   menu?: MenuItem[];
 }
 
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  menu_item_id: number;
+  quantity: number;
+  price: number;
+  menu_item: MenuItem; // Denormalized
+}
+
+export interface Order {
+  id: number;
+  user_id: string;
+  restaurant_id: number;
+  total_price: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  created_at: string;
+  restaurant: Restaurant; // Denormalized
+  order_items: OrderItem[]; // Denormalized
+}
+
+
 // Frontend-specific types
 export interface CartItem {
   id: string; // Unique identifier for product + customization combo

@@ -382,6 +382,29 @@ export const createServiceRequest = async (request: ServiceRequest): Promise<Ser
   return data[0];
 };
 
+// --- Order Services ---
+export const getOrders = async (): Promise<Order[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select(`
+      *,
+      restaurant:restaurants(*),
+      order_items:order_items(*, menu_item:menu_items(*))
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching orders:', error);
+    throw error;
+  }
+
+  return orders;
+};
+
 // --- Geocoding Service ---
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   if (!address) return null;
