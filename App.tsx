@@ -29,6 +29,7 @@ const ManageRestaurants = lazy(() => import('./components/admin/ManageRestaurant
 const ManageCategories = lazy(() => import('./components/admin/ManageCategories').then(module => ({ default: module.ManageCategories })));
 const ManageTariffs = lazy(() => import('./components/admin/ManageTariffs').then(module => ({ default: module.ManageTariffs })));
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
+const PersonalInfo = lazy(() => import('./components/PersonalInfo').then(module => ({ default: module.PersonalInfo })));
 
 /**
  * @component PageTransitionWrapper
@@ -108,6 +109,7 @@ const App: React.FC = () => {
               <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
               <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
               <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
+              <Route path="/profile/edit" element={<PageTransitionWrapper><PersonalInfo /></PageTransitionWrapper>} />
               <Route path="/admin" element={<Admin />}>
                 <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
                 <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
