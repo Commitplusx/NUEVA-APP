@@ -95,12 +95,12 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Keep header mounted but hide it visually on product detail pages to preserve lifecycle and animations */}
-      <div className={`transform transition-all duration-300 ease-in-out ${isProductDetail ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`} aria-hidden={isProductDetail}>
+      {/* Keep header mounted but positioned fixed so hiding it doesn't reserve layout space */}
+      <div className={`fixed top-0 left-0 w-full z-40 transform transition-all duration-300 ease-in-out ${isProductDetail ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`} aria-hidden={isProductDetail}>
         <MainHeader />
       </div>
 
-      {/* Fixed back button when viewing product detail pages */}
+      {/* Fixed back button when viewing product detail pages (outside header) */}
       {isProductDetail && (
         <button
           onClick={() => navigate(-1)}
@@ -115,7 +115,7 @@ const App: React.FC = () => {
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
-      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''} ${shouldShowHeader ? 'pt-16' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
             <Routes location={location} key={location.pathname}>
