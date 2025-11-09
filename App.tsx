@@ -57,7 +57,7 @@ const App: React.FC = () => {
   const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
   const location = useLocation();
   const hideHeaderPaths = ['/login', '/'];
-  const isProductDetail = /^\/restaurants\/[^^\/]+\/menu\/[^^\/]+$/.test(location.pathname);
+  const isProductDetail = /^\/restaurants\/[^\/]+\/menu\/[^\/]+$/.test(location.pathname);
   const shouldShowHeader = !hideHeaderPaths.includes(location.pathname) && !isProductDetail;
   const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductDetail;
 
