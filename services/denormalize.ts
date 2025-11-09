@@ -89,7 +89,7 @@ export const denormalizeRestaurant = (
           item.ingredients = JSON.parse(item.ingredients);
         } catch (error) {
           // If parsing fails, assume it's a comma-separated string
-          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: 'default_icon' }));
+          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
       restaurantWithDetails.menu.push(item);
