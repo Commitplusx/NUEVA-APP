@@ -22,14 +22,24 @@ export const useCategories = () => {
 
       try {
         setLoading(true);
-        const { data, error } = await supabase.from('categories').select('*').order('id');
-        if (error) throw error;
-        
+        const { data: categoriesData, error: categoriesError } = await supabase.from('categories').select('*').order('id');
+        if (categoriesError) throw categoriesError;
+
+        const { data: pricesData, error: pricesError } = await supabase.rpc('get_category_starting_prices');
+        if (pricesError) throw pricesError;
+
         if (isMounted) {
-          if (data && data.length === 0) {
+          if (categoriesData && categoriesData.length === 0) {
             setError('No se encontraron categorías. Por favor, agrega algunas o verifica la configuración de tu base de datos.');
           } else {
-            setCategories(data || []);
+            const categoriesWithPrices = categoriesData.map(category => {
+              const priceInfo = pricesData.find(p => p.category_id === category.id);
+              return {
+                ...category,
+                starting_price: priceInfo ? priceInfo.starting_price : 0,
+              };
+            });
+            setCategories(categoriesWithPrices);
             setError(null); // Clear error on successful fetch
           }
         }

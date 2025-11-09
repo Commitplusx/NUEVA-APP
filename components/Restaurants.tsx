@@ -9,6 +9,7 @@ import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
 import { getTransformedImageUrl } from '../services/image';
 import AdvancedFilters, { Filters } from './AdvancedFilters';
+import { Categories } from './Categories';
 
 const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
@@ -158,6 +159,15 @@ export const Restaurants: React.FC = () => {
     setFilters(newFilters);
   };
 
+  const handleCategorySelect = (categoryId: number) => {
+    setFilters(prevFilters => {
+      const newCategories = prevFilters.categories.includes(categoryId)
+        ? prevFilters.categories.filter(id => id !== categoryId)
+        : [...prevFilters.categories, categoryId];
+      return { ...prevFilters, categories: newCategories };
+    });
+  };
+
   return (
     <div className="p-4">
       <div className="px-4 mb-4 flex gap-2">
@@ -177,6 +187,14 @@ export const Restaurants: React.FC = () => {
           <SlidersIcon className="w-5 h-5 text-gray-600"/>
         </button>
       </div>
+
+      <section className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800 px-4 mb-3">Categorías</h2>
+        <Categories
+          selectedCategories={filters.categories}
+          onCategorySelect={handleCategorySelect}
+        />
+      </section>
 
       <section className="px-4">
         <div className="flex justify-between items-center mb-3">

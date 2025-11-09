@@ -31,18 +31,10 @@ export const useRestaurants = ({ searchQuery, filters }: UseRestaurantsProps) =>
       let restaurantIdsForCategories: number[] | null = null;
 
       if (filters.categories && filters.categories.length > 0) {
-        const { data: catData, error: catError } = await supabase
-          .from('categories')
-          .select('id')
-          .in('name', filters.categories);
-        if (catError) throw catError;
-
-        const categoryIds = catData.map(c => c.id);
-
         const { data: restCatData, error: restCatError } = await supabase
           .from('restaurant_categories')
           .select('restaurant_id')
-          .in('category_id', categoryIds);
+          .in('category_id', filters.categories);
         if (restCatError) throw restCatError;
         
         restaurantIdsForCategories = [...new Set(restCatData.map(rc => rc.restaurant_id))];
