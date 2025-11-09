@@ -65,11 +65,14 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ item, restaurant, 
         {/* Ingredient/product icons overlay (small circular chips) */}
         {item.ingredients && item.ingredients.length > 0 && (
           <div className="absolute right-4 bottom-4 flex gap-3">
-            {item.ingredients.slice(0,5).map((ing, idx) => (
-              <div key={ing.name} className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md">
-                {React.cloneElement(ing.icon as React.ReactElement, { className: 'w-5 h-5 text-orange-500' })}
-              </div>
-            ))}
+            {item.ingredients.slice(0,5).map((ing, idx) => {
+              const Icon = ing.icon as React.FC<any>;
+              return (
+                <div key={ing.name} className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md">
+                  <Icon className="w-5 h-5 text-orange-500" />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
