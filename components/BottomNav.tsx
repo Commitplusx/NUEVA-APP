@@ -51,7 +51,6 @@ export const BottomNav: React.FC = () => {
   const isLoggedIn = userRole !== 'guest';
 
   const basePages = [
-    { to: '/', label: 'Inicio', icon: <HomeIcon className="w-6 h-6 mb-1" /> },
     { to: '/restaurants', label: 'Comercios', icon: <ShoppingIcon className="w-6 h-6 mb-1" /> },
     { to: '/request', label: 'Solicitar', icon: <PackageIcon className="w-6 h-6 mb-1" /> },
   ];
@@ -65,17 +64,11 @@ export const BottomNav: React.FC = () => {
 
   const cartPage = { to: '/cart', label: 'Carrito', icon: <CartIcon className="w-6 h-6 mb-1" />, showCartCount: true };
   const profilePage = { to: '/profile', label: 'Perfil', icon: <UserIcon className="w-6 h-6 mb-1" /> };
+  const loginPage = { to: '/login', label: 'Login', icon: <UserIcon className="w-6 h-6 mb-1" /> };
 
-  let pagesToRender = [];
-
-  if (userRole === 'admin') {
-    pagesToRender = adminPages;
-  } else {
-    pagesToRender = [...basePages, cartPage];
-    if (isLoggedIn) {
-      pagesToRender.push(profilePage);
-    }
-  }
+  const pagesToRender = userRole === 'admin'
+    ? adminPages
+    : [...basePages, cartPage, isLoggedIn ? profilePage : loginPage];
 
   return (
     <motion.div

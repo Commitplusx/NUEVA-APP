@@ -96,13 +96,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* Render the header only when not on product detail pages */}
-      {shouldShowHeader && (
-        <div className="fixed top-0 left-0 w-full z-40">
-          <MainHeader />
-        </div>
-      )}
-
       {/* Fixed back button when viewing product detail pages (outside header) */}
       {isProductDetail && (
         <button
