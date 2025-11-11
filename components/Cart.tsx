@@ -5,17 +5,24 @@ import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderUserDetails } from '../types';
 import { Toast, ToastType } from './Toast';
+import { AnimatePresence, motion } from 'framer-motion';
+import Lottie from 'lottie-react';
+import orderingAnimation from './animations/ordering-animation.json';
+import deliveryAnimation from './animations/delivery-animation.json';
+import foodAnimation from './animations/food-animation.json';
+import deliveryManAnimation from './animations/delivery-man-animation.json';
 
-type CartStep = 'cart' | 'details' | 'confirmation';
+type CartStep = 'cart' | 'details' | 'confirmation' | 'success';
 
 const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
-  const steps: CartStep[] = ['cart', 'details', 'confirmation'];
+  const steps: CartStep[] = ['cart', 'details', 'confirmation', 'success'];
   const currentStepIndex = steps.indexOf(currentStep);
 
   const getStepName = (step: CartStep) => {
     if (step === 'cart') return 'Carrito';
     if (step === 'details') return 'Tus Datos';
-    return 'Confirmar';
+    if (step === 'confirmation') return 'Confirmar';
+    return 'Éxito';
   }
 
   return (
@@ -86,14 +93,20 @@ export const Cart: React.FC = () => {
     userDetails.address.trim() !== '' &&
     userDetails.phone.trim().length >= 10;
 
-  const handleFinalOrderConfirmation = () => {
+  const handleFinalOrderConfirmation = async () => {
     if (!canProceedToConfirmation) {
       setToastInfo({ message: 'Por favor, completa todos los campos requeridos.', type: 'info' });
       setTimeout(() => setToastInfo(null), 3000); // Ocultar después de 3 segundos
       return;
     }
-    handleConfirmOrder(userDetails);
-    setStep('cart'); // Reset to cart view after order
+    try {
+      await handleConfirmOrder(userDetails);
+      setStep('success'); // Set to success step after successful order
+    } catch (error) {
+      console.error('Order confirmation failed:', error);
+      setToastInfo({ message: 'Error al confirmar el pedido. Inténtalo de nuevo.', type: 'error' });
+      setTimeout(() => setToastInfo(null), 3000);
+    }
   };
 
   const renderCartStep = () => (
@@ -227,6 +240,20 @@ export const Cart: React.FC = () => {
         </div>
   );
 
+  const renderSuccessStep = () => (
+    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center">
+      <Lottie animationData={orderingAnimation} loop={false} style={{ width: 200, height: 200 }} />
+      <h3 className="font-bold text-2xl text-green-600 mt-4">¡Pedido Recibido!</h3>
+      <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
+      <button 
+        onClick={() => navigate('/restaurants')} 
+        className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
+      >
+        Volver a Restaurantes
+      </button>
+    </div>
+  );
+
   return (
     <div className="p-4 bg-gray-50 min-h-full">
       <div className="flex items-center gap-4 mb-6">
@@ -238,7 +265,7 @@ export const Cart: React.FC = () => {
         <h1 className="text-xl font-bold text-gray-800">{step === 'cart' ? 'Mi Carrito' : 'Checkout'}</h1>
       </div>
 
-      {cartItems.length === 0 ? (
+      {cartItems.length === 0 && step !== 'success' ? (
         <div className="text-center py-20">
           <p className="mt-4 text-gray-500">Tu carrito está vacío.</p>
           <button 
@@ -251,9 +278,52 @@ export const Cart: React.FC = () => {
       ) : (
         <div>
             <Stepper currentStep={step} />
-            {step === 'cart' && renderCartStep()}
-            {step === 'details' && renderDetailsStep()}
-            {step === 'confirmation' && renderConfirmationStep()}
+            <AnimatePresence mode="wait">
+              {step === 'cart' && (
+                <motion.div
+                  key="cart"
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCartStep()}
+                </motion.div>
+              )}
+              {step === 'details' && (
+                <motion.div
+                  key="details"
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderDetailsStep()}
+                </motion.div>
+              )}
+              {step === 'confirmation' && (
+                <motion.div
+                  key="confirmation"
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderConfirmationStep()}
+                </motion.div>
+              )}
+              {step === 'success' && (
+                <motion.div
+                  key="success"
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderSuccessStep()}
+                </motion.div>
+              )}
+            </AnimatePresence>
         </div>
       )}
       {toastInfo && <Toast message={toastInfo.message} type={toastInfo.type} onClose={() => setToastInfo(null)} />}

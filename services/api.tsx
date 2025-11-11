@@ -1,4 +1,4 @@
-import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile } from '../types';
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 
@@ -105,26 +105,67 @@ export const getServices = async (): Promise<Service[]> => {
 
 
 /**
- * MOCK ORDER CONFIRMATION
- * Simulates sending an order to a backend. In a real app, this would
- * make an HTTP request to a server.
+ * REAL ORDER CONFIRMATION
+ * Sends an order to the Supabase backend.
  * @param {CartItem[]} cart - The items in the user's cart.
- * @param {string} phoneNumber - The user's WhatsApp number.
- * @returns {Promise<{success: boolean}>} - A promise that resolves if the order is confirmed.
+ * @param {OrderUserDetails} userDetails - The user's details for the order.
+ * @returns {Promise<Order>} - A promise that resolves with the newly created order.
  */
-export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails): Promise<{success: boolean}> => {
-  console.log("Simulating order confirmation...");
+export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails): Promise<Order> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
   if (!userDetails.phone || cart.length === 0) {
-      console.error("Order confirmation failed: Phone number and cart items are required.");
-      throw new Error("Phone number and cart items are required.");
+    throw new Error("Phone number and cart items are required.");
   }
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const restaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+
+  // 1. Create the order
+  const { data: orderData, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      user_id: user.id,
+      customer_name: userDetails.name,
+      customer_phone: userDetails.phone,
+      delivery_address: `${userDetails.address}, ${userDetails.neighborhood}, ${userDetails.postalCode}`,
+      total_amount: totalAmount,
+      restaurant_id: restaurantId,
+      status: 'pending',
+    })
+    .select()
+    .single();
+
+  if (orderError) {
+    console.error('Error creating order:', orderError);
+    throw orderError;
+  }
+
+  const order = orderData as Order;
+
+  // 2. Create the order items
+  const orderItems = cart.map(item => ({
+    order_id: order.id,
+    menu_item_id: item.product.id,
+    quantity: item.quantity,
+    price: item.product.price,
+    customized_ingredients: item.customizedIngredients,
+  }));
+
+  const { error: itemsError } = await supabase
+    .from('order_items')
+    .insert(orderItems);
+
+  if (itemsError) {
+    console.error('Error creating order items:', itemsError);
+    // Optionally, you might want to delete the order here if items fail to be created
+    await supabase.from('orders').delete().eq('id', order.id);
+    throw itemsError;
+  }
 
   console.log('Order confirmed for:', { userDetails, cart });
-  // Return a success message
-  return { success: true };
+  return order;
 };
 
 /**

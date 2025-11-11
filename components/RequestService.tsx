@@ -109,6 +109,7 @@ export const RequestService: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [scheduleTime, setScheduleTime] = useState<string>('');
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const [newRequestId, setNewRequestId] = useState<string | null>(null);
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -215,7 +216,10 @@ export const RequestService: React.FC = () => {
     };
 
     try {
-      await createServiceRequest(serviceRequest);
+      const newRequest = await createServiceRequest(serviceRequest);
+      if (newRequest && newRequest.id) {
+        setNewRequestId(newRequest.id);
+      }
       setStep('submitted');
     } catch (error) {
       showToast('Hubo un error al crear la solicitud.', 'error');
@@ -243,13 +247,16 @@ export const RequestService: React.FC = () => {
     return confirmedSchedule.date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' });
   }
 
-  const whatsappNumber = '529631539156';
+  const whatsappNumber = '14155238886';
   const whatsappMessage = encodeURIComponent('Hola, necesito ayuda con mi servicio.');
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   // --- Render Logic ---
 
   if (step === 'submitted') {
+    const trackWhatsappMessage = encodeURIComponent(`Hola, quiero rastrear mi pedido con ID: ${newRequestId}`);
+    const trackWhatsappUrl = `https://wa.me/${whatsappNumber}?text=${trackWhatsappMessage}`;
+
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-600 animate-fade-in">
         <Stepper currentStep={step} />
@@ -260,6 +267,16 @@ export const RequestService: React.FC = () => {
         <p className="mt-4 max-w-sm">
           Hemos recibido tu solicitud de servicio. Nos pondremos en contacto contigo en breve.
         </p>
+        <div className="mt-8 w-full max-w-xs">
+          <a
+            href={trackWhatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-green-500 text-white w-full py-3 rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg flex items-center justify-center gap-2"
+          >
+            Rastrear por WhatsApp
+          </a>
+        </div>
       </div>
     );
   }

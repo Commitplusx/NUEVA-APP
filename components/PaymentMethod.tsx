@@ -13,9 +13,10 @@ const PaymentOptionCard: React.FC<{
   selected: boolean;
   onClick: () => void;
 }> = ({ icon, label, selected, onClick }) => (
-  <button
+  <motion.button
     onClick={onClick}
     className={`payment-option-card ${selected ? 'payment-option-selected' : ''}`}
+    whileTap={{ scale: 0.95 }}
   >
     <div className="payment-icon-wrapper">
       {icon}
@@ -353,34 +354,73 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         <h1 className="payment-title">Payment</h1>
       </div>
 
-      <div className="payment-options-grid">
-        <PaymentOptionCard
-          icon={<CashIcon />}
-          label="Cash"
-          selected={selectedPayment === 'cash'}
-          onClick={() => setSelectedPayment('cash')}
-        />
-        <PaymentOptionCard
-          icon={<VisaIcon />}
-          label="Visa"
-          selected={selectedPayment === 'visa'}
-          onClick={() => setSelectedPayment('visa')}
-        />
-        <PaymentOptionCard
-          icon={<MastercardIcon />}
-          label="Mastercard"
-          selected={selectedPayment === 'mastercard'}
-          onClick={() => setSelectedPayment('mastercard')}
-        />
-        <PaymentOptionCard
-          icon={<PayPalIcon />}
-          label="PayPal"
-          selected={selectedPayment === 'paypal'}
-          onClick={() => setSelectedPayment('paypal')}
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        <div className="payment-options-grid">
+          <motion.div
+            key="cash"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <PaymentOptionCard
+              icon={<CashIcon />}
+              label="Cash"
+              selected={selectedPayment === 'cash'}
+              onClick={() => setSelectedPayment('cash')}
+            />
+          </motion.div>
+          <motion.div
+            key="visa"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+          >
+            <PaymentOptionCard
+              icon={<VisaIcon />}
+              label="Visa"
+              selected={selectedPayment === 'visa'}
+              onClick={() => setSelectedPayment('visa')}
+            />
+          </motion.div>
+          <motion.div
+            key="mastercard"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+          >
+            <PaymentOptionCard
+              icon={<MastercardIcon />}
+              label="Mastercard"
+              selected={selectedPayment === 'mastercard'}
+              onClick={() => setSelectedPayment('mastercard')}
+            />
+          </motion.div>
+          <motion.div
+            key="paypal"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2, delay: 0.15 }}
+          >
+            <PaymentOptionCard
+              icon={<PayPalIcon />}
+              label="PayPal"
+              selected={selectedPayment === 'paypal'}
+              onClick={() => setSelectedPayment('paypal')}
+            />
+          </motion.div>
+        </div>
+      </AnimatePresence>
 
-      <div className="card-section">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
+        className="card-section"
+      >
         <div className="card-visual">
           <div className="mastercard-logo">
             <MastercardIcon />
@@ -407,12 +447,18 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
             You can add a mastercard and<br />save it for later
           </p>
         </div>
-      </div>
+      </motion.div>
 
-      <button className="add-new-btn" onClick={() => setIsAddingCard(true)}>
+      <motion.button
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+        className="add-new-btn"
+        onClick={() => setIsAddingCard(true)}
+      >
         <span className="plus-icon">+</span>
         ADD NEW
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isAddingCard && (
