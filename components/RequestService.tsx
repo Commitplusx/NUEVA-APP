@@ -419,14 +419,13 @@ export const RequestService: React.FC = () => {
             <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
             <div className="relative flex items-center">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-green-500" />
-                <input 
-                  id="origin" 
-                  type="text" 
-                  value={origin} 
-                  readOnly
-                  className="w-full py-2 px-3 pl-10 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed text-gray-700"
-                />
-            </div>
+                                <input
+                                  id="origin"
+                                  type="text"
+                                  value={origin}
+                                  onChange={(e) => setOrigin(e.target.value)}
+                                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                />            </div>
             {!userProfile?.address && (
               <button
                 onClick={handleProfileLinkClick}

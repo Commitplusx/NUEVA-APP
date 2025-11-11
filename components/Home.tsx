@@ -100,27 +100,27 @@ export const Home: React.FC = () => {
               className="relative p-6 w-full h-full flex flex-col justify-center items-center text-center"
             >
               <div className="flex justify-between items-center w-full max-w-md absolute top-6 px-6">
-                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {userRole === 'admin' ? 'Administrador' : userObject?.email || 'invitado'}!</h1>
+                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {userRole === 'admin' ? 'Administrador' : userObject?.email || 'Bienvenido'}!</h1>
                 <UserCircleIcon className="w-8 h-8 text-gray-800" />
               </div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={firstPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-              <motion.h2 
-                className="text-5xl font-extrabold leading-tight mb-4 mt-8 text-gray-800"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                Pide, recibe y disfruta
-              </motion.h2>
-              <motion.p 
+                            <motion.h2
+                              className="text-5xl font-extrabold leading-tight mb-4 mt-8 text-gray-800"
+                              initial={{ y: -20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.4, duration: 0.5 }}
+                            >
+                              Servicios a tu medida, entregados con excelencia.
+                            </motion.h2>
+                                          <motion.p
                 className="text-gray-600 text-lg mb-8 max-w-md"
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                Todo lo que necesitas, a la puerta de tu casa en minutos.
+                Todo lo que necesitas, a la puerta de tu casa con rapidez y eficiencia.
               </motion.p>
             </motion.div>
           )}
@@ -139,9 +139,9 @@ export const Home: React.FC = () => {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={secondPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-              <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">Nuestros Servicios</h2>
+              <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">Descubre Nuestros Servicios Integrales</h2>
               <p className="text-gray-600 text-lg mb-8 max-w-md text-center">
-                Te ofrecemos una amplia gama de servicios para hacerte la vida más fácil.
+                Diseñados para simplificar tu día a día, nuestra plataforma te conecta con soluciones rápidas y confiables.
               </p>
             </motion.div>
           )}
@@ -160,15 +160,14 @@ export const Home: React.FC = () => {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={thirdPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-              <motion.h2 
-                className="text-5xl font-extrabold leading-tight mb-8 mt-8 text-gray-800"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-                Descubre un mundo de sabores
-              </motion.h2>
-              {userRole !== 'admin' ? (
+                            <motion.h2
+                              className="text-5xl font-extrabold leading-tight mb-8 mt-8 text-gray-800"
+                              initial={{ y: -20, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ delay: 0.4, duration: 0.5 }}
+                            >
+                              Tu próxima experiencia te espera.
+                            </motion.h2>              {userRole !== 'admin' ? (
                 <motion.button
                   onClick={() => navigate('/restaurants')}
                   className="bg-orange-500 text-white font-bold py-4 px-8 rounded-full flex items-center justify-center gap-2 group hover:bg-orange-600 transition-colors shadow-lg"
@@ -177,7 +176,7 @@ export const Home: React.FC = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  <span>Explorar Restaurantes</span>
+                  <span>Explorar Opciones Culinarias</span>
                   <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </motion.button>
               ) : (
@@ -189,7 +188,7 @@ export const Home: React.FC = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  <span>Ir al Dashboard</span>
+                  <span>Acceder al Panel de Administración</span>
                   <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </motion.button>
               )}
