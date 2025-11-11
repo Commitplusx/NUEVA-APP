@@ -441,7 +441,10 @@ export const updateServiceRequestStatus = async (id: string, status: string): Pr
 // --- Geocoding Service ---
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   if (!address) return null;
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+  // Bounding box for Comitán de Domínguez, Chiapas, Mexico
+  // min_lon,min_lat,max_lon,max_lat
+  const comitanBoundingBox = '-92.20,16.20,-92.05,16.35';
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&viewbox=${comitanBoundingBox}&bounded=1`;
 
   try {
     const response = await fetch(url, {

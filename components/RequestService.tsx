@@ -157,13 +157,17 @@ export const RequestService: React.FC = () => {
         const profile = await getProfile();
         if (profile) {
           setUserProfile(profile);
+          console.log('Fetched profile in RequestService:', profile); // Debug log
           if (profile.address && profile.lat && profile.lng) {
             setOrigin(profile.address);
             setOriginCoords({ lat: profile.lat, lng: profile.lng });
+            console.log('Origin set from profile:', profile.address, profile.lat, profile.lng); // Debug log
           } else {
+            console.log('Profile found but address/coords missing:', profile); // Debug log
             showToast('No tienes una dirección de origen guardada. Ve a tu perfil para añadir una.', 'info');
           }
         } else {
+            console.log('No profile found for user.'); // Debug log
             showToast('Ve a tu perfil para configurar tu dirección de origen por defecto.', 'info');
         }
       } catch (error) {
@@ -474,15 +478,13 @@ export const RequestService: React.FC = () => {
         ) : (
             <p className="text-sm text-gray-500">Introduce una dirección de destino para calcular el costo.</p>
         )}
-        {(originCoords || destinationCoords) && (
-          <div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md">
-            <MapContainer 
-              center={originCoords ? [originCoords.lat, originCoords.lng] : [0, 0]} 
-              zoom={originCoords ? 13 : 2} 
-              scrollWheelZoom={false} 
-              className="h-full w-full"
-            >
-              <TileLayer
+                  <div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md">
+                    <MapContainer
+                      center={originCoords ? [originCoords.lat, originCoords.lng] : [16.25, -92.13]}
+                      zoom={originCoords ? 13 : 13}
+                      scrollWheelZoom={false}
+                      className="h-full w-full"
+                    >              <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
