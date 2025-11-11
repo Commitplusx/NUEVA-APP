@@ -36,7 +36,7 @@ const PaymentOptionCard: React.FC<{
         </svg>
       </div>
     )}
-  </button>
+  </motion.button>
 );
 
 const CashIcon = () => (
