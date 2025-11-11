@@ -3,9 +3,9 @@ import { useRestaurants } from '../../hooks/useRestaurants';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
 import { useAdminTariffs } from '../../hooks/useAdminTariffs';
 import { useMenuItems } from '../../hooks/useMenuItems'; // Import the new hook
+import { useServiceRequests } from '../../hooks/useServiceRequests';
 import { Spinner } from '../Spinner';
-import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon } from '../icons'; // Import UtensilsIcon
-import { Link } from 'react-router-dom';
+import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon, DocumentTextIcon } from '../icons'; // Import UtensilsIcon
 
 interface StatCardProps {
   title: string;
@@ -40,6 +40,7 @@ export const DashboardOverview: React.FC = () => {
   const { categories, loading: categoriesLoading } = useAdminCategories();
   const { tariffs, loading: tariffsLoading } = useAdminTariffs();
   const { menuItems, loading: menuItemsLoading } = useMenuItems(); // Use the new hook
+  const { requests, loading: requestsLoading } = useServiceRequests();
 
   const stats = [
     {
@@ -48,6 +49,15 @@ export const DashboardOverview: React.FC = () => {
       icon: <BuildingStorefrontIcon />,
       loading: restaurantsLoading,
       to: 'restaurants',
+    },
+    {
+      title: 'Total Solicitudes',
+      value: requests.length,
+      icon: <ClipboardDocumentListIcon />,
+      loading: requestsLoading,
+      to: 'requests',
+      iconBgClass: 'bg-yellow-100',
+      iconTextColorClass: 'text-yellow-500',
     },
     {
       title: 'Total Categorías',

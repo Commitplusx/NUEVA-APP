@@ -151,26 +151,67 @@ export interface ServiceRequest {
 
     distance?: number;
 
-    user_id?: string;
+        user_id?: string;
 
-    scheduled_at?: string | null;
+        scheduled_at?: string | null;
 
-    status?: string;
+        status?: string;
 
-}
+        phone?: string;
 
-export interface Profile {
-  user_id: string;
-  full_name?: string;
-  address?: string;
-  lat?: number;
-  lng?: number;
-  avatar?: string;
-  email?: string; // Added email field
-}
+    }
 
-export interface OrderUserDetails {
-  name: string;
+    
+
+    export interface Profile {
+
+    
+
+      user_id: string;
+
+    
+
+      full_name?: string;
+
+    
+
+      address?: string;
+
+    
+
+      lat?: number;
+
+    
+
+      lng?: number;
+
+    
+
+      avatar?: string;
+
+    
+
+      email?: string; // Added email field
+
+    
+
+      phone?: string;
+
+    
+
+    }
+
+    
+
+    
+
+    
+
+    export interface OrderUserDetails {
+
+    
+
+      name: string;
   address: string;
   postalCode: string;
   neighborhood: string;

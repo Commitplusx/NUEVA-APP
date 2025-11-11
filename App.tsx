@@ -30,6 +30,7 @@ const DashboardOverview = lazy(() => import('./components/admin/DashboardOvervie
 const ManageRestaurants = lazy(() => import('./components/admin/ManageRestaurants').then(module => ({ default: module.ManageRestaurants })));
 const ManageCategories = lazy(() => import('./components/admin/ManageCategories').then(module => ({ default: module.ManageCategories })));
 const ManageTariffs = lazy(() => import('./components/admin/ManageTariffs').then(module => ({ default: module.ManageTariffs })));
+const ManageServiceRequests = lazy(() => import('./components/admin/ManageServiceRequests').then(module => ({ default: module.ManageServiceRequests })));
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
 
 /**
@@ -96,6 +97,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
+      <style>{`.modal-open .bottom-nav { display: none !important; }`}</style>
       {/* Fixed back button when viewing product detail pages (outside header) */}
       {isProductDetail && (
         <button
@@ -147,6 +149,7 @@ const App: React.FC = () => {
                 <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
                 <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
                 <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
+                <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
               </Route>
             </Routes>
           </Suspense>

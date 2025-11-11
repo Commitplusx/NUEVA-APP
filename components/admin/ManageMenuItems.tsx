@@ -37,7 +37,22 @@ const MenuItemForm: React.FC<{
       setImageUrl(menuItem.image_url || '');
       setImagePreview(menuItem.image_url || '');
       setIsPopular(menuItem.is_popular || false);
-      setIngredients(menuItem.ingredients || []);
+      // Normalizar ingredientes: puede venir como string JSON, array o undefined/null
+      const raw = (menuItem as any).ingredients;
+      let normalized: Ingredient[] = [];
+      if (Array.isArray(raw)) {
+        normalized = raw as Ingredient[];
+      } else if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          normalized = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          normalized = [];
+        }
+      } else {
+        normalized = [];
+      }
+      setIngredients(normalized);
     } else {
       setName('');
       setDescription('');
@@ -142,7 +157,7 @@ const MenuItemForm: React.FC<{
               <button type="button" onClick={handleAddIngredient} className="px-4 py-2 text-white font-semibold bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">Añadir</button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {ingredients.map(ing => (
+              {(Array.isArray(ingredients) ? ingredients : []).map(ing => (
                 <div key={ing.name} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-1 rounded-full">
                   <span>{ing.name}</span>
                   <button type="button" onClick={() => handleRemoveIngredient(ing.name)} className="text-red-500 hover:text-red-700">

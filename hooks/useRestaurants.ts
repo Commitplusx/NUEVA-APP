@@ -8,10 +8,12 @@ const PAGE_SIZE = 8;
 
 interface UseRestaurantsProps {
   searchQuery?: string;
-  filters: Filters;
+  filters?: Partial<Filters>;
 }
 
-export const useRestaurants = ({ searchQuery, filters }: UseRestaurantsProps) => {
+const EMPTY_FILTERS: Partial<Filters> = {};
+
+export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRestaurantsProps = {}) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);

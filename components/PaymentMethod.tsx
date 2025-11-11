@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronLeftIcon } from './icons';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeftIcon, XIcon } from './icons';
+import { AddCardForm } from './AddCardForm';
 
 interface PaymentMethodProps {
   onBack: () => void;
@@ -84,9 +86,16 @@ const PayPalIcon = () => (
 
 export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
   const [selectedPayment, setSelectedPayment] = useState<'cash' | 'visa' | 'mastercard' | 'paypal'>('mastercard');
+  const [isAddingCard, setIsAddingCard] = useState(false);
+
+  const handleSaveCard = (newCard: { last4: string; expiry: string; type: string }) => {
+    console.log('New card saved:', newCard);
+    // Aquí puedes agregar la lógica para guardar la tarjeta en tu estado o backend
+    setIsAddingCard(false);
+  };
 
   return (
-    <div className="payment-method-container">
+    <div className={`payment-method-container ${isAddingCard ? 'overflow-hidden' : ''}`}>
       <style>{`
         .payment-method-container {
           min-height: 100vh;
@@ -400,10 +409,34 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         </div>
       </div>
 
-      <button className="add-new-btn">
+      <button className="add-new-btn" onClick={() => setIsAddingCard(true)}>
         <span className="plus-icon">+</span>
         ADD NEW
       </button>
+
+      <AnimatePresence>
+        {isAddingCard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ y: "100vh" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100vh" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full max-w-md bg-gray-100 rounded-t-2xl"
+            >
+              <AddCardForm
+                onCancel={() => setIsAddingCard(false)}
+                onSave={handleSaveCard}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

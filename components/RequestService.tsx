@@ -211,6 +211,7 @@ export const RequestService: React.FC = () => {
       distance: distance,
       scheduled_at,
       status: 'pending',
+      phone: userProfile?.phone,
     };
 
     try {

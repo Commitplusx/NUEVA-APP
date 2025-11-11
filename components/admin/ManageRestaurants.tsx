@@ -163,13 +163,15 @@ const RestaurantList: React.FC<{
   );
 };
 
+const EMPTY_FILTERS = {};
+
 export const ManageRestaurants: React.FC = () => {
-  const { restaurants, loading, error } = useRestaurants();
+  const [searchQuery, setSearchQuery] = useState('');
+  const { restaurants, loading, error } = useRestaurants({ searchQuery, filters: EMPTY_FILTERS });
   const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const { showToast } = useAppContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const [isMenuManageOpen, setIsMenuManageOpen] = useState(false);
   const [selectedRestaurantForMenu, setSelectedRestaurantForMenu] = useState<Restaurant | null>(null);
@@ -201,12 +203,11 @@ export const ManageRestaurants: React.FC = () => {
     }
   };
 
-  const filteredRestaurants = restaurants.filter(r => 
-    r.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRestaurants = restaurants;
 
+  const isAnyModalOpen = isFormOpen || isMenuManageOpen;
   return (
-    <div>
+    <div className={`${isAnyModalOpen ? 'modal-open' : ''}`}>
       <div className="flex justify-between items-center mb-4">
         <div className="w-1/2">
           <input 

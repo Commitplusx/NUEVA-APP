@@ -382,6 +382,21 @@ export const createServiceRequest = async (request: ServiceRequest): Promise<Ser
   return data[0];
 };
 
+export const updateServiceRequestStatus = async (id: string, status: string): Promise<ServiceRequest> => {
+  const { data, error } = await supabase
+    .from('service_requests')
+    .update({ status })
+    .eq('id', id)
+    .select();
+
+  if (error) {
+    console.error('Error updating service request status:', error);
+    throw error;
+  }
+
+  return data[0];
+};
+
 // --- Geocoding Service ---
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   if (!address) return null;

@@ -76,7 +76,7 @@ export const BottomNav: React.FC = () => {
       animate={{ x: "-50%" }}
       exit={{ x: "100%" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:max-w-sm mx-auto bg-white/80 backdrop-blur-sm shadow-lg rounded-full border border-gray-200/80" style={{ zIndex: 9999 }}>
+      className="bottom-nav fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:max-w-sm mx-auto bg-white/80 backdrop-blur-sm shadow-lg rounded-full border border-gray-200/80" style={{ zIndex: 9999 }}>
       <div className="flex justify-around items-center h-16">
         {pagesToRender.map((page) => (
           <NavItem key={page.to} {...page} />

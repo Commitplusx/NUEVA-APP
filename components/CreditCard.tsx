@@ -1,5 +1,4 @@
 import React from 'react';
-import { WifiIcon } from './icons';
 
 interface CreditCardProps {
     cardNumber: string;
@@ -17,8 +16,7 @@ export const CreditCard: React.FC<CreditCardProps> = ({ cardNumber, cardName, ex
             <div className="bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-xl shadow-2xl p-5">
                 <div className="flex justify-between items-start">
                     <div className="font-bold text-lg">Credit Card</div>
-                    <WifiIcon className="w-6 h-6 transform rotate-90" />
-                </div>
+                                    </div>
                 <div className="mt-4 mb-6">
                     <div className="font-mono tracking-wider text-xl">
                         {formatCardNumber(cardNumber) || '#### #### #### ####'}

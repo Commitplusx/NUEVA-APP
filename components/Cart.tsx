@@ -4,6 +4,7 @@ import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon } fro
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderUserDetails } from '../types';
+import { Toast, ToastType } from './Toast';
 
 type CartStep = 'cart' | 'details' | 'confirmation';
 
@@ -67,6 +68,7 @@ export const Cart: React.FC = () => {
     neighborhood: '',
     phone: ''
   });
+  const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -86,7 +88,8 @@ export const Cart: React.FC = () => {
 
   const handleFinalOrderConfirmation = () => {
     if (!canProceedToConfirmation) {
-      alert('Por favor, completa todos los campos requeridos.');
+      setToastInfo({ message: 'Por favor, completa todos los campos requeridos.', type: 'info' });
+      setTimeout(() => setToastInfo(null), 3000); // Ocultar después de 3 segundos
       return;
     }
     handleConfirmOrder(userDetails);
@@ -253,6 +256,7 @@ export const Cart: React.FC = () => {
             {step === 'confirmation' && renderConfirmationStep()}
         </div>
       )}
+      {toastInfo && <Toast message={toastInfo.message} type={toastInfo.type} onClose={() => setToastInfo(null)} />}
     </div>
   );
 };
