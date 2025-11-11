@@ -65,11 +65,14 @@ const App: React.FC = () => {
 
   // Estado para el evento de instalación de PWA
   const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event);
+      setShowInstallButton(true); // Show the button when the prompt is available
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -80,19 +83,21 @@ const App: React.FC = () => {
   }, []);
 
   const handleInstallClick = () => {
-    if (!installPrompt) {
-      return;
+    if (installPrompt) {
+      installPrompt.prompt();
+      installPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the PWA installation');
+        } else {
+          console.log('User dismissed the PWA installation');
+        }
+        setInstallPrompt(null);
+        setShowInstallButton(false); // Hide the button after prompt
+      });
     }
-    installPrompt.prompt();
-    installPrompt.userChoice.then((choiceResult: { outcome: string }) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('El usuario aceptó la instalación');
-      } else {
-        console.log('El usuario rechazó la instalación');
-      }
-      setInstallPrompt(null);
-    });
   };
+
+
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -154,14 +159,17 @@ const App: React.FC = () => {
           </Suspense>
         </AnimatePresence>
       </main>
-      {installPrompt && (
-        <button
-          onClick={handleInstallClick}
-          className="fixed bottom-20 right-4 bg-blue-500 text-white py-2 px-4 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 z-50"
-          aria-label="Instalar aplicación"
-        >
-          Instalar App
-        </button>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+      {showInstallButton && (
+        <div className="fixed bottom-20 left-0 right-0 flex justify-center p-4 z-50">
+          <button
+            onClick={handleInstallClick}
+            className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
+          >
+            Instalar Aplicación
+          </button>
+        </div>
       )}
     </div>
   );

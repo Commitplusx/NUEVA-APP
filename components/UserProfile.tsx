@@ -14,15 +14,9 @@ import {
   ChevronRightIcon,
   PhoneIcon,
   MenuDots,
-  PersonIcon,
   MapIcon,
   ShoppingBagIcon,
-  HeartIcon,
-  BellIcon,
   CreditCardIcon,
-  HelpCircleIcon,
-  ReviewIcon,
-  SettingsIcon,
   LogOutIcon,
 } from './icons';
 import { PaymentMethod } from './PaymentMethod';
