@@ -241,41 +241,15 @@ export const RequestService: React.FC = () => {
       showToast('Espera a que se calcule el precio del envío.', 'error');
       return;
     }
-    setStep('confirmation');
+    // setStep('confirmation'); // Removed this line
+    setShowComingSoonModal(true); // Show modal here
   };
 
   const handleSubmit = async () => {
-    if (!shippingCost || !distance) return;
-
-    let scheduled_at = null;
-    if (confirmedSchedule) {
-        const date = new Date(confirmedSchedule.date);
-        const [hours, minutes] = confirmedSchedule.time.split(':');
-        date.setHours(parseInt(hours), parseInt(minutes));
-        scheduled_at = date.toISOString();
-    }
-
-    const serviceRequest: ServiceRequest = {
-      origin,
-      destination,
-      description,
-      price: shippingCost,
-      distance: distance,
-      scheduled_at,
-      status: 'pending',
-      phone: userProfile?.phone,
-    };
-
-    try {
-      const newRequest = await createServiceRequest(serviceRequest);
-      if (newRequest && newRequest.id) {
-        setNewRequestId(newRequest.id);
-      }
-      setStep('submitted');
-    } catch (error) {
-      showToast('Hubo un error al crear la solicitud.', 'error');
-      console.error(error);
-    }
+    // Temporarily disable actual submission and show coming soon modal
+    setShowComingSoonModal(true);
+    // Optionally, you might want to prevent further execution or clear some state here
+    // For now, just showing the modal is enough as per the request.
   };
 
   const handleScheduleSubmit = (date: Date, time: string) => {
@@ -471,20 +445,18 @@ export const RequestService: React.FC = () => {
                 <Spinner /> <span>Calculando...</span>
             </div>
         ) : shippingCost ? (
-            <div>
-                <p className="text-3xl font-bold text-gray-800">${shippingCost.toFixed(2)}</p>
-                <p className="text-sm text-gray-600">Distancia aproximada: {distance?.toFixed(2)} km</p>
-            </div>
-        ) : (
-            <p className="text-sm text-gray-500">Introduce una dirección de destino para calcular el costo.</p>
-        )}
+            <>
+                <div>
+                    <p className="text-3xl font-bold text-gray-800">${shippingCost.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">Distancia aproximada: {distance?.toFixed(2)} km</p>
+                </div>
                   <div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md">
                     <MapContainer
                       center={originCoords ? [originCoords.lat, originCoords.lng] : [16.25, -92.13]}
                       zoom={originCoords ? 13 : 13}
                       scrollWheelZoom={false}
-                      className="h-full w-full"
-                    >              <TileLayer
+                      className="h-full w-full">
+                    <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
@@ -501,6 +473,9 @@ export const RequestService: React.FC = () => {
               <MapUpdater originCoords={originCoords} destinationCoords={destinationCoords} />
             </MapContainer>
           </div>
+            </>
+        ) : (
+            <p className="text-sm text-gray-500">Introduce una dirección de destino para calcular el costo.</p>
         )}
       </section>
 
