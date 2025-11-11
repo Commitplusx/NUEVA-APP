@@ -7,7 +7,18 @@ import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { Spinner } from './Spinner';
 import { ComingSoonModal } from './ComingSoonModal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon issue with Webpack
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -92,10 +103,29 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
   );
 };
 
+// MapUpdater component to dynamically update map view
+const MapUpdater: React.FC<{ originCoords: { lat: number; lng: number } | null; destinationCoords: { lat: number; lng: number } | null }> = ({ originCoords, destinationCoords }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (originCoords && destinationCoords) {
+      const bounds = L.latLngBounds([originCoords.lat, originCoords.lng], [destinationCoords.lat, destinationCoords.lng]);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else if (originCoords) {
+      map.setView([originCoords.lat, originCoords.lng], 13);
+    } else if (destinationCoords) {
+      map.setView([destinationCoords.lat, destinationCoords.lng], 13);
+    }
+  }, [map, originCoords, destinationCoords]);
+
+  return null;
+};
+
 export const RequestService: React.FC = () => {
   // This comment is added to trigger a re-build and re-evaluation of the component.
   useThemeColor('#f97316');
-  const { showToast, baseFee } = useAppContext();
+  const { showToast, baseFee, userRole } = useAppContext();
+  const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<Step>('details');
   const [origin, setOrigin] = useState<string>('');
@@ -110,6 +140,10 @@ export const RequestService: React.FC = () => {
   const [scheduleTime, setScheduleTime] = useState<string>('');
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
+  const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -125,6 +159,7 @@ export const RequestService: React.FC = () => {
           setUserProfile(profile);
           if (profile.address && profile.lat && profile.lng) {
             setOrigin(profile.address);
+            setOriginCoords({ lat: profile.lat, lng: profile.lng });
           } else {
             showToast('No tienes una dirección de origen guardada. Ve a tu perfil para añadir una.', 'info');
           }
@@ -143,6 +178,7 @@ export const RequestService: React.FC = () => {
     if (!originProfile.lat || !originProfile.lng || !destAddress) {
       setDistance(null);
       setShippingCost(null);
+      setDestinationCoords(null);
       return;
     }
     
@@ -150,6 +186,7 @@ export const RequestService: React.FC = () => {
     try {
       const destCoords = await geocodeAddress(destAddress);
       if (destCoords) {
+        setDestinationCoords(destCoords);
         const dist = haversineDistance(originProfile.lat, originProfile.lng, destCoords.lat, destCoords.lng);
         const cost = baseFee + dist * PRICE_PER_KM;
         setDistance(dist);
@@ -157,6 +194,7 @@ export const RequestService: React.FC = () => {
       } else {
         setDistance(null);
         setShippingCost(null);
+        setDestinationCoords(null);
         showToast('No se pudo encontrar la dirección de destino.', 'error');
       }
     } catch (error) {
@@ -164,7 +202,7 @@ export const RequestService: React.FC = () => {
     } finally {
       setIsCalculating(false);
     }
-  }, [showToast]);
+  }, [showToast, baseFee]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -180,6 +218,15 @@ export const RequestService: React.FC = () => {
 
 
   // --- Handlers ---
+
+  const handleProfileLinkClick = () => {
+    if (userRole === 'guest') {
+      showToast('Debes iniciar sesión para configurar tu perfil.', 'info');
+      navigate('/login');
+    } else {
+      navigate('/profile');
+    }
+  };
 
   const handleProceedToConfirmation = () => {
     if (!origin || !destination || !description) {
@@ -227,17 +274,17 @@ export const RequestService: React.FC = () => {
     }
   };
 
-  const handleScheduleSubmit = () => {
-    if (selectedDate && scheduleTime) {
-      setConfirmedSchedule({ date: selectedDate, time: scheduleTime });
-      setIsScheduling(false);
+  const handleScheduleSubmit = (date: Date, time: string) => {
+    if (date && time) {
+      setConfirmedSchedule({ date: date, time: time });
+      setShowScheduleModal(false);
     } else {
-      alert('Por favor, selecciona un día y una hora.');
+      showToast('Por favor, selecciona un día y una hora.', 'error');
     }
   };
 
   const handleScheduleCancel = () => {
-    setIsScheduling(false);
+    setShowScheduleModal(false);
     setSelectedDate(null);
     setScheduleTime('');
   };
@@ -283,23 +330,26 @@ export const RequestService: React.FC = () => {
   
   if (step === 'confirmation') {
     return (
-        <div className="p-4 space-y-4 animate-fade-in">
+        <div className="p-4 space-y-6 animate-fade-in">
             <Stepper currentStep={step} />
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">CONFIRMA TU SOLICITUD</h1>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
-                <div>
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">Detalles del Servicio</h2>
+                <div className="pb-4 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <Icons.MapPinIcon className="w-5 h-5 text-orange-500" />
+                        Detalles del Servicio
+                    </h2>
                     <div className="space-y-4">
-                        <div className="flex items-center text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-green-500 flex-shrink-0" />
+                        <div className="flex items-start text-gray-700">
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-green-500 flex-shrink-0 mt-1" />
                             <div className="flex-1">
                                 <p className="text-xs font-bold text-gray-500">ORIGEN</p>
                                 <p className="font-semibold text-gray-900">{origin}</p>
                             </div>
                         </div>
                         <div className="h-4 w-px bg-gray-300 ml-2.5"></div>
-                        <div className="flex items-center text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-red-500 flex-shrink-0" />
+                        <div className="flex items-start text-gray-700">
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-red-500 flex-shrink-0 mt-1" />
                             <div className="flex-1">
                                 <p className="text-xs font-bold text-gray-500">DESTINO</p>
                                 <p className="font-semibold text-gray-900">{destination}</p>
@@ -308,26 +358,35 @@ export const RequestService: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">Descripción</h2>
+                <div className="pb-4 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <Icons.PackageIcon className="w-5 h-5 text-orange-500" />
+                        Descripción del Paquete
+                    </h2>
                     <p className="text-sm text-gray-700">{description}</p>
                 </div>
                 
-                <div className="border-t border-gray-200 pt-6">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3">Costo del Envío</h2>
-                    <p className="text-2xl font-bold text-gray-900">${shippingCost?.toFixed(2)}</p>
+                <div className="pb-4 border-b border-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <Icons.DollarSignIcon className="w-5 h-5 text-orange-500" />
+                        Costo del Envío
+                    </h2>
+                    <p className="text-3xl font-bold text-gray-900">${shippingCost?.toFixed(2)}</p>
                     <p className="text-sm text-gray-600">Distancia: {distance?.toFixed(2)} km</p>
                 </div>
 
                 {confirmedSchedule && (
-                    <div className="border-t border-gray-200 pt-6 bg-green-50 p-4 rounded-lg">
-                        <h2 className="text-lg font-bold text-green-800 mb-3">Recogida Programada</h2>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <h2 className="text-lg font-bold text-green-800 mb-3 flex items-center gap-2">
+                            <Icons.CalendarIcon className="w-5 h-5 text-green-600" />
+                            Recogida Programada
+                        </h2>
                         <p className="text-base font-semibold text-green-900">{getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
                     </div>
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-6">
+            <div className="grid grid-cols-2 gap-4 pt-4">
                 <button
                     onClick={() => setStep('details')}
                     className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors shadow-sm"
@@ -337,7 +396,7 @@ export const RequestService: React.FC = () => {
                 </button>
                 <button
                     onClick={handleSubmit}
-                    className="bg-red-600 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-red-700 transition-colors shadow-lg"
+                    className="bg-orange-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors shadow-lg"
                 >
                     Confirmar
                     <Icons.ArrowRightIcon className="w-5 h-5" />
@@ -354,24 +413,6 @@ export const RequestService: React.FC = () => {
         <Stepper currentStep={step} />
       </section>
 
-      {!userProfile?.address && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-            <div className="flex">
-                <div className="flex-shrink-0">
-                    <Icons.AlertTriangleIcon className="h-5 w-5 text-yellow-400" />
-                </div>
-                <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
-                        No tienes una dirección de origen.
-                        <Link to="/profile" className="font-medium underline text-yellow-800 hover:text-yellow-900 ml-1">
-                            Configura tu perfil aquí.
-                        </Link>
-                    </p>
-                </div>
-            </div>
-        </div>
-      )}
-
       <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
         <h3 className="font-bold text-lg text-gray-800 mb-2">Detalles del Envío</h3>
         <div>
@@ -383,9 +424,17 @@ export const RequestService: React.FC = () => {
                   type="text" 
                   value={origin} 
                   readOnly
-                  className="w-full py-3 pl-10 pr-4 bg-gray-200 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed"
+                  className="w-full py-2 px-3 pl-10 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none cursor-not-allowed text-gray-700"
                 />
             </div>
+            {!userProfile?.address && (
+              <button
+                onClick={handleProfileLinkClick}
+                className="text-xs font-medium underline text-red-600 hover:text-red-700 ml-1 mt-1"
+              >
+                  No tienes una dirección de origen. Configura tu perfil aquí.
+              </button>
+            )}
         </div>
 
         <div className="flex items-center justify-center py-1">
@@ -404,7 +453,7 @@ export const RequestService: React.FC = () => {
                   placeholder="Ej: Calle, Colonia, #Casa" 
                   value={destination} 
                   onChange={(e) => setDestination(e.target.value)} 
-                  className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   disabled={!origin}
                 />
             </div>
@@ -426,6 +475,32 @@ export const RequestService: React.FC = () => {
         ) : (
             <p className="text-sm text-gray-500">Introduce una dirección de destino para calcular el costo.</p>
         )}
+        {(originCoords || destinationCoords) && (
+          <div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md">
+            <MapContainer 
+              center={originCoords ? [originCoords.lat, originCoords.lng] : [0, 0]} 
+              zoom={originCoords ? 13 : 2} 
+              scrollWheelZoom={false} 
+              className="h-full w-full"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {originCoords && (
+                <Marker position={[originCoords.lat, originCoords.lng]}>
+                  <Popup>Origen: {origin}</Popup>
+                </Marker>
+              )}
+              {destinationCoords && (
+                <Marker position={[destinationCoords.lat, destinationCoords.lng]}>
+                  <Popup>Destino: {destination}</Popup>
+                </Marker>
+              )}
+              <MapUpdater originCoords={originCoords} destinationCoords={destinationCoords} />
+            </MapContainer>
+          </div>
+        )}
       </section>
 
       <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -435,7 +510,7 @@ export const RequestService: React.FC = () => {
           placeholder="Ej: Paquete pequeño, documentos importantes, etc."
           value={description} 
           onChange={(e) => setDescription(e.target.value)} 
-          className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 h-24 resize-none"
+          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 h-24 resize-none"
         ></textarea>
       </section>
 
@@ -443,7 +518,7 @@ export const RequestService: React.FC = () => {
         <section className="space-y-4 animate-fade-in">
             <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
               <p className="text-sm font-semibold text-gray-700">¿Quieres programar la recogida?</p>
-              <button onClick={() => setIsScheduling(true)} className="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-black transition-colors">
+              <button onClick={() => setShowScheduleModal(true)} className="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-black transition-colors">
                 PROGRAMAR
               </button>
             </div>
@@ -455,7 +530,7 @@ export const RequestService: React.FC = () => {
             <button
               onClick={handleProceedToConfirmation}
               disabled={!shippingCost || isCalculating}
-              className="bg-orange-500 text-white w-full py-4 rounded-lg font-bold hover:bg-orange-600 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-orange-300 disabled:cursor-not-allowed"
+              className="bg-orange-500 text-white w-full py-3 rounded-lg font-bold hover:bg-orange-600 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-orange-300 disabled:cursor-not-allowed"
             >
               Continuar
               <Icons.ArrowRightIcon className="w-5 h-5" />
@@ -464,7 +539,7 @@ export const RequestService: React.FC = () => {
       </div>
       
       <div className="text-center pt-4">
-        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-700 font-semibold flex items-center justify-center gap-2">
+        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 hover:text-gray-700 font-semibold flex items-center justify-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <Icons.WrenchIcon className="w-4 h-4"/>
           Contactar a Soporte
         </a>
@@ -476,6 +551,62 @@ export const RequestService: React.FC = () => {
         title="¡Funcionalidad Próximamente!"
         message="Este mapa interactivo estará disponible muy pronto. Estamos trabajando para mejorar tu experiencia."
       />
+
+      {/* Schedule Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Programar Recogida</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                <select
+                  id="schedule-date"
+                  className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                >
+                  <option value="">Selecciona una fecha</option>
+                  {weekDays.map((day) => (
+                    <option key={day.toISOString()} value={day.toISOString().split('T')[0]}>
+                      {day.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                <select
+                  id="schedule-time"
+                  className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                >
+                  <option value="">Selecciona una hora</option>
+                  {timeSlots.map((slot) => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={handleScheduleCancel}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleScheduleSubmit(selectedDate!, scheduleTime)}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold"
+                disabled={!selectedDate || !scheduleTime}
+              >
+                Confirmar Horario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

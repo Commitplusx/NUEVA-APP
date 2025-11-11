@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, updateProfile } from '../services/api';
+import { getProfile, updateProfile, geocodeAddress } from '../services/api';
 import { Profile } from '../types';
 import { Spinner } from './Spinner';
 import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
+import Lottie from 'lottie-react';
+import profileAnimation from './animations/profile.json';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -49,13 +52,105 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, iconColor, ic
   );
 };
 
+interface AddressManagerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentAddress: string | undefined;
+  onSave: (address: string, lat: number, lng: number) => Promise<void>;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+}
+
+const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, currentAddress, onSave, showToast }) => {
+  const [addressInput, setAddressInput] = useState(currentAddress || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setAddressInput(currentAddress || '');
+  }, [currentAddress]);
+
+  const handleSaveAddress = async () => {
+    if (!addressInput.trim()) {
+      showToast('Por favor, introduce una dirección.', 'error');
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const coords = await geocodeAddress(addressInput);
+      if (coords) {
+        await onSave(addressInput, coords.lat, coords.lng);
+        showToast('Dirección guardada con éxito.', 'success');
+        onClose();
+      } else {
+        showToast('No se pudo encontrar la dirección. Intenta con una más específica.', 'error');
+      }
+    } catch (error) {
+      showToast('Error al guardar la dirección.', 'error');
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={onClose} // Close modal when clicking outside
+        >
+          <motion.div
+            initial={{ y: "-100vh", opacity: 0 }}
+            animate={{ y: "0", opacity: 1 }}
+            exit={{ y: "100vh", opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full relative"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Gestionar Dirección</h2>
+            <input
+              type="text"
+              value={addressInput}
+              onChange={(e) => setAddressInput(e.target.value)}
+              className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800"
+              placeholder="Introduce tu dirección"
+              disabled={isSaving}
+            />
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={onClose}
+                className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
+                disabled={isSaving}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveAddress}
+                className="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition-colors"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Guardando...' : 'Guardar Dirección'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+
 export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, handleLogout } = useAppContext();
+  const { user, handleLogout, showToast } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -89,6 +184,20 @@ export const UserProfile: React.FC = () => {
     }
   };
 
+  const handleSaveAddress = async (address: string, lat: number, lng: number) => {
+    if (!profile) return;
+    try {
+      const updatedProfile = { ...profile, address, lat, lng };
+      await updateProfile(updatedProfile);
+      setProfile(updatedProfile);
+      showToast('Dirección guardada con éxito.', 'success');
+    } catch (error) {
+      showToast('Error al guardar la dirección.', 'error');
+      console.error(error);
+      throw error; // Re-throw to allow modal to handle saving state
+    }
+  };
+
   const handleBack = () => {
     navigate(-1);
   };
@@ -100,10 +209,6 @@ export const UserProfile: React.FC = () => {
     } catch (err) {
       setToast({ message: 'Error al cerrar sesión', type: 'error' });
     }
-  };
-
-  const comingSoon = () => {
-    setToast({ message: 'Próximamente disponible', type: 'success' });
   };
 
   if (loading) {
@@ -128,7 +233,7 @@ export const UserProfile: React.FC = () => {
           </button>
           <h1 className="text-xl font-semibold text-gray-800">Profile</h1>
           <button
-            onClick={comingSoon}
+            onClick={() => showToast('Próximamente disponible', 'info')}
             className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
             <MenuDots className="w-5 h-5 text-gray-700" />
@@ -146,7 +251,7 @@ export const UserProfile: React.FC = () => {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <PersonIcon className="w-16 h-16 text-gray-400" />
+                <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
               </div>
             )}
           </div>
@@ -160,13 +265,7 @@ export const UserProfile: React.FC = () => {
             />
           </h2>
           <p className="text-gray-400 text-sm mt-1">
-            <input
-              type="text"
-              value={profile?.address || ''}
-              onChange={(e) => setProfile(p => p ? { ...p, address: e.target.value } : null)}
-              className="text-center bg-transparent text-sm w-full"
-              placeholder="Tu dirección"
-            />
+            {profile?.address || 'No hay dirección guardada.'}
           </p>
           <div className="mt-2 relative flex items-center">
             <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
@@ -200,19 +299,11 @@ export const UserProfile: React.FC = () => {
         />
         <div className="h-px bg-gray-100" />
         <MenuItem
-          icon={<HeartIcon />}
-          label="Favourite"
-          onClick={comingSoon}
-          iconColor="text-purple-500"
-          iconBgColor="bg-purple-50"
-        />
-        <div className="h-px bg-gray-100" />
-        <MenuItem
-          icon={<BellIcon />}
-          label="Notifications"
-          onClick={comingSoon}
-          iconColor="text-yellow-500"
-          iconBgColor="bg-yellow-50"
+          icon={<MapIcon />}
+          label="Direcciones"
+          onClick={() => setShowAddressModal(true)}
+          iconColor="text-green-500"
+          iconBgColor="bg-green-50"
         />
         <div className="h-px bg-gray-100" />
         <MenuItem
@@ -221,32 +312,6 @@ export const UserProfile: React.FC = () => {
           onClick={() => setShowPaymentMethod(true)}
           iconColor="text-blue-500"
           iconBgColor="bg-blue-50"
-        />
-      </div>
-
-      <div className="mt-4 mx-4 bg-white rounded-2xl overflow-hidden shadow-sm">
-        <MenuItem
-          icon={<HelpCircleIcon />}
-          label="FAQs"
-          onClick={comingSoon}
-          iconColor="text-orange-500"
-          iconBgColor="bg-orange-50"
-        />
-        <div className="h-px bg-gray-100" />
-        <MenuItem
-          icon={<ReviewIcon />}
-          label="User Reviews"
-          onClick={comingSoon}
-          iconColor="text-teal-500"
-          iconBgColor="bg-teal-50"
-        />
-        <div className="h-px bg-gray-100" />
-        <MenuItem
-          icon={<SettingsIcon />}
-          label="Settings"
-          onClick={comingSoon}
-          iconColor="text-purple-500"
-          iconBgColor="bg-purple-50"
         />
       </div>
 
@@ -259,6 +324,14 @@ export const UserProfile: React.FC = () => {
           iconBgColor="bg-red-50"
         />
       </div>
+
+      <AddressManagerModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        currentAddress={profile?.address}
+        onSave={handleSaveAddress}
+        showToast={showToast}
+      />
     </div>
   );
 };
