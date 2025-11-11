@@ -8,7 +8,6 @@
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MainHeader } from './components/MainHeader';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { useAppContext } from './context/AppContext';
@@ -61,7 +60,7 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const hideHeaderPaths = ['/login', '/'];
   const isProductDetail = /^\/restaurants\/[^\/]+\/menu\/[^\/]+$/.test(location.pathname);
-  const shouldShowHeader = !hideHeaderPaths.includes(location.pathname) && !isProductDetail;
+  const shouldShowHeader = false;
   const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductDetail;
 
   // Estado para el evento de instalación de PWA
