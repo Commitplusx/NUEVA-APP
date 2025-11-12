@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, updateProfile, geocodeAddress } from '../services/api';
+import { getProfile, updateProfile } from '../services/api';
 import { Profile } from '../types';
 import { Spinner } from './Spinner';
 import { Toast } from './Toast';
@@ -20,6 +20,7 @@ import {
   LogOutIcon,
 } from './icons';
 import { PaymentMethod } from './PaymentMethod';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 
 interface MenuItemProps {
   icon: React.ReactNode;
@@ -49,60 +50,64 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, iconColor, ic
 interface AddressManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentProfile: Profile | null;
   onSave: (addressData: Partial<Profile>) => Promise<void>;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  isLoaded: boolean;
 }
 
-const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, currentProfile, onSave, showToast }) => {
-  const [address, setAddress] = useState({
-    street_address: '',
-    neighborhood: '',
-    city: '',
-    postal_code: '',
-    address_details: '',
-  });
+const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, onSave, showToast, isLoaded }) => {
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [addressData, setAddressData] = useState<Partial<Profile>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (currentProfile) {
-      setAddress({
-        street_address: currentProfile.street_address || '',
-        neighborhood: currentProfile.neighborhood || '',
-        city: currentProfile.city || '',
-        postal_code: currentProfile.postal_code || '',
-        address_details: currentProfile.address_details || '',
-      });
+  const comitanBounds = {
+    south: 16.20,
+    west: -92.20,
+    north: 16.35,
+    east: -92.05,
+  };
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (!place.geometry || !place.address_components) {
+        showToast('Por favor, selecciona una dirección de la lista.', 'error');
+        return;
+      }
+
+      const getAddressComponent = (type: string) => {
+        const component = place.address_components?.find(c => c.types.includes(type));
+        return component?.long_name || '';
+      };
+
+      const streetNumber = getAddressComponent('street_number');
+      const route = getAddressComponent('route');
+
+      const newAddress: Partial<Profile> = {
+        street_address: `${route} ${streetNumber}`.trim(),
+        neighborhood: getAddressComponent('sublocality_level_1') || getAddressComponent('locality'),
+        city: getAddressComponent('locality') || getAddressComponent('administrative_area_level_2'),
+        postal_code: getAddressComponent('postal_code'),
+        lat: place.geometry.location?.lat(),
+        lng: place.geometry.location?.lng(),
+      };
+      setAddressData(newAddress);
+    } else {
+      console.error('Autocomplete is not loaded yet!');
     }
-  }, [currentProfile, isOpen]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setAddress(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveAddress = async () => {
-    if (!address.street_address.trim() || !address.city.trim()) {
-      showToast('La calle y la ciudad son campos obligatorios.', 'error');
+    if (!addressData.street_address || !addressData.lat) {
+      showToast('Por favor, busca y selecciona una dirección válida.', 'error');
       return;
     }
     setIsSaving(true);
     try {
-      const fullAddress = `${address.street_address}, ${address.neighborhood}, ${address.city}, ${address.postal_code}`;
-      const coords = await geocodeAddress(fullAddress);
-      
-      const addressData: Partial<Profile> = { ...address };
-      if (coords) {
-        addressData.lat = coords.lat;
-        addressData.lng = coords.lng;
-      } else {
-        showToast('No se pudieron obtener las coordenadas para la dirección. Se guardará sin mapa.', 'info');
-      }
-
       await onSave(addressData);
       showToast('Dirección guardada con éxito.', 'success');
       onClose();
-
     } catch (error) {
       showToast('Error al guardar la dirección.', 'error');
       console.error(error);
@@ -110,8 +115,17 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
       setIsSaving(false);
     }
   };
+  
+  useEffect(() => {
+    if (!isOpen) {
+      setAddressData({});
+      if (searchInputRef.current) {
+        searchInputRef.current.value = '';
+      }
+    }
+  }, [isOpen]);
 
-  const inputClass = "w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800";
+  const inputClass = "w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none text-gray-600 cursor-not-allowed";
 
   return (
     <AnimatePresence>
@@ -131,21 +145,52 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
             className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">Gestionar Dirección</h2>
-            <div className="space-y-4">
-              <input type="text" name="street_address" value={address.street_address} onChange={handleChange} className={inputClass} placeholder="Calle y Número" disabled={isSaving} />
-              <input type="text" name="neighborhood" value={address.neighborhood} onChange={handleChange} className={inputClass} placeholder="Barrio / Colonia" disabled={isSaving} />
-              <div className="flex gap-4">
-                <input type="text" name="city" value={address.city} onChange={handleChange} className={inputClass} placeholder="Ciudad" disabled={isSaving} />
-                <input type="text" name="postal_code" value={address.postal_code} onChange={handleChange} className={inputClass} placeholder="Cód. Postal" disabled={isSaving} />
-              </div>
-              <input type="text" name="address_details" value={address.address_details} onChange={handleChange} className={inputClass} placeholder="Detalles (piso, depto, referencias)" disabled={isSaving} />
-            </div>
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Gestionar Dirección</h2>
+            <p className="text-sm text-gray-600 mb-6">Busca tu dirección y selecciónala de la lista para autocompletar.</p>
+            
+            {isLoaded ? (
+              <Autocomplete
+                onLoad={(ac) => setAutocomplete(ac)}
+                onPlaceChanged={onPlaceChanged}
+                options={{
+                  bounds: comitanBounds,
+                  strictBounds: false,
+                  componentRestrictions: { country: 'mx' }, // Restrict to Mexico
+                  fields: ['address_components', 'geometry'],
+                }}
+              >
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Busca tu calle, colonia o código postal..."
+                  className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800"
+                />
+              </Autocomplete>
+            ) : (
+              <Spinner />
+            )}
+
+            {addressData.street_address && (
+              <motion.div 
+                className="mt-6 space-y-3 pt-4 border-t border-gray-200"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <h3 className="font-semibold text-gray-700">Verifica tu dirección:</h3>
+                <input type="text" value={`Calle: ${addressData.street_address}`} readOnly className={inputClass} />
+                <input type="text" value={`Barrio/Colonia: ${addressData.neighborhood}`} readOnly className={inputClass} />
+                <div className="flex gap-4">
+                  <input type="text" value={`Ciudad: ${addressData.city}`} readOnly className={inputClass} />
+                  <input type="text" value={`C.P.: ${addressData.postal_code}`} readOnly className={inputClass} />
+                </div>
+              </motion.div>
+            )}
+
             <div className="mt-8 flex justify-end space-x-3">
               <button onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors" disabled={isSaving}>
                 Cancelar
               </button>
-              <button onClick={handleSaveAddress} className="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition-colors" disabled={isSaving}>
+              <button onClick={handleSaveAddress} className="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition-colors" disabled={isSaving || !addressData.street_address}>
                 {isSaving ? 'Guardando...' : 'Guardar Dirección'}
               </button>
             </div>
@@ -166,6 +211,11 @@ export const UserProfile: React.FC = () => {
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-places-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: ['places'],
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -205,11 +255,10 @@ export const UserProfile: React.FC = () => {
       const updatedProfile = { ...profile, ...addressData };
       await updateProfile(updatedProfile);
       setProfile(updatedProfile);
-      // Toast is shown by the modal now
     } catch (error) {
       showToast('Error al guardar la dirección.', 'error');
       console.error(error);
-      throw error; // Re-throw to allow modal to handle saving state
+      throw error;
     }
   };
 
@@ -350,9 +399,9 @@ export const UserProfile: React.FC = () => {
       <AddressManagerModal
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
-        currentProfile={profile}
         onSave={handleSaveAddress}
         showToast={showToast}
+        isLoaded={isLoaded}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import * as Icons from './icons';
 import { ServiceRequest, Profile } from '../types';
 import { createServiceRequest, getProfile, geocodeAddress } from '../services/api';
@@ -8,17 +8,8 @@ import { useThemeColor } from '../hooks/useThemeColor';
 import { Spinner } from './Spinner';
 import { ComingSoonModal } from './ComingSoonModal';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Fix for default marker icon issue with Webpack
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
+import { motion } from 'framer-motion';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -103,26 +94,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
   );
 };
 
-// MapUpdater component to dynamically update map view
-const MapUpdater: React.FC<{ originCoords: { lat: number; lng: number } | null; destinationCoords: { lat: number; lng: number } | null }> = ({ originCoords, destinationCoords }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    if (originCoords && destinationCoords) {
-      const bounds = L.latLngBounds([originCoords.lat, originCoords.lng], [destinationCoords.lat, destinationCoords.lng]);
-      map.fitBounds(bounds, { padding: [50, 50] });
-    } else if (originCoords) {
-      map.setView([originCoords.lat, originCoords.lng], 13);
-    } else if (destinationCoords) {
-      map.setView([destinationCoords.lat, destinationCoords.lng], 13);
-    }
-  }, [map, originCoords, destinationCoords]);
-
-  return null;
-};
-
 export const RequestService: React.FC = () => {
-  // This comment is added to trigger a re-build and re-evaluation of the component.
   useThemeColor('#f97316');
   const { showToast, baseFee, userRole } = useAppContext();
   const navigate = useNavigate();
@@ -135,7 +107,6 @@ export const RequestService: React.FC = () => {
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
-  const [isScheduling, setIsScheduling] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [scheduleTime, setScheduleTime] = useState<string>('');
   const [showComingSoonModal, setShowComingSoonModal] = useState(false);
@@ -143,7 +114,13 @@ export const RequestService: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  
+  const mapRef = useRef<google.maps.Map | null>(null);
 
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+  });
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -195,7 +172,7 @@ export const RequestService: React.FC = () => {
       } else {
         setOriginCoords(null);
       }
-    }, 1000); // 1-second debounce
+    }, 1500); // Increased debounce to 1.5 seconds
 
     return () => clearTimeout(handler);
   }, [origin]);
@@ -219,7 +196,7 @@ export const RequestService: React.FC = () => {
       } else {
         setDestinationCoords(null);
       }
-    }, 1000); // 1-second debounce
+    }, 1500); // Increased debounce to 1.5 seconds
 
     return () => clearTimeout(handler);
   }, [destination, showToast]);
@@ -239,6 +216,23 @@ export const RequestService: React.FC = () => {
     }
   }, [originCoords, destinationCoords, baseFee]);
 
+  // Effect to fit map bounds when coords change
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (originCoords && destinationCoords) {
+      const bounds = new window.google.maps.LatLngBounds();
+      bounds.extend(originCoords);
+      bounds.extend(destinationCoords);
+      mapRef.current.fitBounds(bounds);
+    } else if (originCoords) {
+      mapRef.current.panTo(originCoords);
+      mapRef.current.setZoom(14);
+    } else if (destinationCoords) {
+      mapRef.current.panTo(destinationCoords);
+      mapRef.current.setZoom(14);
+    }
+  }, [originCoords, destinationCoords]);
 
   // --- Handlers ---
 
@@ -260,15 +254,11 @@ export const RequestService: React.FC = () => {
       showToast('Espera a que se calcule el precio del envío.', 'error');
       return;
     }
-    // setStep('confirmation'); // Removed this line
-    setShowComingSoonModal(true); // Show modal here
+    setShowComingSoonModal(true);
   };
 
   const handleSubmit = async () => {
-    // Temporarily disable actual submission and show coming soon modal
     setShowComingSoonModal(true);
-    // Optionally, you might want to prevent further execution or clear some state here
-    // For now, just showing the modal is enough as per the request.
   };
 
   const handleScheduleSubmit = (date: Date, time: string) => {
@@ -296,6 +286,21 @@ export const RequestService: React.FC = () => {
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   // --- Render Logic ---
+
+  const mapContainerStyle = {
+    width: '100%',
+    height: '100%',
+  };
+
+  const defaultCenter = {
+    lat: 16.25, // Default to Comitán
+    lng: -92.13
+  };
+
+  const mapOptions = {
+    disableDefaultUI: true,
+    zoomControl: true,
+  };
 
   if (step === 'submitted') {
     const trackWhatsappMessage = encodeURIComponent(`Hola, quiero rastrear mi pedido con ID: ${newRequestId}`);
@@ -471,29 +476,29 @@ export const RequestService: React.FC = () => {
                     <p className="text-3xl font-bold text-gray-800">${shippingCost.toFixed(2)}</p>
                     <p className="text-sm text-gray-600">Distancia aproximada: {distance?.toFixed(2)} km</p>
                 </div>
-                  <div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md">
-                    <MapContainer
-                      center={originCoords ? [originCoords.lat, originCoords.lng] : [16.25, -92.13]}
-                      zoom={originCoords ? 13 : 13}
-                      scrollWheelZoom={false}
-                      className="h-full w-full">
-                    <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {originCoords && (
-                <Marker position={[originCoords.lat, originCoords.lng]}>
-                  <Popup>Origen: {origin}</Popup>
-                </Marker>
-              )}
-              {destinationCoords && (
-                <Marker position={[destinationCoords.lat, destinationCoords.lng]}>
-                  <Popup>Destino: {destination}</Popup>
-                </Marker>
-              )}
-              <MapUpdater originCoords={originCoords} destinationCoords={destinationCoords} />
-            </MapContainer>
-          </div>
+                  <motion.div
+                    className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {isLoaded ? (
+                      <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={defaultCenter}
+                        zoom={13}
+                        options={mapOptions}
+                        onLoad={(map) => { mapRef.current = map; }}
+                      >
+                        {originCoords && <MarkerF position={originCoords} animation={window.google.maps.Animation.DROP} />}
+                        {destinationCoords && <MarkerF position={destinationCoords} animation={window.google.maps.Animation.DROP} />}
+                      </GoogleMap>
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center bg-gray-200">
+                        <Spinner />
+                      </div>
+                    )}
+                  </motion.div>
             </>
         ) : (
             <p className="text-sm text-gray-500">Introduce una dirección de destino para calcular el costo.</p>

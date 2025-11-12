@@ -441,26 +441,33 @@ export const updateServiceRequestStatus = async (id: string, status: string): Pr
 // --- Geocoding Service ---
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
   if (!address) return null;
-  // Bounding box for Comitán de Domínguez, Chiapas, Mexico
-  // min_lon,min_lat,max_lon,max_lat
-  const comitanBoundingBox = '-92.20,16.20,-92.05,16.35';
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&viewbox=${comitanBoundingBox}&bounded=1`;
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.error("Google Maps API key is missing. Make sure it's in your .env file as VITE_GOOGLE_MAPS_API_KEY.");
+    return null;
+  }
+
+  // Bias the search towards the specific region
+  const biasedAddress = `${address}, Comitán de Domínguez, Chiapas, Mexico`;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(biasedAddress)}&key=${apiKey}`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Nominatim API returned status ${response.status}`);
+      throw new Error(`Google Geocoding API returned status ${response.status}`);
     }
     const data = await response.json();
-    if (data && data.length > 0) {
-      const { lat, lon } = data[0];
-      return { lat: parseFloat(lat), lng: parseFloat(lon) };
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      const { lat, lng } = data.results[0].geometry.location;
+      return { lat, lng };
+    } else {
+      console.warn(`Geocoding failed for address: "${address}". Status: ${data.status}`);
+      if (data.error_message) {
+        console.error(`Google API Error: ${data.error_message}`);
+      }
+      return null;
     }
-    return null;
   } catch (error) {
     console.error("Geocoding error:", error);
     return null;
