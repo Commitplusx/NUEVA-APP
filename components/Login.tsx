@@ -37,9 +37,9 @@ export const Login: React.FC = () => {
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
         if (role === 'admin') {
-          navigate('/');
+          navigate('/admin');
         } else {
-          navigate('/');
+          navigate('/restaurants');
         }
       } else {
         setError('Registro exitoso, por favor verifica tu correo electrónico para activar tu cuenta.');
@@ -70,7 +70,7 @@ export const Login: React.FC = () => {
         const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
         onLogin(data.user.email, role);
         if (role === 'admin') {
-          navigate('/restaurants');
+          navigate('/admin');
         } else {
           navigate('/restaurants');
         }
