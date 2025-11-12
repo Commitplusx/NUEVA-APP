@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, updateProfile } from '../services/api';
+import { getProfile, updateProfile, getErrorMessage } from '../services/api';
 import { Profile } from '../types';
 import { Spinner } from './Spinner';
 import { Toast } from './Toast';
@@ -53,9 +53,10 @@ interface AddressManagerModalProps {
   onSave: (addressData: Partial<Profile>) => Promise<void>;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
   isLoaded: boolean;
+  initialAddress?: Partial<Profile>;
 }
 
-const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, onSave, showToast, isLoaded }) => {
+const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, onSave, showToast, isLoaded, initialAddress }) => {
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [addressData, setAddressData] = useState<Partial<Profile>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -83,15 +84,28 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
 
       const streetNumber = getAddressComponent('street_number');
       const route = getAddressComponent('route');
+      const placeName = place.name;
+
+      let finalStreetAddress = '';
+      if (route) {
+        finalStreetAddress = `${route} ${streetNumber}`.trim();
+      } else if (placeName && !placeName.includes(getAddressComponent('locality'))) {
+        finalStreetAddress = placeName;
+      } else if (getAddressComponent('sublocality_level_1')) { // Fallback to neighborhood
+        finalStreetAddress = getAddressComponent('sublocality_level_1');
+      } else if (getAddressComponent('locality')) { // Fallback to city if neighborhood is not available
+        finalStreetAddress = getAddressComponent('locality');
+      }
 
       const newAddress: Partial<Profile> = {
-        street_address: `${route} ${streetNumber}`.trim(),
+        street_address: finalStreetAddress,
         neighborhood: getAddressComponent('sublocality_level_1') || getAddressComponent('locality'),
         city: getAddressComponent('locality') || getAddressComponent('administrative_area_level_2'),
         postal_code: getAddressComponent('postal_code'),
         lat: place.geometry.location?.lat(),
         lng: place.geometry.location?.lng(),
       };
+      console.log("New address from Autocomplete:", newAddress);
       setAddressData(newAddress);
     } else {
       console.error('Autocomplete is not loaded yet!');
@@ -117,13 +131,15 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
   };
   
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen && initialAddress) {
+      setAddressData(initialAddress);
+    } else if (!isOpen) {
       setAddressData({});
       if (searchInputRef.current) {
         searchInputRef.current.value = '';
       }
     }
-  }, [isOpen]);
+  }, [isOpen, initialAddress]);
 
   const inputClass = "w-full py-3 px-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none text-gray-600 cursor-not-allowed";
 
@@ -154,7 +170,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
                 onPlaceChanged={onPlaceChanged}
                 options={{
                   bounds: comitanBounds,
-                  strictBounds: false,
+                  strictBounds: true,
                   componentRestrictions: { country: 'mx' }, // Restrict to Mexico
                   fields: ['address_components', 'geometry'],
                 }}
@@ -177,11 +193,11 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
                 animate={{ opacity: 1 }}
               >
                 <h3 className="font-semibold text-gray-700">Verifica tu dirección:</h3>
-                <input type="text" value={`Calle: ${addressData.street_address}`} readOnly className={inputClass} />
-                <input type="text" value={`Barrio/Colonia: ${addressData.neighborhood}`} readOnly className={inputClass} />
+                <input type="text" value={addressData.street_address || ''} onChange={(e) => setAddressData(prev => ({ ...prev, street_address: e.target.value }))} className={inputClass.replace('cursor-not-allowed', '')} />
+                <input type="text" value={addressData.neighborhood || ''} onChange={(e) => setAddressData(prev => ({ ...prev, neighborhood: e.target.value }))} className={inputClass.replace('cursor-not-allowed', '')} />
                 <div className="flex gap-4">
-                  <input type="text" value={`Ciudad: ${addressData.city}`} readOnly className={inputClass} />
-                  <input type="text" value={`C.P.: ${addressData.postal_code}`} readOnly className={inputClass} />
+                  <input type="text" value={addressData.city || ''} onChange={(e) => setAddressData(prev => ({ ...prev, city: e.target.value }))} className={inputClass.replace('cursor-not-allowed', '')} />
+                  <input type="text" value={addressData.postal_code || ''} onChange={(e) => setAddressData(prev => ({ ...prev, postal_code: e.target.value }))} className={inputClass.replace('cursor-not-allowed', '')} />
                 </div>
               </motion.div>
             )}
@@ -204,18 +220,12 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
 
 export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, handleLogout, showToast } = useAppContext();
+  const { user, handleLogout, showToast, isMapsLoaded, loadError } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-places-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries: ['places'],
-  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -255,8 +265,8 @@ export const UserProfile: React.FC = () => {
       const updatedProfile = { ...profile, ...addressData };
       await updateProfile(updatedProfile);
       setProfile(updatedProfile);
-    } catch (error) {
-      showToast('Error al guardar la dirección.', 'error');
+    } catch (error: any) {
+      showToast(`Error al guardar la dirección: ${getErrorMessage(error)}`, 'error');
       console.error(error);
       throw error;
     }
@@ -401,7 +411,8 @@ export const UserProfile: React.FC = () => {
         onClose={() => setShowAddressModal(false)}
         onSave={handleSaveAddress}
         showToast={showToast}
-        isLoaded={isLoaded}
+        isLoaded={isMapsLoaded}
+        initialAddress={profile || undefined}
       />
     </div>
   );

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon } from './icons';
+import { geocodeAddress } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderUserDetails } from '../types';
@@ -56,16 +57,40 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
   );
 };
 
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+};
+
+const CENTRAL_POINT = {
+  lat: 16.25, // Default to Comitán
+  lng: -92.13
+};
+
+const PRICE_PER_KM = 10; // $10 per km
+
 export const Cart: React.FC = () => {
   useThemeColor('#f97316');
   const {
     cart: cartItems,
     handleUpdateCart,
     handleConfirmOrder,
-    baseFee
+    baseFee,
+    user,
+    profile
   } = useAppContext();
   const navigate = useNavigate();
   const [step, setStep] = useState<CartStep>('cart');
+  const [userAddressCoords, setUserAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
+  const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number>(0);
 
   // State for user details form
   const [userDetails, setUserDetails] = useState<OrderUserDetails>({
@@ -77,6 +102,57 @@ export const Cart: React.FC = () => {
   });
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
 
+  useEffect(() => {
+    console.log("Cart useEffect: user changed", user);
+    console.log("Cart useEffect: profile changed", profile);
+    if (user && profile) {
+      setUserDetails(prev => {
+        const newDetails = {
+          ...prev,
+          name: profile.full_name || prev.name,
+          address: profile.street_address || prev.address,
+          neighborhood: profile.neighborhood || prev.neighborhood,
+          postalCode: profile.postal_code || prev.postalCode,
+          phone: profile.phone || prev.phone,
+        };
+        console.log("Cart useEffect: Setting userDetails to", newDetails);
+        return newDetails;
+      });
+    } else {
+      console.log("Cart useEffect: User or profile not available.");
+    }
+  }, [user, profile]);
+
+  useEffect(() => {
+    const calculateDelivery = async () => {
+      if (userDetails.address) {
+        try {
+          const coords = await geocodeAddress(userDetails.address);
+          if (coords) {
+            setUserAddressCoords(coords);
+            const dist = haversineDistance(CENTRAL_POINT.lat, CENTRAL_POINT.lng, coords.lat, coords.lng);
+            setCalculatedDistance(dist);
+            setCalculatedDeliveryFee(dist * PRICE_PER_KM);
+          } else {
+            setUserAddressCoords(null);
+            setCalculatedDistance(null);
+            setCalculatedDeliveryFee(0);
+          }
+        } catch (error) {
+          console.error("Error geocoding address or calculating distance:", error);
+          setUserAddressCoords(null);
+          setCalculatedDistance(null);
+          setCalculatedDeliveryFee(0);
+        }
+      } else {
+        setUserAddressCoords(null);
+        setCalculatedDistance(null);
+        setCalculatedDeliveryFee(0);
+      }
+    };
+    calculateDelivery();
+  }, [userDetails.address]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserDetails(prev => ({ ...prev, [name]: value }));
@@ -84,7 +160,7 @@ export const Cart: React.FC = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const restaurant = cartItems.length > 0 ? cartItems[0].restaurant : null;
-  const deliveryFee = restaurant ? Math.max(restaurant.deliveryFee, baseFee) : 0;
+  const deliveryFee = calculatedDeliveryFee;
   const total = subtotal + deliveryFee;
 
   const canProceedToDetails = cartItems.length > 0;
@@ -100,7 +176,7 @@ export const Cart: React.FC = () => {
       return;
     }
     try {
-      await handleConfirmOrder(userDetails);
+      await handleConfirmOrder(userDetails, deliveryFee);
       setStep('success'); // Set to success step after successful order
     } catch (error) {
       console.error('Order confirmation failed:', error);
@@ -144,6 +220,11 @@ export const Cart: React.FC = () => {
           <span className="text-gray-600">Envío</span>
           <span className="font-semibold">${deliveryFee.toFixed(2)}</span>
         </div>
+        {calculatedDistance !== null && (
+          <p className="text-xs text-gray-500 text-right mt-1">
+            ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
+          </p>
+        )}
         <hr className="my-3" />
         <div className="flex justify-between items-center font-bold text-xl">
           <span>Total</span>
@@ -193,6 +274,12 @@ export const Cart: React.FC = () => {
               <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
           </div>
       </div>
+      {calculatedDistance !== null && (
+        <div className="bg-blue-50 p-3 rounded-lg text-blue-800 text-sm font-medium flex items-center gap-2">
+          <InfoIcon className="w-5 h-5" />
+          <span>Distancia estimada: {calculatedDistance.toFixed(2)} km. Costo de envío: ${calculatedDeliveryFee.toFixed(2)}</span>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4 pt-4">
         <button onClick={() => setStep('cart')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
         <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-orange-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Revisar Pedido</button>
@@ -203,10 +290,19 @@ export const Cart: React.FC = () => {
   const renderConfirmationStep = () => (
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-4">
             <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
-            <div className="text-sm">
-                <p><strong>Nombre:</strong> {userDetails.name}</p>
-                <p><strong>Dirección:</strong> {userDetails.address}, {userDetails.neighborhood}, {userDetails.postalCode}</p>
-                <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+            <div className="space-y-2 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
+                    <UserCircleIcon className="w-5 h-5 text-orange-500" />
+                    <p><strong>Nombre:</strong> {userDetails.name}</p>
+                </div>
+                <div className="flex items-start gap-2">
+                    <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
+                    <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <MailIcon className="w-5 h-5 text-orange-500" />
+                    <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+                </div>
             </div>
             <hr/>
             <div className="space-y-3">
@@ -231,6 +327,11 @@ export const Cart: React.FC = () => {
             <div>
                 <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
                 <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
+                {calculatedDistance !== null && (
+                  <p className="text-xs text-gray-500 text-right mt-1">
+                    ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
+                  </p>
+                )}
                 <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4">

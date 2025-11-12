@@ -24,8 +24,14 @@ export const getProfile = async (): Promise<Profile> => {
     return {
       user_id: user.id,
       full_name: '',
-      address: '',
+      street_address: '',
+      neighborhood: '',
+      city: '',
+      postal_code: '',
+      lat: null,
+      lng: null,
       avatar: '',
+      phone: '',
     };
   }
 
@@ -111,7 +117,7 @@ export const getServices = async (): Promise<Service[]> => {
  * @param {OrderUserDetails} userDetails - The user's details for the order.
  * @returns {Promise<Order>} - A promise that resolves with the newly created order.
  */
-export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails): Promise<Order> => {
+export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails, deliveryFee: number): Promise<Order> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -119,7 +125,8 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     throw new Error("Phone number and cart items are required.");
   }
 
-  const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const subtotalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const totalAmount = subtotalAmount + deliveryFee;
   const restaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
 
   // 1. Create the order
@@ -131,6 +138,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
       customer_phone: userDetails.phone,
       delivery_address: `${userDetails.address}, ${userDetails.neighborhood}, ${userDetails.postalCode}`,
       total_amount: totalAmount,
+      delivery_fee: deliveryFee,
       restaurant_id: restaurantId,
       status: 'pending',
     })
@@ -138,7 +146,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     .single();
 
   if (orderError) {
-    console.error('Error creating order:', orderError);
+    console.error('Error creating order in Supabase:', orderError);
     throw orderError;
   }
 
@@ -158,7 +166,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     .insert(orderItems);
 
   if (itemsError) {
-    console.error('Error creating order items:', itemsError);
+    console.error('Error creating order items in Supabase:', itemsError);
     // Optionally, you might want to delete the order here if items fail to be created
     await supabase.from('orders').delete().eq('id', order.id);
     throw itemsError;

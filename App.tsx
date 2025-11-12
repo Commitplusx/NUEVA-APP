@@ -31,6 +31,7 @@ const ManageCategories = lazy(() => import('./components/admin/ManageCategories'
 const ManageTariffs = lazy(() => import('./components/admin/ManageTariffs').then(module => ({ default: module.ManageTariffs })));
 const ManageServiceRequests = lazy(() => import('./components/admin/ManageServiceRequests').then(module => ({ default: module.ManageServiceRequests })));
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
+const VerifyCode = lazy(() => import('./components/VerifyCode').then(module => ({ default: module.VerifyCode })));
 
 /**
  * @component PageTransitionWrapper
@@ -142,6 +143,7 @@ const App: React.FC = () => {
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
               <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
+              <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id/menu/:itemId" element={<PageTransitionWrapper><MenuItemPage /></PageTransitionWrapper>} />

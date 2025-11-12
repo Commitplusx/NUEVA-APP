@@ -9,7 +9,7 @@ import { Spinner } from './Spinner';
 import { ComingSoonModal } from './ComingSoonModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -96,7 +96,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
 
 export const RequestService: React.FC = () => {
   useThemeColor('#f97316');
-  const { showToast, baseFee, userRole } = useAppContext();
+  const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError } = useAppContext();
   const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<Step>('details');
@@ -117,10 +117,7 @@ export const RequestService: React.FC = () => {
   
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
-  });
+
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);

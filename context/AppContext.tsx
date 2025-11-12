@@ -7,11 +7,15 @@
  */
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useJsApiLoader } from '@react-google-maps/api';
 import { supabase } from '../services/supabase';
 import { confirmarPedido, getTariffs, getProfile } from '../services/api';
-import { Restaurant, MenuItem, CartItem, Ingredient, UserRole, Tariff, OrderUserDetails } from '../types';
+import { Restaurant, MenuItem, CartItem, Ingredient, UserRole, Tariff, OrderUserDetails, Profile } from '../types';
 import { Toast, ToastType } from '../components/Toast';
 import { User } from '@supabase/supabase-js';
+
+const libraries: ('places' | 'maps')[] = ['places', 'maps'];
+
 
 /**
  * @interface AppContextType
@@ -30,6 +34,8 @@ interface AppContextType {
   isCartAnimating: boolean;
   profile: Profile | null;
   baseFee: number;
+  isMapsLoaded: boolean;
+  loadError?: Error;
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
   toggleSidebar: () => void;
@@ -43,7 +49,7 @@ interface AppContextType {
   handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => void;
   handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
   handleRemoveFromCart: (cartItemId: string) => void;
-  handleConfirmOrder: (userDetails: OrderUserDetails) => Promise<void>;
+  handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
   setIsCustomizationModalOpen: (isOpen: boolean) => void;
 }
 
@@ -73,6 +79,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isCartAnimating, setIsCartAnimating] = useState(false);
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
   const [baseFee, setBaseFee] = useState(45); // Default value in case fetch fails
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
 
   useEffect(() => {
     const fetchBaseFee = async () => {
@@ -91,6 +104,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     fetchBaseFee();
   }, []);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const userProfile = await getProfile();
+          setProfile(userProfile);
+        } catch (error) {
+          console.error("Error fetching user profile in AppContext:", error);
+          setProfile(null);
+        }
+      } else {
+        setProfile(null);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   /**
    * @function useEffect
@@ -266,10 +297,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
    * Muestra un Toast de éxito o error.
    * @param {string} phoneNumber - El número de teléfono del usuario para la confirmación.
    */
-  const handleConfirmOrder = async (userDetails: OrderUserDetails) => {
+  const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
     try {
-      await confirmarPedido(cart, userDetails);
+      await confirmarPedido(cart, userDetails, deliveryFee);
       showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
+      console.log("Clearing cart after successful order.");
       setCart([]); // Vaciar el carrito después de confirmar el pedido
     } catch (error) {
       console.error("Order confirmation failed:", error);
@@ -282,7 +314,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Objeto de valor que se proporcionará a los consumidores del contexto
   const value = {
-    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, isCustomizationModalOpen, baseFee,
+    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
     toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen
   };
 

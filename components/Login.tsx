@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../services/supabase';
+import { updateProfile } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { UserIcon, LockIcon, MailIcon } from './icons'; // Import MailIcon
 
@@ -9,6 +10,8 @@ export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -26,23 +29,21 @@ export const Login: React.FC = () => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: email,
         password: password,
       });
 
-      if (error) {
-        setError(error.message);
+      if (signUpError) {
+        setError(signUpError.message);
       } else if (data.user) {
-        const role = data.user.email.endsWith('@admin.com') ? 'admin' : 'user';
-        onLogin(data.user.email, role);
-        if (role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/restaurants');
-        }
-      } else {
-        setError('Registro exitoso, por favor verifica tu correo electrónico para activar tu cuenta.');
+        // Update the user's profile with full name and phone number
+        await updateProfile({
+          user_id: data.user.id,
+          full_name: fullName,
+          phone: phone,
+        });
+        navigate(`/verify-code?email=${email}`);
       }
     } catch (error) {
       setError('Ocurrió un error inesperado al registrarse.');
@@ -109,6 +110,30 @@ export const Login: React.FC = () => {
           >{error}</motion.p>}
 
           <div className="space-y-4">
+            {isRegistering && (
+              <>
+                <div className="relative">
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Nombre Completo"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="relative">
+                  <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    placeholder="Número de Teléfono"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+              </>
+            )}
             <div className="relative">
               <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
