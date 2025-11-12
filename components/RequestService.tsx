@@ -152,22 +152,26 @@ export const RequestService: React.FC = () => {
 
   // Fetch user profile on mount
   useEffect(() => {
+    const formatAddress = (p: Profile | null): string => {
+        if (!p) return '';
+        const parts = [p.street_address, p.neighborhood, p.city, p.postal_code].filter(Boolean);
+        if (parts.length === 0) return '';
+        return parts.join(', ');
+    };
+
     const fetchProfile = async () => {
       try {
         const profile = await getProfile();
         if (profile) {
           setUserProfile(profile);
-          console.log('Fetched profile in RequestService:', profile); // Debug log
-          if (profile.address && profile.lat && profile.lng) {
-            setOrigin(profile.address);
+          const formattedAddress = formatAddress(profile);
+          if (formattedAddress && profile.lat && profile.lng) {
+            setOrigin(formattedAddress);
             setOriginCoords({ lat: profile.lat, lng: profile.lng });
-            console.log('Origin set from profile:', profile.address, profile.lat, profile.lng); // Debug log
           } else {
-            console.log('Profile found but address/coords missing:', profile); // Debug log
             showToast('No tienes una dirección de origen guardada. Ve a tu perfil para añadir una.', 'info');
           }
         } else {
-            console.log('No profile found for user.'); // Debug log
             showToast('Ve a tu perfil para configurar tu dirección de origen por defecto.', 'info');
         }
       } catch (error) {
@@ -175,50 +179,65 @@ export const RequestService: React.FC = () => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [showToast]);
 
-  // Debounced distance and price calculation
-  const calculateDistanceAndPrice = useCallback(async (originProfile: Profile, destAddress: string) => {
-    if (!originProfile.lat || !originProfile.lng || !destAddress) {
-      setDistance(null);
-      setShippingCost(null);
-      setDestinationCoords(null);
-      return;
-    }
-    
-    setIsCalculating(true);
-    try {
-      const destCoords = await geocodeAddress(destAddress);
-      if (destCoords) {
-        setDestinationCoords(destCoords);
-        const dist = haversineDistance(originProfile.lat, originProfile.lng, destCoords.lat, destCoords.lng);
-        const cost = baseFee + dist * PRICE_PER_KM;
-        setDistance(dist);
-        setShippingCost(cost);
-      } else {
-        setDistance(null);
-        setShippingCost(null);
-        setDestinationCoords(null);
-        showToast('No se pudo encontrar la dirección de destino.', 'error');
-      }
-    } catch (error) {
-      showToast('Error al calcular la distancia.', 'error');
-    } finally {
-      setIsCalculating(false);
-    }
-  }, [showToast, baseFee]);
-
+  // Debounced geocoding for origin
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (destination && userProfile) {
-        calculateDistanceAndPrice(userProfile, destination);
+    const handler = setTimeout(async () => {
+      if (origin) {
+        try {
+          const coords = await geocodeAddress(origin);
+          setOriginCoords(coords);
+        } catch (error) {
+          console.error("Error geocoding origin:", error);
+          setOriginCoords(null);
+        }
+      } else {
+        setOriginCoords(null);
       }
     }, 1000); // 1-second debounce
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [destination, userProfile, calculateDistanceAndPrice]);
+    return () => clearTimeout(handler);
+  }, [origin]);
+
+  // Debounced geocoding for destination
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (destination) {
+        try {
+          const coords = await geocodeAddress(destination);
+          if (coords) {
+            setDestinationCoords(coords);
+          } else {
+            setDestinationCoords(null);
+            showToast('No se pudo encontrar la dirección de destino.', 'error');
+          }
+        } catch (error) {
+          console.error("Error geocoding destination:", error);
+          setDestinationCoords(null);
+        }
+      } else {
+        setDestinationCoords(null);
+      }
+    }, 1000); // 1-second debounce
+
+    return () => clearTimeout(handler);
+  }, [destination, showToast]);
+
+  // Calculate distance and price whenever coordinates change
+  useEffect(() => {
+    if (originCoords && destinationCoords) {
+      setIsCalculating(true);
+      const dist = haversineDistance(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng);
+      const cost = baseFee + dist * PRICE_PER_KM;
+      setDistance(dist);
+      setShippingCost(cost);
+      setIsCalculating(false);
+    } else {
+      setDistance(null);
+      setShippingCost(null);
+    }
+  }, [originCoords, destinationCoords, baseFee]);
 
 
   // --- Handlers ---
@@ -397,19 +416,21 @@ export const RequestService: React.FC = () => {
             <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
             <div className="relative flex items-center">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-green-500" />
-                                <input
-                                  id="origin"
-                                  type="text"
-                                  value={origin}
-                                  onChange={(e) => setOrigin(e.target.value)}
-                                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                                />            </div>
-            {!userProfile?.address && (
+                <input
+                  id="origin"
+                  type="text"
+                  value={origin}
+                  onChange={(e) => setOrigin(e.target.value)}
+                  placeholder="Dirección de origen"
+                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+            </div>
+            {!userProfile?.street_address && (
               <button
                 onClick={handleProfileLinkClick}
                 className="text-xs font-medium underline text-red-600 hover:text-red-700 ml-1 mt-1"
               >
-                  No tienes una dirección de origen. Configura tu perfil aquí.
+                  No tienes una dirección guardada. Ve a tu perfil para añadir una.
               </button>
             )}
         </div>

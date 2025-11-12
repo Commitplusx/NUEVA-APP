@@ -6,7 +6,7 @@ import { useAdminTariffs } from '../../hooks/useAdminTariffs';
 import { useMenuItems } from '../../hooks/useMenuItems'; // Import the new hook
 import { useServiceRequests } from '../../hooks/useServiceRequests';
 import { Spinner } from '../Spinner';
-import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon, DocumentTextIcon } from '../icons'; // Import UtensilsIcon
+import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon, DocumentTextIcon, ArrowRightIcon } from '../icons'; // Import UtensilsIcon
 
 interface StatCardProps {
   title: string;

@@ -163,43 +163,59 @@ export interface ServiceRequest {
 
     
 
-    export interface Profile {
+        export interface Profile {
 
     
 
-      user_id: string;
+          user_id: string;
 
     
 
-      full_name?: string;
+          full_name?: string;
 
     
 
-      address?: string;
+          street_address?: string;
 
     
 
-      lat?: number;
+          neighborhood?: string;
 
     
 
-      lng?: number;
+          city?: string;
 
     
 
-      avatar?: string;
+          postal_code?: string;
 
     
 
-      email?: string; // Added email field
+          address_details?: string;
 
     
 
-      phone?: string;
+          lat?: number;
 
     
 
-    }
+          lng?: number;
+
+    
+
+          avatar?: string;
+
+    
+
+          email?: string; // Added email field
+
+    
+
+          phone?: string;
+
+    
+
+        }
 
     
 

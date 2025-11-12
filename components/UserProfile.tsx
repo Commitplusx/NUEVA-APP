@@ -49,34 +49,60 @@ const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, iconColor, ic
 interface AddressManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentAddress: string | undefined;
-  onSave: (address: string, lat: number, lng: number) => Promise<void>;
+  currentProfile: Profile | null;
+  onSave: (addressData: Partial<Profile>) => Promise<void>;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
-const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, currentAddress, onSave, showToast }) => {
-  const [addressInput, setAddressInput] = useState(currentAddress || '');
+const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClose, currentProfile, onSave, showToast }) => {
+  const [address, setAddress] = useState({
+    street_address: '',
+    neighborhood: '',
+    city: '',
+    postal_code: '',
+    address_details: '',
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setAddressInput(currentAddress || '');
-  }, [currentAddress]);
+    if (currentProfile) {
+      setAddress({
+        street_address: currentProfile.street_address || '',
+        neighborhood: currentProfile.neighborhood || '',
+        city: currentProfile.city || '',
+        postal_code: currentProfile.postal_code || '',
+        address_details: currentProfile.address_details || '',
+      });
+    }
+  }, [currentProfile, isOpen]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setAddress(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSaveAddress = async () => {
-    if (!addressInput.trim()) {
-      showToast('Por favor, introduce una dirección.', 'error');
+    if (!address.street_address.trim() || !address.city.trim()) {
+      showToast('La calle y la ciudad son campos obligatorios.', 'error');
       return;
     }
     setIsSaving(true);
     try {
-      const coords = await geocodeAddress(addressInput);
+      const fullAddress = `${address.street_address}, ${address.neighborhood}, ${address.city}, ${address.postal_code}`;
+      const coords = await geocodeAddress(fullAddress);
+      
+      const addressData: Partial<Profile> = { ...address };
       if (coords) {
-        await onSave(addressInput, coords.lat, coords.lng);
-        showToast('Dirección guardada con éxito.', 'success');
-        onClose();
+        addressData.lat = coords.lat;
+        addressData.lng = coords.lng;
       } else {
-        showToast('No se pudo encontrar la dirección. Intenta con una más específica.', 'error');
+        showToast('No se pudieron obtener las coordenadas para la dirección. Se guardará sin mapa.', 'info');
       }
+
+      await onSave(addressData);
+      showToast('Dirección guardada con éxito.', 'success');
+      onClose();
+
     } catch (error) {
       showToast('Error al guardar la dirección.', 'error');
       console.error(error);
@@ -84,6 +110,8 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
       setIsSaving(false);
     }
   };
+
+  const inputClass = "w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800";
 
   return (
     <AnimatePresence>
@@ -93,38 +121,31 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={onClose} // Close modal when clicking outside
+          onClick={onClose}
         >
           <motion.div
-            initial={{ y: "-100vh", opacity: 0 }}
+            initial={{ y: "-50px", opacity: 0 }}
             animate={{ y: "0", opacity: 1 }}
-            exit={{ y: "100vh", opacity: 0 }}
+            exit={{ y: "50px", opacity: 0 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full relative"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Gestionar Dirección</h2>
-            <input
-              type="text"
-              value={addressInput}
-              onChange={(e) => setAddressInput(e.target.value)}
-              className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-800"
-              placeholder="Introduce tu dirección"
-              disabled={isSaving}
-            />
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={onClose}
-                className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
-                disabled={isSaving}
-              >
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">Gestionar Dirección</h2>
+            <div className="space-y-4">
+              <input type="text" name="street_address" value={address.street_address} onChange={handleChange} className={inputClass} placeholder="Calle y Número" disabled={isSaving} />
+              <input type="text" name="neighborhood" value={address.neighborhood} onChange={handleChange} className={inputClass} placeholder="Barrio / Colonia" disabled={isSaving} />
+              <div className="flex gap-4">
+                <input type="text" name="city" value={address.city} onChange={handleChange} className={inputClass} placeholder="Ciudad" disabled={isSaving} />
+                <input type="text" name="postal_code" value={address.postal_code} onChange={handleChange} className={inputClass} placeholder="Cód. Postal" disabled={isSaving} />
+              </div>
+              <input type="text" name="address_details" value={address.address_details} onChange={handleChange} className={inputClass} placeholder="Detalles (piso, depto, referencias)" disabled={isSaving} />
+            </div>
+            <div className="mt-8 flex justify-end space-x-3">
+              <button onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors" disabled={isSaving}>
                 Cancelar
               </button>
-              <button
-                onClick={handleSaveAddress}
-                className="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition-colors"
-                disabled={isSaving}
-              >
+              <button onClick={handleSaveAddress} className="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-bold transition-colors" disabled={isSaving}>
                 {isSaving ? 'Guardando...' : 'Guardar Dirección'}
               </button>
             </div>
@@ -178,13 +199,13 @@ export const UserProfile: React.FC = () => {
     }
   };
 
-  const handleSaveAddress = async (address: string, lat: number, lng: number) => {
+  const handleSaveAddress = async (addressData: Partial<Profile>) => {
     if (!profile) return;
     try {
-      const updatedProfile = { ...profile, address, lat, lng };
+      const updatedProfile = { ...profile, ...addressData };
       await updateProfile(updatedProfile);
       setProfile(updatedProfile);
-      showToast('Dirección guardada con éxito.', 'success');
+      // Toast is shown by the modal now
     } catch (error) {
       showToast('Error al guardar la dirección.', 'error');
       console.error(error);
@@ -203,6 +224,13 @@ export const UserProfile: React.FC = () => {
     } catch (err) {
       setToast({ message: 'Error al cerrar sesión', type: 'error' });
     }
+  };
+
+  const formatAddress = (p: Profile | null): string => {
+    if (!p) return 'No hay dirección guardada.';
+    const parts = [p.street_address, p.neighborhood, p.city, p.postal_code].filter(Boolean);
+    if (parts.length === 0) return 'No hay dirección guardada.';
+    return parts.join(', ');
   };
 
   if (loading) {
@@ -259,7 +287,7 @@ export const UserProfile: React.FC = () => {
             />
           </h2>
           <p className="text-gray-400 text-sm mt-1">
-            {profile?.address || 'No hay dirección guardada.'}
+            {formatAddress(profile)}
           </p>
           <div className="mt-2 relative flex items-center">
             <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
@@ -322,7 +350,7 @@ export const UserProfile: React.FC = () => {
       <AddressManagerModal
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
-        currentAddress={profile?.address}
+        currentProfile={profile}
         onSave={handleSaveAddress}
         showToast={showToast}
       />

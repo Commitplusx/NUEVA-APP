@@ -104,22 +104,43 @@ const RestaurantForm: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">{restaurant ? 'Editar' : 'Agregar'} Restaurante</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <input type="text" placeholder="Nombre" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <input type="text" placeholder="Categorías (separadas por coma)" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
-            {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            
+            <div className="md:col-span-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Restaurante</label>
+              <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categorías</label>
+              <input type="text" id="category" placeholder="pizzas, italiana, rápido" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              <p className="text-xs text-gray-500 mt-1">Separar con comas.</p>
+            </div>
+
+            <div>
+              <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700 mb-1">Costo de Envío</label>
+              <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="Ej: 2.50" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            </div>
+
+            <div>
+              <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700 mb-1">Tiempo de Entrega (min)</label>
+              <input type="number" id="deliveryTime" min="0" placeholder="Ej: 30" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            </div>
+
+            <div className="md:col-span-2 mt-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
+              <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
+              {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
+            </div>
           </div>
-          <input type="text" placeholder="Costo de Envío" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <input type="text" placeholder="Tiempo de Entrega" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 h-12 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-          <div className="flex justify-end space-x-4 pt-4">
+
+          <div className="flex justify-end space-x-4 pt-8">
             <button type="button" onClick={onCancel} className="px-6 py-2 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSaving} className="px-6 py-2 text-white font-semibold bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-400">
+            <button type="submit" disabled={isSaving} className="px-6 py-2 text-white font-semibold bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
               {isSaving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
