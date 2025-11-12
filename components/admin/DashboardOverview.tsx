@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
 import { useAdminTariffs } from '../../hooks/useAdminTariffs';
@@ -53,7 +54,7 @@ export const DashboardOverview: React.FC = () => {
     {
       title: 'Total Solicitudes',
       value: requests.length,
-      icon: <ClipboardDocumentListIcon />,
+      icon: <DocumentTextIcon />,
       loading: requestsLoading,
       to: 'requests',
       iconBgClass: 'bg-yellow-100',

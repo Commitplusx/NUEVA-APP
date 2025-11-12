@@ -19,7 +19,7 @@ const RestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }
       whileHover={{ scale: 1.03, y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
-      <div className="relative w-full h-40 bg-gray-200">
+      <div className="relative w-full bg-gray-200" style={{ aspectRatio: '16 / 9' }}>
         {optimizedImageUrl ? (
           <img src={optimizedImageUrl} alt={restaurant.name} className="w-full h-full object-cover" />
         ) : (
