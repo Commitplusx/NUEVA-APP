@@ -69,11 +69,6 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c; // Distance in km
 };
 
-const CENTRAL_POINT = {
-  lat: 16.25, // Default to Comitán
-  lng: -92.13
-};
-
 const PRICE_PER_KM = 10; // $10 per km
 
 export const Cart: React.FC = () => {
@@ -103,64 +98,49 @@ export const Cart: React.FC = () => {
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
-    console.log("DEBUG: Profile or user updated.", { user, profile });
     if (user && profile) {
-      setUserDetails(prev => {
-        const newDetails = {
-          ...prev,
-          name: profile.full_name || prev.name,
-          address: profile.street_address || prev.address,
-          neighborhood: profile.neighborhood || prev.neighborhood,
-          postalCode: profile.postal_code || prev.postalCode,
-          phone: profile.phone || prev.phone,
-        };
-        console.log("DEBUG: Setting userDetails from profile.", newDetails);
-        return newDetails;
-      });
-    } else {
-      console.log("DEBUG: User or profile not available on load.");
+      setUserDetails(prev => ({
+        ...prev,
+        name: profile.full_name || prev.name,
+        address: profile.street_address || prev.address,
+        neighborhood: profile.neighborhood || prev.neighborhood,
+        postalCode: profile.postal_code || prev.postalCode,
+        phone: profile.phone || prev.phone,
+      }));
     }
   }, [user, profile]);
 
   // Debounced geocoding for user address
   useEffect(() => {
-    console.log("DEBUG: Geocoding effect triggered. Address:", userDetails.address);
     if (!userDetails.address) {
-      console.log("DEBUG: No address, setting coords to null.");
       setUserAddressCoords(null);
       return;
     }
-
     const handler = setTimeout(async () => {
-      console.log(`DEBUG: Debounce triggered. Geocoding "${userDetails.address}"...`);
       try {
         const coords = await geocodeAddress(userDetails.address);
-        console.log("DEBUG: Geocoding result:", coords);
         setUserAddressCoords(coords);
       } catch (error) {
-        console.error("DEBUG: Error geocoding address:", error);
+        console.error("Error geocoding address:", error);
         setUserAddressCoords(null);
       }
-    }, 1000); // 1-second debounce
-
+    }, 1000);
     return () => clearTimeout(handler);
   }, [userDetails.address]);
 
   // Calculate distance and price whenever coordinates change
   useEffect(() => {
-    console.log("DEBUG: Calculation effect triggered. Coords:", userAddressCoords);
-    if (userAddressCoords) {
-      const dist = haversineDistance(CENTRAL_POINT.lat, CENTRAL_POINT.lng, userAddressCoords.lat, userAddressCoords.lng);
+    const restaurant = cartItems[0]?.restaurant;
+    if (userAddressCoords && restaurant?.lat && restaurant?.lng) {
+      const dist = haversineDistance(restaurant.lat, restaurant.lng, userAddressCoords.lat, userAddressCoords.lng);
       const fee = dist * PRICE_PER_KM;
-      console.log(`DEBUG: Calculation successful. Distance: ${dist.toFixed(2)}km, Fee: $${fee.toFixed(2)}`);
       setCalculatedDistance(dist);
       setCalculatedDeliveryFee(fee);
     } else {
-      console.log("DEBUG: No coords, setting fee to 0.");
       setCalculatedDistance(null);
       setCalculatedDeliveryFee(0);
     }
-  }, [userAddressCoords]);
+  }, [userAddressCoords, cartItems]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -209,8 +189,8 @@ export const Cart: React.FC = () => {
       <div className="space-y-4 mb-6">
         {cartItems.map(item => (
           <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            {item.product.imageUrl ? (
-              <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
+            {(item.product as any).image_url ? (
+              <img src={(item.product as any).image_url} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
             ) : (
               <div className="w-20 h-20 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-2">
                 No Image
@@ -330,9 +310,22 @@ export const Cart: React.FC = () => {
     </div>
   );
 
-  const renderConfirmationStep = () => (
+  const renderConfirmationStep = () => {
+    const restaurant = cartItems.length > 0 ? cartItems[0].restaurant : null;
+    return (
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-4">
             <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
+            
+            {restaurant && (
+              <div className="my-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border">
+                  <img src={(restaurant as any).image_url || restaurant.imageUrl} alt={restaurant.name} className="w-12 h-12 rounded-full object-cover" />
+                  <div>
+                      <p className="text-sm text-gray-500">Tu pedido de:</p>
+                      <h4 className="font-bold text-md text-gray-800">{restaurant.name}</h4>
+                  </div>
+              </div>
+            )}
+
             <div className="space-y-2 text-sm text-gray-700">
                 <div className="flex items-center gap-2">
                     <UserCircleIcon className="w-5 h-5 text-orange-500" />
@@ -351,8 +344,8 @@ export const Cart: React.FC = () => {
             <div className="space-y-3">
                 {cartItems.map(item => (
                     <div key={item.id} className="flex items-center gap-3">
-                        {item.product.imageUrl ? (
-                            <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
+                        {(item.product as any).image_url ? (
+                            <img src={(item.product as any).image_url} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
                         ) : (
                             <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
                                 No Image
@@ -382,7 +375,7 @@ export const Cart: React.FC = () => {
                 <button onClick={handleFinalOrderConfirmation} disabled={true} className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Confirmar Pedido</button>
             </div>
         </div>
-  );
+  )};
 
   const renderSuccessStep = () => (
     <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center">

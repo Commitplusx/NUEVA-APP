@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useCategories } from '../../hooks/useCategories';
-import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage } from '../../services/api';
+import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage, geocodeAddress } from '../../services/api';
 import { Restaurant, Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
@@ -15,13 +15,23 @@ const RestaurantForm: React.FC<{
   onCancel: () => void;
 }> = ({ restaurant, allCategories, onSave, onCancel }) => {
   const { showToast } = useAppContext();
+  // Restaurant Info
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
+  
+  // Image State
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [deliveryFee, setDeliveryFee] = useState('');
-  const [deliveryTime, setDeliveryTime] = useState('');
+
+  // Address State
+  const [streetAddress, setStreetAddress] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -32,7 +42,12 @@ const RestaurantForm: React.FC<{
       setImagePreview(restaurant.image_url);
       setDeliveryFee(String(restaurant.delivery_fee));
       setDeliveryTime(String(restaurant.delivery_time));
+      setStreetAddress(restaurant.street_address || '');
+      setNeighborhood(restaurant.neighborhood || '');
+      setCity(restaurant.city || '');
+      setPostalCode(restaurant.postal_code || '');
     } else {
+      // Reset form
       setName('');
       setCategory('');
       setImageUrl('');
@@ -40,6 +55,10 @@ const RestaurantForm: React.FC<{
       setImagePreview(null);
       setDeliveryFee('');
       setDeliveryTime('');
+      setStreetAddress('');
+      setNeighborhood('');
+      setCity('');
+      setPostalCode('');
     }
   }, [restaurant]);
 
@@ -65,17 +84,38 @@ const RestaurantForm: React.FC<{
         return;
       }
 
+      // Geocode address
+      const fullAddress = `${streetAddress}, ${neighborhood}, ${city}, ${postalCode}`;
+      const coords = await geocodeAddress(fullAddress);
+      if (!coords) {
+        showToast('No se pudieron obtener las coordenadas para la dirección proporcionada. Verifica la dirección.', 'error');
+        setIsSaving(false);
+        return;
+      }
+
       let finalImageUrl = imageUrl;
       if (imageFile) {
         finalImageUrl = await uploadImage(imageFile);
       }
 
+      const restaurantData = {
+        name,
+        image_url: finalImageUrl,
+        delivery_fee: fee,
+        delivery_time: time,
+        street_address: streetAddress,
+        neighborhood,
+        city,
+        postal_code: postalCode,
+        lat: coords.lat,
+        lng: coords.lng,
+        rating: restaurant?.rating || 0,
+      };
+
       let savedRestaurant: Restaurant;
       if (restaurant) {
-        const restaurantData = { name, image_url: finalImageUrl, delivery_fee: fee, delivery_time: time, rating: restaurant.rating };
         savedRestaurant = await updateRestaurant(restaurant.id, restaurantData);
       } else {
-        const restaurantData = { name, image_url: finalImageUrl, delivery_fee: fee, delivery_time: time };
         savedRestaurant = await addRestaurant(restaurantData);
       }
 
@@ -86,7 +126,7 @@ const RestaurantForm: React.FC<{
         if (existingCategory) {
           categoryIds.push(existingCategory.id);
         } else {
-          const newCategory = await addCategory({ name: catName });
+          const newCategory = await addCategory({ name: catName, icon: 'DefaultIcon' });
           categoryIds.push(newCategory.id);
         }
       }
@@ -121,9 +161,30 @@ const RestaurantForm: React.FC<{
               <p className="text-xs text-gray-500 mt-1">Separar con comas.</p>
             </div>
 
+            {/* Address Fields */}
+            <fieldset className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border p-4 rounded-lg">
+              <legend className="text-lg font-semibold text-gray-700 mb-2 px-2">Dirección</legend>
+              <div className="md:col-span-2">
+                <label htmlFor="streetAddress" className="block text-sm font-medium text-gray-700 mb-1">Calle y Número</label>
+                <input type="text" id="streetAddress" value={streetAddress} onChange={e => setStreetAddress(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
+              <div>
+                <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia</label>
+                <input type="text" id="neighborhood" value={neighborhood} onChange={e => setNeighborhood(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
+               <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                <input type="text" id="city" value={city} onChange={e => setCity(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
+              <div>
+                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
+                <input type="text" id="postalCode" value={postalCode} onChange={e => setPostalCode(e.target.value)} className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              </div>
+            </fieldset>
+
             <div>
-              <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700 mb-1">Costo de Envío</label>
-              <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="Ej: 2.50" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+              <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700 mb-1">Costo de Envío (Base)</label>
+              <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="Ej: 10.00" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
 
             <div>
@@ -190,7 +251,7 @@ export const ManageRestaurants: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { restaurants, loading, error } = useRestaurants({ searchQuery, filters: EMPTY_FILTERS });
   const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
-  const { showToast } = useAppContext();
+  const { showToast, requestConfirmation } = useAppContext();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
 
@@ -212,16 +273,24 @@ export const ManageRestaurants: React.FC = () => {
     setIsMenuManageOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este restaurante?')) {
-      try {
-        await deleteRestaurant(id);
-        showToast('Restaurante eliminado.', 'success');
-      } catch (error) {
-        console.error('Error deleting restaurant:', error);
-        showToast('Error al eliminar.', 'error');
+  const handleDelete = (id: number) => {
+    requestConfirmation(
+      'Confirmar Eliminación',
+      '¿Estás seguro de que quieres eliminar este restaurante? Esta acción no se puede deshacer.',
+      async () => {
+        try {
+          await deleteRestaurant(id);
+          showToast('Restaurante eliminado.', 'success');
+        } catch (error: any) {
+          console.error('Error deleting restaurant:', error);
+          if (error.code === '23503') {
+            showToast('No se puede eliminar: este restaurante ya tiene pedidos asociados.', 'error');
+          } else {
+            showToast('Error al eliminar el restaurante.', 'error');
+          }
+        }
       }
-    }
+    );
   };
 
   const filteredRestaurants = restaurants;

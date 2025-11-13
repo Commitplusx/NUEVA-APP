@@ -59,23 +59,67 @@ export interface MenuItem {
 
 export interface Restaurant {
 
+
+
   id: number;
+
+
 
   name: string;
 
+
+
   imageUrl: string;
+
+
 
   rating: number;
 
+
+
   deliveryFee: number;
+
+
 
   deliveryTime: number;
 
+
+
+  street_address?: string;
+
+
+
+  neighborhood?: string;
+
+
+
+  city?: string;
+
+
+
+  postal_code?: string;
+
+
+
+  lat?: number;
+
+
+
+  lng?: number;
+
+
+
   // Denormalized for easier access in the frontend
+
+
 
   categories?: Category[]; 
 
+
+
   menu?: MenuItem[];
+
+
 
 }
 
