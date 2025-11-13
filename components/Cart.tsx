@@ -103,8 +103,7 @@ export const Cart: React.FC = () => {
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
 
   useEffect(() => {
-    console.log("Cart useEffect: user changed", user);
-    console.log("Cart useEffect: profile changed", profile);
+    console.log("DEBUG: Profile or user updated.", { user, profile });
     if (user && profile) {
       setUserDetails(prev => {
         const newDetails = {
@@ -115,43 +114,53 @@ export const Cart: React.FC = () => {
           postalCode: profile.postal_code || prev.postalCode,
           phone: profile.phone || prev.phone,
         };
-        console.log("Cart useEffect: Setting userDetails to", newDetails);
+        console.log("DEBUG: Setting userDetails from profile.", newDetails);
         return newDetails;
       });
     } else {
-      console.log("Cart useEffect: User or profile not available.");
+      console.log("DEBUG: User or profile not available on load.");
     }
   }, [user, profile]);
 
+  // Debounced geocoding for user address
   useEffect(() => {
-    const calculateDelivery = async () => {
-      if (userDetails.address) {
-        try {
-          const coords = await geocodeAddress(userDetails.address);
-          if (coords) {
-            setUserAddressCoords(coords);
-            const dist = haversineDistance(CENTRAL_POINT.lat, CENTRAL_POINT.lng, coords.lat, coords.lng);
-            setCalculatedDistance(dist);
-            setCalculatedDeliveryFee(dist * PRICE_PER_KM);
-          } else {
-            setUserAddressCoords(null);
-            setCalculatedDistance(null);
-            setCalculatedDeliveryFee(0);
-          }
-        } catch (error) {
-          console.error("Error geocoding address or calculating distance:", error);
-          setUserAddressCoords(null);
-          setCalculatedDistance(null);
-          setCalculatedDeliveryFee(0);
-        }
-      } else {
+    console.log("DEBUG: Geocoding effect triggered. Address:", userDetails.address);
+    if (!userDetails.address) {
+      console.log("DEBUG: No address, setting coords to null.");
+      setUserAddressCoords(null);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      console.log(`DEBUG: Debounce triggered. Geocoding "${userDetails.address}"...`);
+      try {
+        const coords = await geocodeAddress(userDetails.address);
+        console.log("DEBUG: Geocoding result:", coords);
+        setUserAddressCoords(coords);
+      } catch (error) {
+        console.error("DEBUG: Error geocoding address:", error);
         setUserAddressCoords(null);
-        setCalculatedDistance(null);
-        setCalculatedDeliveryFee(0);
       }
-    };
-    calculateDelivery();
+    }, 1000); // 1-second debounce
+
+    return () => clearTimeout(handler);
   }, [userDetails.address]);
+
+  // Calculate distance and price whenever coordinates change
+  useEffect(() => {
+    console.log("DEBUG: Calculation effect triggered. Coords:", userAddressCoords);
+    if (userAddressCoords) {
+      const dist = haversineDistance(CENTRAL_POINT.lat, CENTRAL_POINT.lng, userAddressCoords.lat, userAddressCoords.lng);
+      const fee = dist * PRICE_PER_KM;
+      console.log(`DEBUG: Calculation successful. Distance: ${dist.toFixed(2)}km, Fee: $${fee.toFixed(2)}`);
+      setCalculatedDistance(dist);
+      setCalculatedDeliveryFee(fee);
+    } else {
+      console.log("DEBUG: No coords, setting fee to 0.");
+      setCalculatedDistance(null);
+      setCalculatedDeliveryFee(0);
+    }
+  }, [userAddressCoords]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -163,8 +172,18 @@ export const Cart: React.FC = () => {
   const deliveryFee = calculatedDeliveryFee;
   const total = subtotal + deliveryFee;
 
+  console.log("Debug canProceedToConfirmation:");
+  console.log("  user:", user);
+  console.log("  userDetails.name:", userDetails.name);
+  console.log("  userDetails.address:", userDetails.address);
+  console.log("  userDetails.phone:", userDetails.phone);
+  console.log("  userDetails.name.trim() !== '':", userDetails.name.trim() !== '');
+  console.log("  userDetails.address.trim() !== '':", userDetails.address.trim() !== '');
+  console.log("  userDetails.phone.trim().length >= 10:", userDetails.phone.trim().length >= 10);
+
   const canProceedToDetails = cartItems.length > 0;
   const canProceedToConfirmation = 
+    user !== null && // Add this check
     userDetails.name.trim() !== '' &&
     userDetails.address.trim() !== '' &&
     userDetails.phone.trim().length >= 10;
@@ -200,6 +219,30 @@ export const Cart: React.FC = () => {
             <div className="flex-grow">
               <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
               <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
+              {(() => {
+                const allIngredients = item.product.ingredients || [];
+                if (allIngredients.length === 0) return null;
+
+                const selectedNames = new Set(item.customizedIngredients.map(i => i.name));
+                const excludedIngredients = allIngredients.filter(i => !selectedNames.has(i.name));
+
+                // Only show customizations if something was actually removed
+                const hasCustomization = item.customizedIngredients.length < allIngredients.length;
+
+                if (!hasCustomization) return null;
+
+                return (
+                  <div className="text-xs text-gray-600 mt-2">
+                    <p className="font-bold">Personalización:</p>
+                    {item.customizedIngredients.map(ing => (
+                      <span key={ing.name} className="mr-2 text-green-700">{`+${ing.name}`}</span>
+                    ))}
+                    {excludedIngredients.map(ing => (
+                      <span key={ing.name} className="mr-2 text-red-700 line-through">{`${ing.name}`}</span>
+                    ))}
+                  </div>
+                )
+              })()}
               <div className="flex items-center gap-3 mt-2">
                 <button onClick={() => handleUpdateCart(item.id, item.quantity - 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">-</button>
                 <span className="font-bold w-6 text-center">{item.quantity}</span>
@@ -336,7 +379,7 @@ export const Cart: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4">
                 <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-                <button onClick={handleFinalOrderConfirmation} className="bg-green-500 text-white font-bold py-3 rounded-lg">Confirmar Pedido</button>
+                <button onClick={handleFinalOrderConfirmation} disabled={true} className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Confirmar Pedido</button>
             </div>
         </div>
   );

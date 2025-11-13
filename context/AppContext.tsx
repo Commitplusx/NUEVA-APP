@@ -24,6 +24,7 @@ const libraries: ('places' | 'maps')[] = ['places', 'maps'];
 interface AppContextType {
   user: User | null;
   userRole: UserRole;
+  isLoadingAuth: boolean;
   selectedRestaurant: Restaurant | null;
   selectedMenuItem: MenuItem | null;
   cart: CartItem[];
@@ -36,6 +37,7 @@ interface AppContextType {
   baseFee: number;
   isMapsLoaded: boolean;
   loadError?: Error;
+  isProductModalOpen: boolean;
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
   toggleSidebar: () => void;
@@ -51,6 +53,7 @@ interface AppContextType {
   handleRemoveFromCart: (cartItemId: string) => void;
   handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
   setIsCustomizationModalOpen: (isOpen: boolean) => void;
+  setIsProductModalOpen: (isOpen: boolean) => void;
 }
 
 /**
@@ -70,6 +73,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Estados locales para gestionar la información global de la aplicación
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<UserRole>('guest');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // <-- AÑADIDO
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -78,6 +82,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCartAnimating, setIsCartAnimating] = useState(false);
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [baseFee, setBaseFee] = useState(45); // Default value in case fetch fails
   const [profile, setProfile] = useState<Profile | null>(null);
 
@@ -140,6 +145,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUserRole('guest');
         console.log('AppContext: Auth state changed - User logged out.');
       }
+      setIsLoadingAuth(false); // <-- AÑADIDO
     });
 
     // Verificación inicial de la sesión al cargar la aplicación
@@ -148,6 +154,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUser(session.user || null);
         setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
       }
+      setIsLoadingAuth(false); // <-- AÑADIDO
     });
 
     // Limpieza del listener al desmontar el componente
@@ -314,8 +321,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Objeto de valor que se proporcionará a los consumidores del contexto
   const value = {
-    user, userRole, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
-    toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen
+    user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
+    isProductModalOpen,
+    toggleSidebar, showToast, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+    setIsProductModalOpen
   };
 
   return (

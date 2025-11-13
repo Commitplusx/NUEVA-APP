@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Restaurant, MenuItem } from '../types';
+import { Restaurant, MenuItem, Ingredient } from '../types';
 import { ChevronLeftIcon } from './icons';
 import { Spinner } from './Spinner';
 import { useRestaurantDetail } from '../hooks/useRestaurantDetail';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { getTransformedImageUrl } from '../services/image';
+import { ProductDetailModal } from './ProductDetailModal';
+import { useAppContext } from '../context/AppContext';
 
 const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 100, 100);
@@ -36,10 +38,27 @@ export const RestaurantDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { restaurant, loading, error } = useRestaurantDetail(id || '');
+  const { handleAddToCart, isProductModalOpen, setIsProductModalOpen } = useAppContext();
+
+  // --- State for Modal ---
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const handleMenuItemSelect = (item: MenuItem) => {
-    // Navigate to full product detail page instead of opening the modal
-    navigate(`/restaurants/${id}/menu/${item.id}`);
+    // Instead of navigating, open the modal
+    setSelectedItem(item);
+    setIsProductModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsProductModalOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleModalAddToCart = (item: MenuItem, quantity: number, customizedIngredients: Ingredient[]) => {
+    if (restaurant) {
+        handleAddToCart(item, quantity, customizedIngredients, restaurant);
+        handleCloseModal(); // Close modal after adding to cart
+    }
   };
 
   if (loading) {
@@ -91,7 +110,14 @@ export const RestaurantDetail: React.FC = () => {
          </div>
       </div>
 
-      {/* Product customization is now a dedicated page at /restaurants/:id/menu/:itemId */}
+      {/* Render the modal */}
+      <ProductDetailModal 
+        isOpen={isProductModalOpen}
+        item={selectedItem}
+        restaurant={restaurant}
+        onClose={handleCloseModal}
+        onAddToCart={handleModalAddToCart}
+      />
     </div>
   );
 };

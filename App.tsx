@@ -20,7 +20,6 @@ import { Spinner } from './components/Spinner';
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
 const Restaurants = lazy(() => import('./components/Restaurants').then(module => ({ default: module.Restaurants })));
 const RestaurantDetail = lazy(() => import('./components/RestaurantDetail').then(module => ({ default: module.RestaurantDetail })));
-const MenuItemPage = lazy(() => import('./components/MenuItemPage').then(module => ({ default: module.MenuItemPage })));
 const Cart = lazy(() => import('./components/Cart').then(module => ({ default: module.Cart })));
 const Admin = lazy(() => import('./components/Admin').then(module => ({ default: module.Admin })));
 const Login = lazy(() => import('./components/Login').then(module => ({ default: module.Login })));
@@ -56,13 +55,12 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
  * Gestiona la visibilidad de la cabecera y el sidebar basándose en la ruta actual y el rol del usuario.
  */
 const App: React.FC = () => {
-  const { isSidebarOpen, userRole, isCustomizationModalOpen } = useAppContext();
+  const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
   const hideHeaderPaths = ['/login', '/'];
-  const isProductDetail = /^\/restaurants\/[^\/]+\/menu\/[^\/]+$/.test(location.pathname);
   const shouldShowHeader = false;
-  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductDetail;
+  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductModalOpen;
 
   // Estado para el evento de instalación de PWA
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -103,35 +101,6 @@ const App: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <style>{`.modal-open .bottom-nav { display: none !important; }`}</style>
-      {/* Fixed back button when viewing product detail pages (outside header) */}
-      {isProductDetail && (
-        <button
-          onClick={() => {
-            try {
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
-                const parts = location.pathname.split('/');
-                const restaurantId = parts[2];
-                if (restaurantId) {
-                  navigate(`/restaurants/${restaurantId}`);
-                } else {
-                  navigate('/restaurants');
-                }
-              }
-            } catch (err) {
-              // fallback
-              const parts = location.pathname.split('/');
-              const restaurantId = parts[2];
-              navigate(restaurantId ? `/restaurants/${restaurantId}` : '/');
-            }
-          }}
-          className="fixed top-4 left-4 z-50 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110"
-          aria-label="Volver"
-        >
-          <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
-        </button>
-      )}
 
       <AnimatePresence mode="wait">
         {shouldShowBottomNav && <BottomNav />}
@@ -146,7 +115,6 @@ const App: React.FC = () => {
               <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
-              <Route path="/restaurants/:id/menu/:itemId" element={<PageTransitionWrapper><MenuItemPage /></PageTransitionWrapper>} />
               <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
               <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
               <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
@@ -164,7 +132,7 @@ const App: React.FC = () => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {showInstallButton && (
-        <div className="fixed bottom-20 left-0 right-0 flex justify-center p-4 z-50">
+        <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
           <button
             onClick={handleInstallClick}
             className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
