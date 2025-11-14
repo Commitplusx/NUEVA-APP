@@ -71,24 +71,23 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
           <div className="flex flex-col items-center text-center">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                index <= currentStepIndex ? 'bg-[var(--color-rappi-primary)] text-white' : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {index < currentStepIndex ? <Icons.CheckCircleIcon className="w-6 h-6" /> : index + 1}
-            </div>
-            <p
-              className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                index <= currentStepIndex ? 'text-[var(--color-rappi-primary)]' : 'text-gray-500'
-              }`}
-            >
-              {getStepName(step as Step)}
-            </p>
-          </div>
-          {index < steps.length - 1 && (
-            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-              index < currentStepIndex ? 'border-[var(--color-rappi-primary)]' : 'border-gray-200'
-            }`}></div>
-          )}
+                              index <= currentStepIndex ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                            }`}
+                            >
+                              {index < currentStepIndex ? <Icons.CheckCircleIcon className="w-6 h-6" /> : index + 1}
+                            </div>
+                            <p
+                              className={`mt-2 text-xs font-bold transition-colors duration-300 ${
+                                index <= currentStepIndex ? 'text-green-600' : 'text-gray-500'
+                              }`}
+                            >
+                              {getStepName(step as Step)}
+                            </p>
+                          </div>
+                          {index < steps.length - 1 && (
+                            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
+                              index < currentStepIndex ? 'border-green-600' : 'border-gray-200'
+                            }`}></div>          )}
         </React.Fragment>
       ))}
     </div>
@@ -514,7 +513,7 @@ export const RequestService: React.FC = () => {
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.MapPinIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
+                        <Icons.MapPinIcon className="w-5 h-5 text-green-600" />
                         Detalles del Servicio
                     </h2>
                     <div className="space-y-4">
@@ -546,7 +545,7 @@ export const RequestService: React.FC = () => {
                 
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.DollarSignIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
+                        <Icons.DollarSignIcon className="w-5 h-5 text-green-600" />
                         Costo del Envío
                     </h2>
                     <p className="text-3xl font-bold text-gray-900">${shippingCost?.toFixed(2)}</p>
@@ -574,7 +573,7 @@ export const RequestService: React.FC = () => {
                 </button>
                 <button
                     onClick={handleSubmit}
-                    className="bg-[var(--color-rappi-primary)] text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors shadow-lg"
+                    className="bg-black text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors shadow-lg"
                 >
                     Confirmar
                     <Icons.ArrowRightIcon className="w-5 h-5" />
@@ -604,9 +603,10 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowOriginMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-[var(--color-rappi-primary)] text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors"
+                  className="flex-shrink-0 bg-black text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
-                  Seleccionar en mapa
+                  <Icons.MapIcon className="w-4 h-4" />
+                  Mapa
                 </button>
             </div>
             {!userProfile?.street_address && (
@@ -636,9 +636,10 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowDestinationMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-[var(--color-rappi-primary)] text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors"
+                  className="flex-shrink-0 bg-black text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
-                  Seleccionar en mapa
+                  <Icons.MapIcon className="w-4 h-4" />
+                  Mapa
                 </button>
             </div>
              {!origin && <p className="text-xs text-[var(--color-rappi-danger)] mt-1">Debes configurar una dirección de origen en tu perfil primero.</p>}
@@ -693,7 +694,7 @@ export const RequestService: React.FC = () => {
           placeholder="Ej: Paquete pequeño, documentos importantes, etc."
           value={description} 
           onChange={(e) => setDescription(e.target.value)} 
-          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-rappi-primary)] h-24 resize-none"
+          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 h-24 resize-none"
         ></textarea>
       </section>
 
@@ -701,7 +702,7 @@ export const RequestService: React.FC = () => {
         <section className="space-y-4 animate-fade-in">
             <div className="flex items-center justify-between bg-gray-100 p-3 rounded-lg">
               <p className="text-sm font-semibold text-gray-700">¿Quieres programar la recogida?</p>
-              <button onClick={() => setShowScheduleModal(true)} className="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-black transition-colors">
+              <button onClick={() => setShowScheduleModal(true)} className="bg-black text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-gray-800 transition-colors">
                 PROGRAMAR
               </button>
             </div>
@@ -713,7 +714,7 @@ export const RequestService: React.FC = () => {
             <button
               onClick={handleProceedToConfirmation}
               disabled={!shippingCost || isCalculating}
-              className="bg-orange-500 text-white w-full py-3 rounded-lg font-bold hover:bg-orange-600 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-orange-300 disabled:cursor-not-allowed"
+              className="bg-black text-white w-full py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
               Continuar
               <Icons.ArrowRightIcon className="w-5 h-5" />
