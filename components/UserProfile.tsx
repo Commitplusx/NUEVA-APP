@@ -33,6 +33,7 @@ import {
 } from './icons';
 import { PaymentMethod } from './PaymentMethod';
 import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { supabase } from '../services/supabase';
 
 
 
@@ -252,6 +253,203 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
   );
 };
 
+interface EditProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (profileData: Partial<Profile>) => Promise<void>;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  initialProfile?: Partial<Profile>;
+}
+
+const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, onSave, showToast, initialProfile }) => {
+  const [profileData, setProfileData] = useState<Partial<Profile>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialProfile) {
+      setProfileData(initialProfile);
+    } else if (!isOpen) {
+      setProfileData({});
+    }
+  }, [isOpen, initialProfile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(profileData);
+      showToast('Perfil actualizado con éxito.', 'success');
+      onClose();
+    } catch (error) {
+      showToast('Error al actualizar el perfil.', 'error');
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: "-50px", opacity: 0 }}
+            animate={{ y: "0", opacity: 1 }}
+            exit={{ y: "50px", opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Editar Perfil</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                <input
+                  type="text"
+                  id="full_name"
+                  name="full_name"
+                  value={profileData.full_name || ''}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                  placeholder="Tu nombre completo"
+                />
+              </div>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Teléfono</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={profileData.phone || ''}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                  placeholder="Tu teléfono (Ej: +521...)"
+                />
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end space-x-3">
+              <button onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors" disabled={isSaving}>
+                Cancelar
+              </button>
+              <button onClick={handleSaveProfile} className="px-5 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-bold transition-colors" disabled={isSaving}>
+                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+interface UserOrdersModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  userId: string | undefined;
+}
+
+const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, showToast, userId }) => {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [errorOrders, setErrorOrders] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!isOpen || !userId) {
+        setOrders([]);
+        return;
+      }
+      setLoadingOrders(true);
+      setErrorOrders(null);
+      try {
+        // Assuming a getOrders function exists in your API service
+        // You might need to create this function in services/api.ts
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+        setOrders(data || []);
+      } catch (error: any) {
+        console.error('Error fetching orders:', error);
+        setErrorOrders('Error al cargar tus pedidos.');
+        showToast('Error al cargar tus pedidos.', 'error');
+      } finally {
+        setLoadingOrders(false);
+      }
+    };
+
+    fetchOrders();
+  }, [isOpen, userId, showToast]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: "-50px", opacity: 0 }}
+            animate={{ y: "0", opacity: 1 }}
+            exit={{ y: "50px", opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Mis Pedidos</h2>
+            
+            {loadingOrders ? (
+              <Spinner />
+            ) : errorOrders ? (
+              <p className="text-red-500">{errorOrders}</p>
+            ) : orders.length === 0 ? (
+              <p className="text-gray-600">No tienes pedidos realizados aún.</p>
+            ) : (
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {orders.map((order) => (
+                  <div key={order.id} className="p-4 border border-gray-200 rounded-lg">
+                    <p className="font-semibold text-gray-800">Pedido #{order.id}</p>
+                    <p className="text-sm text-gray-600">Fecha: {new Date(order.created_at).toLocaleDateString()}</p>
+                    <p className="text-sm text-gray-600">Total: ${order.total_amount}</p>
+                    {/* Add more order details as needed */}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-8 flex justify-end">
+              <button onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+                Cerrar
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 
 export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -261,6 +459,8 @@ export const UserProfile: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -283,14 +483,16 @@ export const UserProfile: React.FC = () => {
     fetchProfile();
   }, [user]);
 
-  const handleSave = async () => {
+  const handleSaveProfile = async (profileData: Partial<Profile>) => {
     if (!profile) return;
     try {
-      await updateProfile(profile);
-      setToast({ message: 'Perfil actualizado con éxito', type: 'success' });
-    } catch (error) {
-      setToast({ message: 'Error al actualizar el perfil', type: 'error' });
+      const updatedProfile = { ...profile, ...profileData };
+      await updateProfile(updatedProfile);
+      setProfile(updatedProfile);
+    } catch (error: any) {
+      showToast(`Error al actualizar el perfil: ${getErrorMessage(error)}`, 'error');
       console.error(error);
+      throw error;
     }
   };
 
@@ -372,51 +574,23 @@ export const UserProfile: React.FC = () => {
             )}
           </div>
           <div>
-            <input
-              type="text"
-              value={profile?.full_name || ''}
-              onChange={(e) => setProfile(p => p ? { ...p, full_name: e.target.value } : null)}
-              className="text-lg font-bold text-gray-900 bg-transparent w-full"
-              placeholder="Tu nombre"
-            />
-            <button onClick={comingSoon} className="text-sm font-semibold text-gray-800 hover:text-gray-600">
+            <p className="text-lg font-bold text-gray-900">{profile?.full_name || 'Tu nombre'}</p>
+            <button onClick={() => setShowEditProfileModal(true)} className="text-sm font-semibold text-gray-800 hover:text-gray-600">
               Editar perfil ›
             </button>
           </div>
         </div>
-        <div className="mt-4 relative flex items-center">
-          <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-          <input
-            type="tel"
-            value={profile?.phone || ''}
-            onChange={(e) => setProfile(p => p ? { ...p, phone: e.target.value } : null)}
-            className="w-full py-2 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-800"
-            placeholder="Tu teléfono (Ej: +521...)"
-          />
-        </div>
-        <button
-          onClick={handleSave}
-          className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-lg mt-4"
-        >
-          Guardar Cambios
-        </button>
+        <p className="text-gray-400 text-sm mt-1">{formatAddress(profile)}</p>
+        <p className="text-gray-400 text-sm mt-1">{profile?.phone || 'No hay teléfono registrado.'}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3 px-4 mb-8">
-          <QuickActionButton icon={<PackageIcon className="w-7 h-7" />} label="Pedidos" onClick={comingSoon} />
-          <QuickActionButton icon={<HeadphonesIcon className="w-7 h-7" />} label="Ayuda" onClick={comingSoon} />
+          <QuickActionButton icon={<PackageIcon className="w-7 h-7" />} label="Pedidos" onClick={() => setShowOrdersModal(true)} />
+          <QuickActionButton icon={<HeadphonesIcon className="w-7 h-7" />} label="Editar Perfil" onClick={() => setShowEditProfileModal(true)} />
           <QuickActionButton icon={<CreditCardIcon className="w-7 h-7" />} label="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
       </div>
       
       <div className="px-4 space-y-8">
-          <Section title="Amigos e Influencers">
-              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-                  <ListItem icon={<UserIcon className="w-6 h-6" />} text="Mis amigos" subtext="Selecciona tus amigos y lo que pueden ver" onClick={comingSoon} />
-                  <hr className="border-gray-200" />
-                  <ListItem icon={<SparklesIcon className="w-6 h-6" />} text="Influencers" subtext="Sigue a los influencers y ve sus recomendaciones" onClick={comingSoon} />
-              </div>
-          </Section>
-
           <Section title="Beneficios">
               <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
                   <ListItem 
@@ -425,38 +599,14 @@ export const UserProfile: React.FC = () => {
                       value="$0.00"
                       hasChevron={false}
                   />
-                  <hr className="border-gray-200" />
-                  <ListItem icon={<TicketIcon className="w-6 h-6" />} text="Cupones" onClick={comingSoon} />
-                  <hr className="border-gray-200" />
-                  <ListItem icon={<StarIcon className="w-6 h-6 text-yellow-500" />} text="Loyalty" onClick={comingSoon} />
               </div>
           </Section>
           
           <Section title="Mi cuenta">
               <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-                  <ListItem icon={<CrownIcon className="w-6 h-6" />} text="RappiPro" onClick={comingSoon} />
-                   <hr className="border-gray-200" />
                   <ListItem icon={<LocationIcon className="w-6 h-6" />} text="Direcciones" onClick={() => setShowAddressModal(true)} />
                    <hr className="border-gray-200" />
                   <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
-                   <hr className="border-gray-200" />
-                  <ListItem icon={<DocumentTextIcon className="w-6 h-6" />} text="Datos de facturación" onClick={comingSoon} />
-                   <hr className="border-gray-200" />
-                  <ListItem icon={<HeadphonesIcon className="w-6 h-6" />} text="Ayuda" onClick={comingSoon} />
-              </div>
-          </Section>
-
-          <Section title="Configuración">
-              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-                  <ListItem icon={<BellIcon className="w-6 h-6" />} text="Notificaciones" onClick={comingSoon} />
-              </div>
-          </Section>
-          
-          <Section title="Más información">
-              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-                  <ListItem icon={<StoreIcon className="w-6 h-6" />} text="Quiero ser Aliado Estrella" onClick={comingSoon} />
-                   <hr className="border-gray-200" />
-                  <ListItem icon={<MotorcycleIcon className="w-6 h-6" />} text="Quiero ser Repartidor" onClick={comingSoon} />
               </div>
           </Section>
 
@@ -474,6 +624,21 @@ export const UserProfile: React.FC = () => {
         showToast={showToast}
         isLoaded={isMapsLoaded}
         initialAddress={profile || undefined}
+      />
+
+      <EditProfileModal
+        isOpen={showEditProfileModal}
+        onClose={() => setShowEditProfileModal(false)}
+        onSave={handleSaveProfile}
+        showToast={showToast}
+        initialProfile={profile || undefined}
+      />
+
+      <UserOrdersModal
+        isOpen={showOrdersModal}
+        onClose={() => setShowOrdersModal(false)}
+        showToast={showToast}
+        userId={user?.id}
       />
     </div>
   );
