@@ -365,6 +365,10 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [errorOrders, setErrorOrders] = useState<string | null>(null);
+  const [showOrderDetailModal, setShowOrderDetailModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const { handleAddToCart } = useAppContext(); // Assuming handleAddToCart is available in AppContext
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -377,7 +381,7 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
       try {
         const { data, error } = await supabase
           .from('orders')
-          .select('*, order_items(*)') // Select order and its related order_items
+          .select('*, order_items!left(id, quantity, price, menu_items(id, name, description, price, image_url)), restaurants(*)') // Select order and its related order_items
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
@@ -396,6 +400,30 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
 
     fetchOrders();
   }, [isOpen, userId, showToast]);
+
+  const handleOrderClick = (order: any) => {
+    setSelectedOrder(order);
+    setShowOrderDetailModal(true);
+  };
+
+  const handleRepeatOrder = (order: any) => {
+    if (order.order_items && order.order_items.length > 0) {
+      order.order_items.forEach((item: any) => {
+        // Assuming item has id, name, price, quantity
+        const menuItem = {
+          ...item.menu_items,
+          imageUrl: item.menu_items.image_url,
+        };
+        handleAddToCart(menuItem, item.quantity, [], order.restaurants);
+      });
+      showToast('Orden añadida al carrito.', 'success');
+      setShowOrderDetailModal(false);
+      onClose(); // Close orders modal
+      navigate('/cart'); // Navigate to cart page
+    } else {
+      showToast('No hay artículos para repetir en esta orden.', 'error');
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -424,9 +452,13 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
             ) : orders.length === 0 ? (
               <p className="text-gray-600 text-center">No tienes pedidos realizados aún.</p>
             ) : (
-              <div className="space-y-6 max-h-96 overflow-y-auto pr-2"> {/* Added pr-2 for scrollbar */}
+              <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
                 {orders.map((order) => (
-                  <div key={order.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                  <div 
+                    key={order.id || `order-${index}`} 
+                    className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleOrderClick(order)}
+                  >
                     <div className="flex justify-between items-center mb-2">
                       <p className="font-semibold text-lg text-gray-800">Pedido #{order.id}</p>
                       <span className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</span>
@@ -437,11 +469,14 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="font-medium text-gray-700 mb-1">Artículos:</p>
                         <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                          {order.order_items.map((item: any, index: number) => (
-                            <li key={index}>
-                              {item.quantity} x {item.name} - ${item.price?.toFixed(2) || '0.00'}
+                          {order.order_items.slice(0, 3).map((item: any, itemIndex: number) => (
+                            <li key={item.id || `order-${order.id}-item-${itemIndex}`}>
+                              {item.quantity} x {item.name}
                             </li>
                           ))}
+                          {order.order_items.length > 3 && (
+                            <li className="text-xs text-gray-500">...y {order.order_items.length - 3} más</li>
+                          )}
                         </ul>
                       </div>
                     )}
@@ -461,12 +496,107 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
           </motion.div>
         </motion.div>
       )}
+      {selectedOrder && (
+        <OrderDetailModal
+          isOpen={showOrderDetailModal}
+          onClose={() => setShowOrderDetailModal(false)}
+          order={selectedOrder}
+          onRepeatOrder={handleRepeatOrder}
+          showToast={showToast}
+        />
+      )}
     </AnimatePresence>
   );
 };
 
+interface OrderDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  order: any; // Define a proper type for order
+  onRepeatOrder: (order: any) => void;
+  showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+}
 
-export const UserProfile: React.FC = () => {
+const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, order, onRepeatOrder, showToast }) => {
+  if (!order) return null;
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: "-50px", opacity: 0 }}
+            animate={{ y: "0", opacity: 1 }}
+            exit={{ y: "50px", opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Detalle del Pedido #{order.id}</h2>
+            
+            {order.restaurants && (
+              <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
+                <img 
+                  src={order.restaurants.image_url} 
+                  alt={order.restaurants.name} 
+                  className="w-16 h-16 rounded-full object-cover mr-4 border border-gray-200"
+                />
+                <div>
+                  <p className="font-bold text-lg text-gray-800">{order.restaurants.name}</p>
+                  <p className="text-sm text-gray-600">Restaurante</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-3 text-gray-700">
+              <p><strong>Fecha:</strong> {new Date(order.created_at).toLocaleString()}</p>
+              <p><strong>Estado:</strong> {order.status || 'Desconocido'}</p>
+              <p><strong>Total:</strong> ${order.total_amount?.toFixed(2) || '0.00'}</p>
+              
+              {order.order_items && order.order_items.length > 0 && (
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="font-medium text-gray-800 mb-2">Artículos:</p>
+                  <ul className="space-y-2">
+                    {order.order_items.map((item: any, itemIndex: number) => (
+                      <li key={item.id || `order-${order.id}-item-${itemIndex}`} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                        <span>{item.quantity} x {item.name}</span>
+                        <span>${(item.quantity * item.price)?.toFixed(2) || '0.00'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!order.order_items || order.order_items.length === 0 && (
+                <p className="text-sm text-gray-500 italic">No hay artículos para este pedido.</p>
+              )}
+            </div>
+
+            <div className="mt-8 flex justify-between space-x-3">
+              <button 
+                onClick={() => onRepeatOrder(order)} 
+                className="flex-1 px-5 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-bold transition-colors"
+              >
+                Repetir Orden
+              </button>
+              <button onClick={onClose} className="flex-1 px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors">
+                Cerrar
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    );
+  };
+  
+  
+  export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, handleLogout, showToast, isMapsLoaded, loadError } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);
