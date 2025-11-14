@@ -72,6 +72,8 @@ interface AppContextType {
 
   isProductModalOpen: boolean;
 
+  isBottomNavVisible: boolean;
+
 
 
     // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
@@ -136,7 +138,9 @@ interface AppContextType {
 
     setIsProductModalOpen: (isOpen: boolean) => void;
 
+    
 
+    setBottomNavVisible: (isVisible: boolean) => void;
 
   }
 
@@ -290,11 +294,15 @@ interface AppContextType {
 
 
 
-    const [profile, setProfile] = useState<Profile | null>(null);
+        const [profile, setProfile] = useState<Profile | null>(null);
 
 
 
-    const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
+        const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
+
+
+
+        const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
 
 
@@ -1074,27 +1082,63 @@ interface AppContextType {
 
 
 
-    const value = {
+        const value = {
 
 
 
-      user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
+  
 
 
 
-      isProductModalOpen,
+          user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
 
 
 
-      toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+  
 
 
 
-      setIsProductModalOpen
+          isProductModalOpen,
 
 
 
-    };
+  
+
+
+
+          isBottomNavVisible,
+
+
+
+  
+
+
+
+          toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+
+
+
+  
+
+
+
+          setIsProductModalOpen,
+
+
+
+  
+
+
+
+          setBottomNavVisible: setIsBottomNavVisible
+
+
+
+  
+
+
+
+        };
 
 
 

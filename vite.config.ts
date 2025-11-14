@@ -15,6 +15,14 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      optimizeDeps: {
+        exclude: ['/api/*'],
+      },
+      build: {
+        rollupOptions: {
+          external: ['/api/*'],
+        },
       }
     };
 });

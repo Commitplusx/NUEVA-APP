@@ -46,9 +46,13 @@ const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, show
 };
 
 export const BottomNav: React.FC = () => {
-  const { cartItemCount, userRole, handleLogout } = useAppContext();
+  const { cartItemCount, userRole, handleLogout, isBottomNavVisible } = useAppContext();
   const navigate = useNavigate();
   const isLoggedIn = userRole !== 'guest';
+
+  if (!isBottomNavVisible) {
+    return null;
+  }
 
   const basePages = [
     { to: '/restaurants', label: 'Comercios', icon: <ShoppingIcon className="w-6 h-6 mb-1" /> },

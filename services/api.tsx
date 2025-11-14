@@ -1,4 +1,4 @@
-import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order } from '../types';
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 
@@ -480,4 +480,86 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
     console.error("Geocoding error:", error);
     return null;
   }
+};
+
+export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promise<{ street_address: string; neighborhood: string; city: string; postal_code: string; } | null> => {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.error("Google Maps API key is missing.");
+    return null;
+  }
+
+  // 1. Intenta con Places API a través del proxy local para evitar CORS
+  const placesUrl = `/api/google-places-proxy?lat=${lat}&lng=${lng}`;
+  try {
+    const placesResponse = await fetch(placesUrl);
+    const placesData = await placesResponse.json();
+
+    if (placesData.status === 'OK' && placesData.results.length > 0) {
+      const place = placesData.results[0];
+      const placeName = place.name;
+      const vicinity = place.vicinity; // La dirección aproximada que da Places API
+
+      // Places API no da todos los componentes de dirección, así que los obtenemos con Geocoding
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`;
+      const geocodeResponse = await fetch(geocodeUrl);
+      const geocodeData = await geocodeResponse.json();
+
+      if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
+        const addressComponents = geocodeData.results[0].address_components;
+        const neighborhood = addressComponents.find(c => c.types.includes('neighborhood'))?.long_name || '';
+        const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
+        const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
+
+        // Combina el nombre del lugar con su dirección si son diferentes
+        const street_address = (vicinity && !placeName.includes(vicinity.split(',')[0]))
+          ? `${placeName}, ${vicinity}`
+          : placeName;
+
+        return {
+          street_address,
+          neighborhood,
+          city,
+          postal_code,
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Places API call failed, falling back to geocoding.", error);
+  }
+
+  // 2. Si Places API falla o no da resultados, usa el método de Geocoding anterior como respaldo
+  console.log("Fallback to Geocoding API");
+  const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`;
+  try {
+    const response = await fetch(geocodeUrl);
+    const data = await response.json();
+    if (data.status === 'OK' && data.results && data.results.length > 0) {
+      const result = data.results[0];
+      const addressComponents = result.address_components;
+      
+      const neighborhood = addressComponents.find(c => c.types.includes('neighborhood'))?.long_name || '';
+      const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
+      const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
+
+      let street_address = '';
+      const fullFormattedAddress = result.formatted_address;
+
+      if (city && fullFormattedAddress.includes(city)) {
+        street_address = fullFormattedAddress.substring(0, fullFormattedAddress.indexOf(city)).replace(/,\s*$/, '').trim();
+      } else {
+        street_address = fullFormattedAddress.split(',')[0];
+      }
+
+      if (!street_address && data.results.length > 1) {
+         street_address = data.results[1].formatted_address.split(',')[0];
+      }
+
+      return { street_address, neighborhood, city, postal_code };
+    }
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+  }
+
+  return null; // Devuelve null si todo falla
 };
