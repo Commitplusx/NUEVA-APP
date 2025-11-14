@@ -1,76 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
 import { getProfile, updateProfile, getErrorMessage } from '../services/api';
 import { Profile } from '../types';
+import { Spinner } from './Spinner';
+import { Toast } from './Toast';
+import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
-import { PaymentMethod } from './PaymentMethod';
+import Lottie from 'lottie-react';
+import profileAnimation from './animations/profile.json';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import {
+  ChevronLeftIcon,
   ChevronRightIcon,
+  PhoneIcon,
+  MenuDots,
+  MapIcon,
   ShoppingBagIcon,
   CreditCardIcon,
-  QuestionMarkCircleIcon,
-  UserGroupIcon,
-  SparklesIcon,
-  GiftIcon,
-  StarIcon,
-  ShieldCheckIcon,
-  MapPinIcon,
-  DocumentTextIcon,
-  BellIcon,
-  BuildingStorefrontIcon,
-  BriefcaseIcon,
+  LogOutIcon,
 } from './icons';
-import { Spinner } from './Spinner';
+import { PaymentMethod } from './PaymentMethod';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 
-
-const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
-  <h3 className="px-4 pt-6 pb-2 text-2xl font-bold text-gray-800">{title}</h3>
-);
-
-interface ListItemProps {
-  icon?: React.ReactNode;
+interface MenuItemProps {
+  icon: React.ReactNode;
   label: string;
-  description?: string;
-  value?: string;
   onClick?: () => void;
-  hideChevron?: boolean;
+  iconColor: string;
+  iconBgColor: string;
 }
 
-const ListItem: React.FC<ListItemProps> = ({ icon, label, description, value, onClick, hideChevron }) => {
-  const content = (
-    <div className="flex items-center justify-between w-full p-4 hover:bg-gray-50 transition-colors">
+const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, iconColor, iconBgColor }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+    >
       <div className="flex items-center gap-4">
-        {icon && (
-          <div className="w-8 h-8 flex items-center justify-center">
-            {icon}
-          </div>
-        )}
-        <div className="flex flex-col">
-          <span className="font-medium text-gray-800">{label}</span>
-          {description && <span className="text-sm text-gray-500">{description}</span>}
+        <div className={`w-10 h-10 ${iconBgColor} rounded-lg flex items-center justify-center`}>
+          {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 ${iconColor}` })}
         </div>
+        <span className="text-gray-700 font-medium">{label}</span>
       </div>
-      <div className="flex items-center gap-2">
-        {value && <span className="font-medium text-gray-800">{value}</span>}
-        {!hideChevron && <ChevronRightIcon className="w-5 h-5 text-gray-400" />}
-      </div>
-    </div>
+      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+    </button>
   );
-
-  if (onClick) {
-    return (
-      <button onClick={onClick} className="w-full text-left">
-        {content}
-      </button>
-    );
-  }
-  return content;
 };
 
-// Address Management Modal
 interface AddressManagerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -115,9 +91,9 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
         finalStreetAddress = `${route} ${streetNumber}`.trim();
       } else if (placeName && !placeName.includes(getAddressComponent('locality'))) {
         finalStreetAddress = placeName;
-      } else if (getAddressComponent('sublocality_level_1')) {
+      } else if (getAddressComponent('sublocality_level_1')) { // Fallback to neighborhood
         finalStreetAddress = getAddressComponent('sublocality_level_1');
-      } else if (getAddressComponent('locality')) {
+      } else if (getAddressComponent('locality')) { // Fallback to city if neighborhood is not available
         finalStreetAddress = getAddressComponent('locality');
       }
 
@@ -129,6 +105,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
         lat: place.geometry.location?.lat(),
         lng: place.geometry.location?.lng(),
       };
+      console.log("New address from Autocomplete:", newAddress);
       setAddressData(newAddress);
     } else {
       console.error('Autocomplete is not loaded yet!');
@@ -152,7 +129,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
       setIsSaving(false);
     }
   };
-  
+
   useEffect(() => {
     if (isOpen && initialAddress) {
       setAddressData(initialAddress);
@@ -186,7 +163,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
           >
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Gestionar Dirección</h2>
             <p className="text-sm text-gray-600 mb-6">Busca tu dirección y selecciónala de la lista para autocompletar.</p>
-            
+
             {isLoaded ? (
               <Autocomplete
                 onLoad={(ac) => setAutocomplete(ac)}
@@ -194,7 +171,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
                 options={{
                   bounds: comitanBounds,
                   strictBounds: true,
-                  componentRestrictions: { country: 'mx' },
+                  componentRestrictions: { country: 'mx' }, // Restrict to Mexico
                   fields: ['address_components', 'geometry'],
                 }}
               >
@@ -210,7 +187,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
             )}
 
             {addressData.street_address && (
-              <motion.div 
+              <motion.div
                 className="mt-6 space-y-3 pt-4 border-t border-gray-200"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -243,9 +220,12 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
 
 export const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, showToast, isMapsLoaded } = useAppContext();
+  const { user, handleLogout, showToast, isMapsLoaded, loadError } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -259,14 +239,25 @@ export const UserProfile: React.FC = () => {
         setProfile(userProfile);
       } catch (err) {
         console.error(err);
-        showToast('Error al cargar el perfil', 'error');
+        setToast({ message: 'Error al cargar el perfil', type: 'error' });
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [user, showToast]);
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!profile) return;
+    try {
+      await updateProfile(profile);
+      setToast({ message: 'Perfil actualizado con éxito', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Error al actualizar el perfil', type: 'error' });
+      console.error(error);
+    }
+  };
 
   const handleSaveAddress = async (addressData: Partial<Profile>) => {
     if (!profile) return;
@@ -281,8 +272,25 @@ export const UserProfile: React.FC = () => {
     }
   };
 
-  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
-  const [showAddressModal, setShowAddressModal] = useState(false);
+  const handleBack = () => {
+    navigate(-1);
+  };
+
+  const handleLogoutClick = async () => {
+    try {
+      await handleLogout();
+      navigate('/');
+    } catch (err) {
+      setToast({ message: 'Error al cerrar sesión', type: 'error' });
+    }
+  };
+
+  const formatAddress = (p: Profile | null): string => {
+    if (!p) return 'No hay dirección guardada.';
+    const parts = [p.street_address, p.neighborhood, p.city, p.postal_code].filter(Boolean);
+    if (parts.length === 0) return 'No hay dirección guardada.';
+    return parts.join(', ');
+  };
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
@@ -292,112 +300,113 @@ export const UserProfile: React.FC = () => {
     return <PaymentMethod onBack={() => setShowPaymentMethod(false)} />;
   }
 
-  const QuickActionButton: React.FC<{ icon: React.ReactNode; label: string; onClick: () => void; }> = ({ icon, label, onClick }) => (
-    <div className="flex flex-col items-center gap-2" onClick={onClick}>
-        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center shadow-sm hover:bg-gray-200 transition-colors cursor-pointer">
-            {icon}
-        </div>
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="p-4">
-        <h1 className="text-4xl font-bold text-gray-800">Cuenta</h1>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* User Info Section */}
-      <div className="flex items-center gap-4 p-4">
-        <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-500">
-          <Avatar
-            url={profile?.avatar_url}
-            size={64}
-            onUpload={async (url) => {
-              if (profile) {
-                const updatedProfile = { ...profile, avatar_url: url };
-                await updateProfile(updatedProfile);
-                setProfile(updatedProfile);
-                showToast('Avatar actualizado!', 'success');
-              }
-            }}
-          />
+      <div className="bg-white pb-6">
+        <div className="flex items-center justify-between p-4">
+          <button
+            onClick={handleBack}
+            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
+            <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
+          </button>
+          <h1 className="text-xl font-semibold text-gray-800">Profile</h1>
+          <button
+            onClick={() => showToast('Próximamente disponible', 'info')}
+            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
+            <MenuDots className="w-5 h-5 text-gray-700" />
+          </button>
         </div>
-        <div>
-          <input
+
+        <div className="flex flex-col items-center mt-6 px-4">
+          <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+            {profile?.avatar ? (
+              <Avatar
+                url={profile.avatar}
+                size={104}
+                onUpload={() => {}}
+                loading={false}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
+              </div>
+            )}
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mt-4">
+            <input
               type="text"
               value={profile?.full_name || ''}
               onChange={(e) => setProfile(p => p ? { ...p, full_name: e.target.value } : null)}
-              className="text-xl font-semibold text-gray-800 bg-transparent w-full"
+              className="text-center bg-transparent font-bold text-2xl w-full"
               placeholder="Tu nombre"
             />
-          <button onClick={() => showToast('Próximamente disponible', 'info')} className="text-sm font-medium text-green-500 hover:text-green-600">
-            Editar perfil ›
-          </button>
+          </h2>
+          <p className="text-gray-400 text-sm mt-1">
+            {formatAddress(profile)}
+          </p>
+          <div className="mt-2 relative flex items-center">
+            <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+            <input
+              type="tel"
+              value={profile?.phone || ''}
+              onChange={(e) => setProfile(p => p ? { ...p, phone: e.target.value } : null)}
+              className="w-full py-2 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Tu teléfono (Ej: +521...)"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex justify-around p-4 mt-4">
-        <QuickActionButton
-            icon={<ShoppingBagIcon className="w-8 h-8 text-gray-600" />}
-            label="Pedidos"
-            onClick={() => showToast('Próximamente disponible', 'info')}
+      <div className="mt-4 mx-4">
+        <button
+          onClick={handleSave}
+          className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-lg"
+        >
+          Guardar Cambios
+        </button>
+      </div>
+
+      <div className="mt-4 mx-4 bg-white rounded-2xl overflow-hidden shadow-sm">
+        <MenuItem
+          icon={<ShoppingBagIcon />}
+          label="Cart"
+          onClick={() => navigate('/cart')}
+          iconColor="text-blue-500"
+          iconBgColor="bg-blue-50"
         />
-        <QuickActionButton
-            icon={<QuestionMarkCircleIcon className="w-8 h-8 text-gray-600" />}
-            label="Ayuda"
-            onClick={() => showToast('Próximamente disponible', 'info')}
+        <div className="h-px bg-gray-100" />
+        <MenuItem
+          icon={<MapIcon />}
+          label="Direcciones"
+          onClick={() => setShowAddressModal(true)}
+          iconColor="text-green-500"
+          iconBgColor="bg-green-50"
         />
-        <QuickActionButton
-            icon={<CreditCardIcon className="w-8 h-8 text-gray-600" />}
-            label="Métodos de pago"
-            onClick={() => setShowPaymentMethod(true)}
+        <div className="h-px bg-gray-100" />
+        <MenuItem
+          icon={<CreditCardIcon />}
+          label="Payment Method"
+          onClick={() => setShowPaymentMethod(true)}
+          iconColor="text-blue-500"
+          iconBgColor="bg-blue-50"
         />
       </div>
 
-      {/* Separator */}
-      <div className="h-4 bg-gray-50 border-t border-b border-gray-200" />
-
-      <div className="pb-24">
-        {/* Amigos e Influencers Section */}
-        <SectionHeader title="Amigos e Influencers" />
-        <ListItem
-          label="Mis amigos"
-          description="Selecciona tus amigos y lo que pueden ver"
-          onClick={() => showToast('Próximamente disponible', 'info')}
+      <div className="mt-4 mx-4 mb-24 bg-white rounded-2xl overflow-hidden shadow-sm">
+        <MenuItem
+          icon={<LogOutIcon />}
+          label="Log Out"
+          onClick={handleLogoutClick}
+          iconColor="text-red-500"
+          iconBgColor="bg-red-50"
         />
-        <ListItem
-          label="Influencers"
-          description="Sigue a los influencers y ve sus recomendaciones"
-          onClick={() => showToast('Próximamente disponible', 'info')}
-        />
-
-        {/* Beneficios Section */}
-        <SectionHeader title="Beneficios" />
-        <ListItem icon={<CreditCardIcon className="w-6 h-6 text-gray-600" />} label="Créditos" value="$0.00" hideChevron />
-        <ListItem icon={<GiftIcon className="w-6 h-6 text-gray-600" />} label="Cupones" onClick={() => showToast('Próximamente disponible', 'info')} />
-        <ListItem icon={<StarIcon className="w-6 h-6 text-gray-600" />} label="Loyalty" onClick={() => showToast('Próximamente disponible', 'info')} />
-
-        {/* Mi cuenta Section */}
-        <SectionHeader title="Mi cuenta" />
-        <ListItem icon={<ShieldCheckIcon className="w-6 h-6 text-gray-600" />} label="RappiPro" onClick={() => showToast('Próximamente disponible', 'info')} />
-        <ListItem icon={<MapPinIcon className="w-6 h-6 text-gray-600" />} label="Direcciones" onClick={() => setShowAddressModal(true)} />
-        <ListItem icon={<CreditCardIcon className="w-6 h-6 text-gray-600" />} label="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
-        <ListItem icon={<DocumentTextIcon className="w-6 h-6 text-gray-600" />} label="Datos de facturación" onClick={() => showToast('Próximamente disponible', 'info')} />
-        <ListItem icon={<QuestionMarkCircleIcon className="w-6 h-6 text-gray-600" />} label="Ayuda" onClick={() => showToast('Próximamente disponible', 'info')} />
-
-        {/* Configuración Section */}
-        <SectionHeader title="Configuración" />
-        <ListItem icon={<BellIcon className="w-6 h-6 text-gray-600" />} label="Notificaciones" onClick={() => showToast('Próximamente disponible', 'info')} />
-
-        {/* Más información Section */}
-        <SectionHeader title="Más información" />
-        <ListItem icon={<BuildingStorefrontIcon className="w-6 h-6 text-gray-600" />} label="Quiero ser Aliado Rappi" onClick={() => showToast('Próximamente disponible', 'info')} />
-        <ListItem icon={<BriefcaseIcon className="w-6 h-6 text-gray-600" />} label="Quiero ser Repartidor" onClick={() => showToast('Próximamente disponible', 'info')} />
       </div>
-       <AddressManagerModal
+
+      <AddressManagerModal
         isOpen={showAddressModal}
         onClose={() => setShowAddressModal(false)}
         onSave={handleSaveAddress}
