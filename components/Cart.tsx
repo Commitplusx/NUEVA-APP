@@ -189,8 +189,8 @@ export const Cart: React.FC = () => {
       <div className="space-y-4 mb-6">
         {cartItems.map(item => (
           <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
-            {(item.product as any).image_url ? (
-              <img src={(item.product as any).image_url} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
+            {item.product.imageUrl ? (
+              <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
             ) : (
               <div className="w-20 h-20 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-2">
                 No Image
@@ -344,8 +344,8 @@ export const Cart: React.FC = () => {
             <div className="space-y-3">
                 {cartItems.map(item => (
                     <div key={item.id} className="flex items-center gap-3">
-                        {(item.product as any).image_url ? (
-                            <img src={(item.product as any).image_url} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
+                        {item.product.imageUrl ? (
+                            <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
                         ) : (
                             <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
                                 No Image

@@ -34,15 +34,20 @@ const IngredientToggleButton: React.FC<{ ingredient: Ingredient; isSelected: boo
     return (
         <button 
             onClick={onToggle}
-            className={`flex-shrink-0 flex flex-col items-center justify-center p-2 border-2 rounded-lg w-20 h-20 text-center transition-all duration-200 relative ${
+            className={`flex-shrink-0 flex flex-col items-center justify-center p-2 border rounded-lg w-24 h-24 text-center transition-all duration-200 relative ${
                 isSelected 
-                ? 'bg-orange-50 border-orange-500' 
-                : 'bg-gray-100 border-gray-300 opacity-60'
+                ? 'bg-orange-100 border-orange-500 text-orange-800' 
+                : 'bg-gray-100 border-gray-300 text-gray-600'
             }`}
             aria-pressed={isSelected}
         >
             {IconComponent && <IconComponent className={`w-8 h-8 mb-1 ${isSelected ? 'text-orange-500' : 'text-gray-400'}`} />}
-            <span className={`text-xs font-medium ${isSelected ? 'text-gray-700' : 'text-gray-500 line-through'}`}>{ingredient.name}</span>
+            <span className={`text-xs font-medium ${isSelected ? 'text-orange-800' : 'text-gray-600'}`}>{ingredient.name}</span>
+            {isSelected && (
+                <div className="absolute top-1 right-1 bg-orange-500 rounded-full p-0.5">
+                    <Icons.CheckIcon className="w-3 h-3 text-white" />
+                </div>
+            )}
         </button>
     );
 };
@@ -51,48 +56,31 @@ const IngredientToggleButton: React.FC<{ ingredient: Ingredient; isSelected: boo
 export const ProductDetail: React.FC<ProductDetailProps> = ({ item, restaurant, onBack, selectedIngredients, onToggleIngredient }) => {
   useThemeColor('#f97316');
 
-  const headerImageUrl = getTransformedImageUrl(restaurant.imageUrl || item.imageUrl || '', 1200, 600);
-
   return (
     <div className="bg-gray-50 pb-6">
       <div className="relative">
-        <img src={headerImageUrl} alt={restaurant.name} className="w-full h-64 object-cover" />
-        <button onClick={onBack} className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110">
+        <img src={getTransformedImageUrl(item.imageUrl || restaurant.imageUrl || '', 1200, 600)} alt={item.name} className="w-full h-64 object-cover" />
+        <button onClick={onBack} className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md transition-transform hover:scale-110 z-10">
           <Icons.ChevronLeftIcon className="w-6 h-6 text-gray-800"/>
         </button>
-         <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/70 to-transparent">
-             <span className="bg-white/90 text-black text-xs font-bold px-2 py-1 rounded">DELIVERY</span>
-        </div>
-
-        {/* Ingredient/product icons overlay (small circular chips) */}
-        {item.ingredients && item.ingredients.length > 0 && (
-          <div className="absolute right-4 bottom-4 flex gap-3">
-            {item.ingredients.slice(0,5).map((ing) => {
-              const IconComponent = typeof ing.icon === 'string' ? iconMap[ing.icon] : Icons.FoodIcon;
-              return (
-                <div key={ing.name} className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-md">
-                  {IconComponent && <IconComponent className="w-5 h-5 text-orange-500" />}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       <div className="p-4">
-        <div className="flex justify-between items-start">
-            <h1 className="text-2xl font-bold text-gray-900 flex-1 pr-4">{item.name}</h1>
-            <p className="text-3xl font-bold text-orange-600">${item.price.toFixed(2)}</p>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-500 mt-2">
-            <div className="flex items-center gap-1">
-                <Icons.LocationIcon className="w-4 h-4" />
-                <span>{restaurant.name}</span>
-            </div>
-            <div className="flex items-center gap-1">
-                <Icons.StarIcon className="w-5 h-5 text-yellow-400" />
-                <span className="font-bold text-gray-800">{item.rating}</span>
-                <span>({item.reviews} Reviews)</span>
+        <div className="flex flex-col items-start">
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">{item.name}</h1>
+            <p className="text-4xl font-bold text-orange-600 mb-4">${item.price.toFixed(2)}</p>
+            <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                <div className="flex items-center gap-1">
+                    <Icons.LocationIcon className="w-4 h-4 text-gray-400" />
+                    <span>{restaurant.name}</span>
+                </div>
+                {item.rating && (
+                    <div className="flex items-center gap-1">
+                        <Icons.StarIcon className="w-5 h-5 text-yellow-400" />
+                        <span className="font-bold text-gray-800">{item.rating}</span>
+                        {item.reviews && <span>({item.reviews} Reviews)</span>}
+                    </div>
+                )}
             </div>
         </div>
 

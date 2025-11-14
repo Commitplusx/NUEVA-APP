@@ -10,24 +10,19 @@ import { ProductDetailModal } from './ProductDetailModal';
 import { useAppContext } from '../context/AppContext';
 
 const MenuItemCard: React.FC<{ item: MenuItem; onSelect: (item: MenuItem) => void }> = ({ item, onSelect }) => {
-  const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 100, 100);
+  const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 100, 100); // Slightly larger image
   return (
     <button onClick={() => onSelect(item)} className="w-full flex items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm transition-transform transform hover:scale-[1.02] duration-300 text-left">
       {optimizedImageUrl && (
-          <img src={optimizedImageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg mr-4"/>
+          <img src={optimizedImageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg mr-4 border border-gray-200"/>
       )}
-      <div className="flex-1 pr-2">
+      <div className="flex-1">
         <div className="flex items-center">
           {item.isPopular && <span className="text-xs font-bold text-orange-500 mr-2 bg-orange-100 px-2 py-0.5 rounded-full">🔥 Popular</span>}
         </div>
         <h3 className="font-bold text-gray-800 mt-1">{item.name}</h3>
-        <p className="text-sm text-gray-500 my-1 line-clamp-2">{item.description}</p>
-        <p className="font-bold text-lg text-orange-500">${item.price.toFixed(2)}</p>
-      </div>
-      <div className="text-orange-500">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+        {item.description && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{item.description}</p>} {/* Reintroduced concise description */}
+        <p className="font-bold text-lg text-orange-500 mt-1">${item.price.toFixed(2)}</p>
       </div>
     </button>
   );
@@ -91,20 +86,9 @@ export const RestaurantDetail: React.FC = () => {
       </div>
       
       <div className="p-4">
-         {popularItems.length > 0 && (
-           <div className="mb-8">
-             <h2 className="text-2xl font-bold text-gray-800 mb-4">Los Más Populares</h2>
-             <div className="space-y-4">
-                {popularItems.map(item => (
-                  <MenuItemCard key={item.id} item={item} onSelect={handleMenuItemSelect} />
-                ))}
-             </div>
-           </div>
-         )}
-         
-         <h2 className="text-2xl font-bold text-gray-800 mb-4">Menú Completo</h2>
+         <h2 className="text-2xl font-bold text-gray-800 mb-4">Menú</h2>
          <div className="space-y-4">
-            {otherItems.map(item => (
+            {restaurant.menu.map(item => (
               <MenuItemCard key={item.id} item={item} onSelect={handleMenuItemSelect} />
             ))}
          </div>

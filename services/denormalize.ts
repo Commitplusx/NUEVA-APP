@@ -49,7 +49,10 @@ export const denormalizeRestaurants = (
           item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
-      restaurant.menu.push(item);
+      restaurant.menu.push({
+        ...item,
+        imageUrl: getPublicImageUrl(item.image_url || item.imageUrl || ''),
+      });
     }
   }
 
@@ -93,7 +96,10 @@ export const denormalizeRestaurant = (
           item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
-      restaurantWithDetails.menu.push(item);
+      restaurantWithDetails.menu.push({
+        ...item,
+        imageUrl: getPublicImageUrl(item.image_url || item.imageUrl || ''),
+      });
     }
   }
 
