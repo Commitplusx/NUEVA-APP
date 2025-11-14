@@ -23,7 +23,8 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^6.30.1",
     "simple-parallax-js": "^6.3.3",
-    "twilio": "^5.10.4"
+    "twilio": "^5.10.4",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

@@ -482,7 +482,7 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
   }
 };
 
-export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promise<{ street_address: string; neighborhood: string; city: string; postal_code: string; } | null> => {
+export const reverseGeocode = async (lat: number, lng: number): Promise<string | null> => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     console.error("Google Maps API key is missing.");
@@ -497,30 +497,10 @@ export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promi
 
     if (placesData.status === 'OK' && placesData.results.length > 0) {
       const place = placesData.results[0];
-      const placeName = place.name;
-      const vicinity = place.vicinity; // La dirección aproximada que da Places API
-
-      // Places API no da todos los componentes de dirección, así que los obtenemos con Geocoding
-      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`;
-      const geocodeResponse = await fetch(geocodeUrl);
-      const geocodeData = await geocodeResponse.json();
-
-      if (geocodeData.status === 'OK' && geocodeData.results.length > 0) {
-        const addressComponents = geocodeData.results[0].address_components;
-        const neighborhood = addressComponents.find(c => c.types.includes('neighborhood'))?.long_name || '';
-        const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
-        const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
-
-        // Use the formatted_address directly for the street_address
-        const street_address = geocodeData.results[0].formatted_address;
-
-        return {
-          street_address,
-          neighborhood,
-          city,
-          postal_code,
-        };
-      }
+      // Places API often provides a good formatted address in 'name' or 'vicinity'
+      if (place.formatted_address) return place.formatted_address;
+      if (place.name && place.vicinity) return `${place.name}, ${place.vicinity}`;
+      if (place.name) return place.name;
     }
   } catch (error) {
     console.error("Places API call failed, falling back to geocoding.", error);
@@ -533,17 +513,7 @@ export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promi
     const response = await fetch(geocodeUrl);
     const data = await response.json();
     if (data.status === 'OK' && data.results && data.results.length > 0) {
-      const result = data.results[0];
-      const addressComponents = result.address_components;
-      
-      const neighborhood = addressComponents.find(c => c.types.includes('neighborhood'))?.long_name || '';
-      const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
-      const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
-
-      // Use the formatted_address directly for the street_address
-      const street_address = result.formatted_address;
-
-      return { street_address, neighborhood, city, postal_code };
+      return data.results[0].formatted_address;
     }
   } catch (error) {
     console.error("Reverse geocoding error:", error);

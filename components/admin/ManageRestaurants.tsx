@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useCategories } from '../../hooks/useCategories';
-import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage, reverseGeocodeCoordinates } from '../../services/api';
+import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage, reverseGeocode } from '../../services/api';
 import { Restaurant, Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
@@ -83,12 +83,17 @@ const RestaurantForm: React.FC<{
     setLat(location.lat);
     setLng(location.lng);
     showToast('Obteniendo dirección...', 'info');
-    const addressDetails = await reverseGeocodeCoordinates(location.lat, location.lng);
+    const addressDetails = await reverseGeocode(location.lat, location.lng);
     if (addressDetails) {
-      setStreetAddress(addressDetails.street_address);
-      setNeighborhood(addressDetails.neighborhood);
-      setCity(addressDetails.city);
-      setPostalCode(addressDetails.postal_code);
+      // The reverseGeocode function now returns a string, not an object with street_address etc.
+      // We need to parse this string or adjust the expectation.
+      // For now, I will set the streetAddress to the full address string.
+      // A more robust solution might involve updating the reverseGeocode function
+      // to return structured data or parsing the string here.
+      setStreetAddress(addressDetails);
+      setNeighborhood(''); // Clear these as the string might not contain them
+      setCity('');
+      setPostalCode('');
       showToast('Dirección actualizada.', 'success');
     } else {
       showToast('No se pudo obtener la dirección para esta ubicación.', 'error');

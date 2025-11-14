@@ -10,6 +10,7 @@ import { ComingSoonModal } from './ComingSoonModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
+import { LocationPickerMapModal } from './LocationPickerMapModal';
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -24,7 +25,7 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   return R * c; // Distance in km
 };
 
@@ -114,6 +115,10 @@ export const RequestService: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showOriginMapPicker, setShowOriginMapPicker] = useState(false);
+  const [showDestinationMapPicker, setShowDestinationMapPicker] = useState(false);
+  const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [initialDestinationLocation, setInitialDestinationLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
   
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -142,6 +147,7 @@ export const RequestService: React.FC = () => {
           if (formattedAddress && profile.lat && profile.lng) {
             setOrigin(formattedAddress);
             setOriginCoords({ lat: profile.lat, lng: profile.lng });
+            setInitialOriginLocation({ lat: profile.lat, lng: profile.lng });
           } else {
             showToast('No tienes una dirección de origen guardada. Ve a tu perfil para añadir una.', 'info');
           }
@@ -271,6 +277,18 @@ export const RequestService: React.FC = () => {
     setShowScheduleModal(false);
     setSelectedDate(null);
     setScheduleTime('');
+  };
+
+  const handleConfirmOrigin = (address: string, lat: number, lng: number) => {
+    setOrigin(address);
+    setOriginCoords({ lat, lng });
+    setShowOriginMapPicker(false);
+  };
+
+  const handleConfirmDestination = (address: string, lat: number, lng: number) => {
+    setDestination(address);
+    setDestinationCoords({ lat, lng });
+    setShowDestinationMapPicker(false);
   };
   
   const getFormattedScheduledDate = () => {
@@ -539,17 +557,19 @@ export const RequestService: React.FC = () => {
       <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
         <h3 className="font-bold text-lg text-gray-800 mb-2">Detalles del Envío</h3>
         <div>
-            <label htmlFor="origin" className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
-            <div className="relative flex items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
+            <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-green-500" />
-                <input
-                  id="origin"
-                  type="text"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="Dirección de origen"
-                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
+                <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
+                <button
+                  onClick={() => {
+                    setInitialOriginLocation(originCoords || undefined);
+                    setShowOriginMapPicker(true);
+                  }}
+                  className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
+                >
+                  Seleccionar en mapa
+                </button>
             </div>
             {!userProfile?.street_address && (
               <button
@@ -568,18 +588,20 @@ export const RequestService: React.FC = () => {
         </div>
 
         <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
-            <div className="relative flex items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+            <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-red-500" />
-                <input 
-                  id="destination" 
-                  type="text" 
-                  placeholder="Ej: Calle, Colonia, #Casa" 
-                  value={destination} 
-                  onChange={(e) => setDestination(e.target.value)} 
-                  className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{destination || 'Selecciona tu dirección de destino'}</p>
+                <button
+                  onClick={() => {
+                    setInitialDestinationLocation(destinationCoords || undefined);
+                    setShowDestinationMapPicker(true);
+                  }}
+                  className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
                   disabled={!origin}
-                />
+                >
+                  Seleccionar en mapa
+                </button>
             </div>
              {!origin && <p className="text-xs text-red-500 mt-1">Debes configurar una dirección de origen en tu perfil primero.</p>}
         </div>
@@ -730,6 +752,22 @@ export const RequestService: React.FC = () => {
           </div>
         </div>
       )}
+
+      <LocationPickerMapModal
+        isOpen={showOriginMapPicker}
+        onClose={() => setShowOriginMapPicker(false)}
+        onConfirm={handleConfirmOrigin}
+        initialLocation={initialOriginLocation}
+        title="Seleccionar Origen"
+      />
+
+      <LocationPickerMapModal
+        isOpen={showDestinationMapPicker}
+        onClose={() => setShowDestinationMapPicker(false)}
+        onConfirm={handleConfirmDestination}
+        initialLocation={initialDestinationLocation}
+        title="Seleccionar Destino"
+      />
     </div>
   );
 };
