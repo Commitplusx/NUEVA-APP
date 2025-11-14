@@ -492,13 +492,12 @@ export const RequestService: React.FC = () => {
           Hemos recibido tu solicitud de servicio. Nos pondremos en contacto contigo en breve.
         </p>
         <div className="mt-8 w-full max-w-xs">
-          <a
-            href={trackWhatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 text-white w-full py-3 rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg flex items-center justify-center gap-2"
-          >
-            Rastrear por WhatsApp
+                      <a
+                      href={trackWhatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-black text-white w-full py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center gap-2"
+                    >            Rastrear por WhatsApp
           </a>
         </div>
       </div>
@@ -590,11 +589,10 @@ export const RequestService: React.FC = () => {
         <Stepper currentStep={step} />
       </section>
 
-      <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-3">
+      <section className="bg-white p-4 rounded-lg">
         <h3 className="font-bold text-lg text-gray-800 mb-2">Detalles del Envío</h3>
         <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
-            <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
+            <div className="relative flex items-center bg-gray-100 rounded-md">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-success)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
                 <button
@@ -603,7 +601,7 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowOriginMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-black text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
+                  className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
                   Mapa
@@ -627,7 +625,7 @@ export const RequestService: React.FC = () => {
 
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
-            <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
+            <div className="relative flex items-center bg-gray-100 rounded-md">
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-danger)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{destination || 'Selecciona tu dirección de destino'}</p>
                 <button
@@ -636,7 +634,7 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowDestinationMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-black text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
+                  className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
                   Mapa
@@ -646,8 +644,7 @@ export const RequestService: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="font-bold text-lg text-gray-800 mb-2">Costo Estimado</h3>
+      <section className="bg-white p-4 rounded-lg">
         {isCalculating ? (
             <div className="flex items-center gap-2 text-gray-500">
                 <Spinner /> <span>Calculando...</span>
@@ -687,14 +684,14 @@ export const RequestService: React.FC = () => {
         )}
       </section>
 
-      <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+      <section className="bg-white p-4 rounded-lg">
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Descripción del paquete o mandado</label>
         <textarea 
           id="description" 
           placeholder="Ej: Paquete pequeño, documentos importantes, etc."
           value={description} 
           onChange={(e) => setDescription(e.target.value)} 
-          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 h-24 resize-none"
+          className="w-full py-2 px-3 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 h-24 resize-none"
         ></textarea>
       </section>
 
@@ -734,14 +731,14 @@ export const RequestService: React.FC = () => {
       {/* Schedule Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Programar Recogida</h2>
             <div className="space-y-4">
               <div>
                 <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                 <select
                   id="schedule-date"
-                  className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full py-2 px-3 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                   value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
                 >
@@ -757,7 +754,7 @@ export const RequestService: React.FC = () => {
                 <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
                 <select
                   id="schedule-time"
-                  className="w-full py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full py-2 px-3 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
                 >
@@ -771,13 +768,13 @@ export const RequestService: React.FC = () => {
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={handleScheduleCancel}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-semibold"
               >
                 Cancelar
               </button>
               <button
                 onClick={() => handleScheduleSubmit(selectedDate!, scheduleTime)}
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-semibold disabled:bg-gray-600 disabled:cursor-not-allowed"
                 disabled={!selectedDate || !scheduleTime}
               >
                 Confirmar Horario
