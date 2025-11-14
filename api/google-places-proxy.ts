@@ -7,25 +7,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing lat or lng parameters' });
   }
 
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY; // Use GOOGLE_MAPS_API_KEY for Geocoding API
   if (!apiKey) {
-    console.error('GOOGLE_PLACES_API_KEY is not set');
+    console.error('GOOGLE_MAPS_API_KEY is not set');
     return res.status(500).json({ error: 'Server configuration error: API key missing' });
   }
 
   try {
-    const placesApiUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=1500&type=restaurant&key=${apiKey}`;
-    const apiResponse = await fetch(placesApiUrl);
+    // Use Google Geocoding API for reverse geocoding
+    const geocodingApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}&language=es`;
+    const apiResponse = await fetch(geocodingApiUrl);
     const data = await apiResponse.json();
 
     if (!apiResponse.ok) {
-      console.error('Google Places API error:', data);
+      console.error('Google Geocoding API error:', data);
       return res.status(apiResponse.status).json(data);
     }
 
     res.status(200).json(data);
   } catch (error) {
-    console.error('Error in Google Places proxy:', error);
-    res.status(500).json({ error: 'Failed to fetch from Google Places API' });
+    console.error('Error in Google Geocoding proxy:', error);
+    res.status(500).json({ error: 'Failed to fetch from Google Geocoding API' });
   }
 }
