@@ -511,10 +511,8 @@ export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promi
         const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
         const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
 
-        // Combina el nombre del lugar con su dirección si son diferentes
-        const street_address = (vicinity && !placeName.includes(vicinity.split(',')[0]))
-          ? `${placeName}, ${vicinity}`
-          : placeName;
+        // Use the formatted_address directly for the street_address
+        const street_address = geocodeData.results[0].formatted_address;
 
         return {
           street_address,
@@ -542,18 +540,8 @@ export const reverseGeocodeCoordinates = async (lat: number, lng: number): Promi
       const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || '';
       const postal_code = addressComponents.find(c => c.types.includes('postal_code'))?.long_name || '';
 
-      let street_address = '';
-      const fullFormattedAddress = result.formatted_address;
-
-      if (city && fullFormattedAddress.includes(city)) {
-        street_address = fullFormattedAddress.substring(0, fullFormattedAddress.indexOf(city)).replace(/,\s*$/, '').trim();
-      } else {
-        street_address = fullFormattedAddress.split(',')[0];
-      }
-
-      if (!street_address && data.results.length > 1) {
-         street_address = data.results[1].formatted_address.split(',')[0];
-      }
+      // Use the formatted_address directly for the street_address
+      const street_address = result.formatted_address;
 
       return { street_address, neighborhood, city, postal_code };
     }
