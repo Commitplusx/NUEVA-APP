@@ -587,7 +587,7 @@ export const RequestService: React.FC = () => {
   return (
     <div className="p-4 space-y-5">
       <section>
-        <h1 className="text-2xl font-bold text-center mb-4">SOLICITA TU SERVICIO</h1>
+        <h1 className="text-2xl font-bold text-center mb-4">Crea tu Solicitud de Envío</h1>
         <Stepper currentStep={step} />
       </section>
 
@@ -614,7 +614,7 @@ export const RequestService: React.FC = () => {
                 onClick={handleProfileLinkClick}
                 className="text-xs font-medium underline text-[var(--color-rappi-danger)] hover:text-[color-mix(in srgb, var(--color-rappi-danger) 80%, black)] ml-1 mt-1"
               >
-                  No tienes una dirección guardada. Ve a tu perfil para añadir una.
+                  Añadir dirección en perfil
               </button>
             )}
         </div>
