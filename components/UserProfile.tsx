@@ -375,11 +375,9 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
       setLoadingOrders(true);
       setErrorOrders(null);
       try {
-        // Assuming a getOrders function exists in your API service
-        // You might need to create this function in services/api.ts
         const { data, error } = await supabase
           .from('orders')
-          .select('*')
+          .select('*, order_items(*)') // Select order and its related order_items
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
 
@@ -422,17 +420,34 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
             {loadingOrders ? (
               <Spinner />
             ) : errorOrders ? (
-              <p className="text-red-500">{errorOrders}</p>
+              <p className="text-red-500 text-center">{errorOrders}</p>
             ) : orders.length === 0 ? (
-              <p className="text-gray-600">No tienes pedidos realizados aún.</p>
+              <p className="text-gray-600 text-center">No tienes pedidos realizados aún.</p>
             ) : (
-              <div className="space-y-4 max-h-80 overflow-y-auto">
+              <div className="space-y-6 max-h-96 overflow-y-auto pr-2"> {/* Added pr-2 for scrollbar */}
                 {orders.map((order) => (
-                  <div key={order.id} className="p-4 border border-gray-200 rounded-lg">
-                    <p className="font-semibold text-gray-800">Pedido #{order.id}</p>
-                    <p className="text-sm text-gray-600">Fecha: {new Date(order.created_at).toLocaleDateString()}</p>
-                    <p className="text-sm text-gray-600">Total: ${order.total_amount}</p>
-                    {/* Add more order details as needed */}
+                  <div key={order.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="font-semibold text-lg text-gray-800">Pedido #{order.id}</p>
+                      <span className="text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-2">Total: <span className="font-bold">${order.total_amount?.toFixed(2) || '0.00'}</span></p>
+                    
+                    {order.order_items && order.order_items.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <p className="font-medium text-gray-700 mb-1">Artículos:</p>
+                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                          {order.order_items.map((item: any, index: number) => (
+                            <li key={index}>
+                              {item.quantity} x {item.name} - ${item.price?.toFixed(2) || '0.00'}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {!order.order_items || order.order_items.length === 0 && (
+                      <p className="text-sm text-gray-500 italic">No hay artículos para este pedido.</p>
+                    )}
                   </div>
                 ))}
               </div>
