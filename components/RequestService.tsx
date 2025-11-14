@@ -6,7 +6,7 @@ import { createServiceRequest, getProfile, geocodeAddress } from '../services/ap
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { Spinner } from './Spinner';
-import { ComingSoonModal } from './ComingSoonModal';
+
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
@@ -71,14 +71,14 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
           <div className="flex flex-col items-center text-center">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                index <= currentStepIndex ? 'bg-[var(--color-rappi-primary)] text-white' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {index < currentStepIndex ? <Icons.CheckCircleIcon className="w-6 h-6" /> : index + 1}
             </div>
             <p
               className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
+                index <= currentStepIndex ? 'text-[var(--color-rappi-primary)]' : 'text-gray-500'
               }`}
             >
               {getStepName(step as Step)}
@@ -86,7 +86,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
           </div>
           {index < steps.length - 1 && (
             <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-              index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
+              index < currentStepIndex ? 'border-[var(--color-rappi-primary)]' : 'border-gray-200'
             }`}></div>
           )}
         </React.Fragment>
@@ -96,7 +96,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
 };
 
 export const RequestService: React.FC = () => {
-  useThemeColor('#f97316');
+  useThemeColor('var(--color-rappi-primary)');
   const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError, setBottomNavVisible } = useAppContext();
   const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
@@ -110,7 +110,7 @@ export const RequestService: React.FC = () => {
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [scheduleTime, setScheduleTime] = useState<string>('');
-  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -257,11 +257,46 @@ export const RequestService: React.FC = () => {
       showToast('Espera a que se calcule el precio del envío.', 'error');
       return;
     }
-    setShowComingSoonModal(true);
+    setStep('confirmation');
   };
 
   const handleSubmit = async () => {
-    setShowComingSoonModal(true);
+    if (!origin || !destination || !description || !shippingCost || !userProfile?.user_id) {
+      showToast('Faltan datos para crear la solicitud.', 'error');
+      return;
+    }
+
+    setIsCalculating(true); // Use this for a loading state during submission
+
+    try {
+      let scheduledAt = null;
+      if (confirmedSchedule) {
+        const date = confirmedSchedule.date.toISOString().split('T')[0];
+        scheduledAt = `${date}T${confirmedSchedule.time}:00`; // Format to ISO string
+      }
+
+      const newServiceRequest: ServiceRequest = {
+        origin,
+        destination,
+        description,
+        price: shippingCost,
+        distance: distance || 0, // Assuming distance is calculated, default to 0 if not
+        user_id: userProfile.user_id,
+        scheduled_at: scheduledAt,
+        status: 'pending', // Default status
+        phone: userProfile.phone || undefined, // Include phone if available
+      };
+
+      const createdRequest = await createServiceRequest(newServiceRequest);
+      setNewRequestId(createdRequest.id?.toString() || null);
+      setStep('submitted');
+      showToast('Solicitud de servicio creada con éxito.', 'success');
+    } catch (error) {
+      console.error("Error creating service request:", error);
+      showToast('Error al crear la solicitud de servicio.', 'error');
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleScheduleSubmit = (date: Date, time: string) => {
@@ -479,12 +514,12 @@ export const RequestService: React.FC = () => {
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.MapPinIcon className="w-5 h-5 text-orange-500" />
+                        <Icons.MapPinIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
                         Detalles del Servicio
                     </h2>
                     <div className="space-y-4">
                         <div className="flex items-start text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-green-500 flex-shrink-0 mt-1" />
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-[var(--color-rappi-success)] flex-shrink-0 mt-1" />
                             <div className="flex-1">
                                 <p className="text-xs font-bold text-gray-500">ORIGEN</p>
                                 <p className="font-semibold text-gray-900">{origin}</p>
@@ -492,7 +527,7 @@ export const RequestService: React.FC = () => {
                         </div>
                         <div className="h-4 w-px bg-gray-300 ml-2.5"></div>
                         <div className="flex items-start text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-red-500 flex-shrink-0 mt-1" />
+                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-[var(--color-rappi-danger)] flex-shrink-0 mt-1" />
                             <div className="flex-1">
                                 <p className="text-xs font-bold text-gray-500">DESTINO</p>
                                 <p className="font-semibold text-gray-900">{destination}</p>
@@ -503,7 +538,7 @@ export const RequestService: React.FC = () => {
 
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.PackageIcon className="w-5 h-5 text-orange-500" />
+                        <Icons.PackageIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
                         Descripción del Paquete
                     </h2>
                     <p className="text-sm text-gray-700">{description}</p>
@@ -511,7 +546,7 @@ export const RequestService: React.FC = () => {
                 
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.DollarSignIcon className="w-5 h-5 text-orange-500" />
+                        <Icons.DollarSignIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
                         Costo del Envío
                     </h2>
                     <p className="text-3xl font-bold text-gray-900">${shippingCost?.toFixed(2)}</p>
@@ -539,7 +574,7 @@ export const RequestService: React.FC = () => {
                 </button>
                 <button
                     onClick={handleSubmit}
-                    className="bg-orange-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors shadow-lg"
+                    className="bg-[var(--color-rappi-primary)] text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors shadow-lg"
                 >
                     Confirmar
                     <Icons.ArrowRightIcon className="w-5 h-5" />
@@ -561,7 +596,7 @@ export const RequestService: React.FC = () => {
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Origen</label>
             <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
-                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-green-500" />
+                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-success)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
                 <button
                   onClick={() => {
@@ -569,7 +604,7 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowOriginMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
+                  className="flex-shrink-0 bg-[var(--color-rappi-primary)] text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors"
                 >
                   Seleccionar en mapa
                 </button>
@@ -577,7 +612,7 @@ export const RequestService: React.FC = () => {
             {!userProfile?.street_address && (
               <button
                 onClick={handleProfileLinkClick}
-                className="text-xs font-medium underline text-red-600 hover:text-red-700 ml-1 mt-1"
+                className="text-xs font-medium underline text-[var(--color-rappi-danger)] hover:text-[color-mix(in srgb, var(--color-rappi-danger) 80%, black)] ml-1 mt-1"
               >
                   No tienes una dirección guardada. Ve a tu perfil para añadir una.
               </button>
@@ -593,7 +628,7 @@ export const RequestService: React.FC = () => {
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Destino</label>
             <div className="relative flex items-center border border-gray-300 rounded-lg bg-gray-50">
-                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-red-500" />
+                <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-danger)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{destination || 'Selecciona tu dirección de destino'}</p>
                 <button
                   onClick={() => {
@@ -601,13 +636,12 @@ export const RequestService: React.FC = () => {
                     setBottomNavVisible(false);
                     setShowDestinationMapPicker(true);
                   }}
-                  className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
-                  disabled={!origin}
+                  className="flex-shrink-0 bg-[var(--color-rappi-primary)] text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-[color-mix(in srgb, var(--color-rappi-primary) 80%, black)] transition-colors"
                 >
                   Seleccionar en mapa
                 </button>
             </div>
-             {!origin && <p className="text-xs text-red-500 mt-1">Debes configurar una dirección de origen en tu perfil primero.</p>}
+             {!origin && <p className="text-xs text-[var(--color-rappi-danger)] mt-1">Debes configurar una dirección de origen en tu perfil primero.</p>}
         </div>
       </section>
 
@@ -659,7 +693,7 @@ export const RequestService: React.FC = () => {
           placeholder="Ej: Paquete pequeño, documentos importantes, etc."
           value={description} 
           onChange={(e) => setDescription(e.target.value)} 
-          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 h-24 resize-none"
+          className="w-full py-2 px-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-rappi-primary)] h-24 resize-none"
         ></textarea>
       </section>
 
@@ -694,12 +728,7 @@ export const RequestService: React.FC = () => {
         </a>
       </div>
 
-      <ComingSoonModal
-        isOpen={showComingSoonModal}
-        onClose={() => setShowComingSoonModal(false)}
-        title="¡Funcionalidad Próximamente!"
-        message="Este mapa interactivo estará disponible muy pronto. Estamos trabajando para mejorar tu experiencia."
-      />
+
 
       {/* Schedule Modal */}
       {showScheduleModal && (

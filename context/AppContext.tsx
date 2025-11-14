@@ -72,77 +72,81 @@ interface AppContextType {
 
   isProductModalOpen: boolean;
 
-  isBottomNavVisible: boolean;
+    isBottomNavVisible: boolean;
 
+    bottomNavCustomContent: ReactNode | null;
 
+  
 
-    // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
+      // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
 
+  
 
+      toggleSidebar: () => void;
 
-    toggleSidebar: () => void;
+  
 
+      showToast: (message: string, type: ToastType) => void;
 
+  
 
-    showToast: (message: string, type: ToastType) => void;
+      requestConfirmation: (title: string, message: string, onConfirm: () => void) => void;
 
+  
 
+      handleLogin: (username: string, role: UserRole) => void;
 
-    requestConfirmation: (title: string, message: string, onConfirm: () => void) => void;
+  
 
+      handleLogout: () => void;
 
+  
 
-    handleLogin: (username: string, role: UserRole) => void;
+      handleSelectRestaurant: (restaurant: Restaurant) => void;
 
+  
 
+      handleBackToRestaurants: () => void;
 
-    handleLogout: () => void;
+  
 
+      handleSelectMenuItem: (item: MenuItem) => void;
 
+  
 
-    handleSelectRestaurant: (restaurant: Restaurant) => void;
+      handleBackToMenu: () => void;
 
+  
 
+      handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => void;
 
-    handleBackToRestaurants: () => void;
+  
 
+      handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
 
+  
 
-    handleSelectMenuItem: (item: MenuItem) => void;
+      handleRemoveFromCart: (cartItemId: string) => void;
 
+  
 
+      handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
 
-    handleBackToMenu: () => void;
+  
 
+      setIsCustomizationModalOpen: (isOpen: boolean) => void;
 
+  
 
-    handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => void;
+      setIsProductModalOpen: (isOpen: boolean) => void;
 
+      
 
+      setBottomNavVisible: (isVisible: boolean) => void;
 
-    handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
+      setBottomNavCustomContent: (content: ReactNode | null) => void;
 
-
-
-    handleRemoveFromCart: (cartItemId: string) => void;
-
-
-
-    handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
-
-
-
-    setIsCustomizationModalOpen: (isOpen: boolean) => void;
-
-
-
-    setIsProductModalOpen: (isOpen: boolean) => void;
-
-    
-
-    setBottomNavVisible: (isVisible: boolean) => void;
-
-  }
+    }
 
 
 
@@ -298,847 +302,859 @@ interface AppContextType {
 
 
 
-        const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
+                const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
 
 
 
-        const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+                const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
 
 
-  
+                const [bottomNavCustomContent, setBottomNavCustomContent] = useState<ReactNode | null>(null);
 
 
 
-    const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
+          
 
 
 
-      googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+            const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
 
 
 
-      libraries,
+              googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
 
 
 
-    });
+              libraries,
 
 
 
-  
+            });
 
 
 
-  
+          
 
 
 
-    useEffect(() => {
+          
 
 
 
-      const fetchBaseFee = async () => {
+            useEffect(() => {
 
 
 
-        try {
+              const fetchBaseFee = async () => {
 
 
 
-          const tariffs = await getTariffs();
+                try {
 
 
 
-          const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
+                  const tariffs = await getTariffs();
 
 
 
-          if (baseTariff) {
+                  const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
 
 
 
-            setBaseFee(baseTariff.price);
+                  if (baseTariff) {
 
 
 
-          } else {
+                    setBaseFee(baseTariff.price);
 
 
 
-              console.warn('"Tarifa Base" not found in database, using default value.');
+                  } else {
 
 
 
-          }
+                      console.warn('"Tarifa Base" not found in database, using default value.');
 
 
 
-        } catch (error) {
+                  }
 
 
 
-          console.error("Failed to fetch tariffs:", error);
+                } catch (error) {
 
 
 
-        }
+                  console.error("Failed to fetch tariffs:", error);
 
 
 
-      };
+                }
 
 
 
-  
+              };
 
 
 
-      fetchBaseFee();
+          
 
 
 
-    }, []);
+              fetchBaseFee();
 
 
 
-  
+            }, []);
 
 
 
-    useEffect(() => {
+          
 
 
 
-      const fetchUserProfile = async () => {
+            useEffect(() => {
 
 
 
-        if (user) {
+              const fetchUserProfile = async () => {
 
 
 
-          try {
+                if (user) {
 
 
 
-            const userProfile = await getProfile();
+                  try {
 
 
 
-            setProfile(userProfile);
+                    const userProfile = await getProfile();
 
 
 
-          } catch (error) {
+                    setProfile(userProfile);
 
 
 
-            console.error("Error fetching user profile in AppContext:", error);
+                  } catch (error) {
 
 
 
-            setProfile(null);
+                    console.error("Error fetching user profile in AppContext:", error);
 
 
 
-          }
+                    setProfile(null);
 
 
 
-        } else {
+                  }
 
 
 
-          setProfile(null);
+                } else {
 
 
 
-        }
+                  setProfile(null);
 
 
 
-      };
+                }
 
 
 
-  
+              };
 
 
 
-      fetchUserProfile();
+          
 
 
 
-    }, [user]);
+              fetchUserProfile();
 
 
 
-  
+            }, [user]);
 
 
 
-    useEffect(() => {
+          
 
 
 
-      const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            useEffect(() => {
 
 
 
-        if (session?.user) {
+              const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
 
 
 
-          setUser(session.user || null);
+                if (session?.user) {
 
 
 
-          setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+                  setUser(session.user || null);
 
 
 
-        } else {
+                  setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
 
 
-          setUser(null);
+                } else {
 
 
 
-          setUserRole('guest');
+                  setUser(null);
 
 
 
-        }
+                  setUserRole('guest');
 
 
 
-        setIsLoadingAuth(false);
+                }
 
 
 
-      });
+                setIsLoadingAuth(false);
 
 
 
-  
+              });
 
 
 
-      supabase.auth.getSession().then(({ data: { session } }) => {
+          
 
 
 
-        if (session?.user) {
+              supabase.auth.getSession().then(({ data: { session } }) => {
 
 
 
-          setUser(session.user || null);
+                if (session?.user) {
 
 
 
-          setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+                  setUser(session.user || null);
 
 
 
-        }
+                  setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
 
 
-        setIsLoadingAuth(false);
+                }
 
 
 
-      });
+                setIsLoadingAuth(false);
 
 
 
-  
+              });
 
 
 
-      return () => {
+          
 
 
 
-        authListener.subscription.unsubscribe();
+              return () => {
 
 
 
-      };
+                authListener.subscription.unsubscribe();
 
 
 
-    }, []);
+              };
 
 
 
-  
+            }, []);
 
 
 
-    const toggleSidebar = () => {
+          
 
 
 
-      setIsSidebarOpen(!isSidebarOpen);
+            const toggleSidebar = () => {
 
 
 
-    };
+              setIsSidebarOpen(!isSidebarOpen);
 
 
 
-  
+            };
 
 
 
-    const showToast = (message: string, type: ToastType) => {
+          
 
 
 
-      setToastMessage(message);
+            const showToast = (message: string, type: ToastType) => {
 
 
 
-      setToastType(type);
+              setToastMessage(message);
 
 
 
-      setTimeout(() => {
+              setToastType(type);
 
 
 
-        setToastMessage(null);
+              setTimeout(() => {
 
 
 
-      }, 3000);
+                setToastMessage(null);
 
 
 
-    };
+              }, 3000);
 
 
 
-  
+            };
 
 
 
-    const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
+          
 
 
 
-      setConfirmation({
+            const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
 
 
 
-        isOpen: true,
+              setConfirmation({
 
 
 
-        title,
+                isOpen: true,
 
 
 
-        message,
+                title,
 
 
 
-        onConfirm,
+                message,
 
 
 
-      });
+                onConfirm,
 
 
 
-    };
+              });
 
 
 
-  
+            };
 
 
 
-    const handleLogin = (username: string, role: UserRole) => {
+          
 
 
 
-      setUserRole(role);
+            const handleLogin = (username: string, role: UserRole) => {
 
 
 
-      setIsSidebarOpen(false);
+              setUserRole(role);
 
 
 
-      showToast(`¡Bienvenido, ${username}!`, 'success');
+              setIsSidebarOpen(false);
 
 
 
-    };
+              showToast(`¡Bienvenido, ${username}!`, 'success');
 
 
 
-  
+            };
 
 
 
-    const handleLogout = async () => {
+          
 
 
 
-      await supabase.auth.signOut();
+            const handleLogout = async () => {
 
 
 
-      setUser(null);
+              await supabase.auth.signOut();
 
 
 
-      setUserRole('guest');
+              setUser(null);
 
 
 
-      setIsSidebarOpen(false);
+              setUserRole('guest');
 
 
 
-      showToast('Has cerrado sesión.', 'info');
+              setIsSidebarOpen(false);
 
 
 
-    };
+              showToast('Has cerrado sesión.', 'info');
 
 
 
-  
+            };
 
 
 
-    const handleSelectRestaurant = (restaurant: Restaurant) => {
+          
 
 
 
-      setSelectedRestaurant(restaurant);
+            const handleSelectRestaurant = (restaurant: Restaurant) => {
 
 
 
-    };
+              setSelectedRestaurant(restaurant);
 
 
 
-    
+            };
 
 
 
-    const handleBackToRestaurants = () => {
+            
 
 
 
-      setSelectedRestaurant(null);
+            const handleBackToRestaurants = () => {
 
 
 
-    };
+              setSelectedRestaurant(null);
 
 
 
-  
+            };
 
 
 
-    const handleSelectMenuItem = (item: MenuItem) => {
+          
 
 
 
-      setSelectedMenuItem(item);
+            const handleSelectMenuItem = (item: MenuItem) => {
 
 
 
-    };
+              setSelectedMenuItem(item);
 
 
 
-  
+            };
 
 
 
-    const handleBackToMenu = () => {
+          
 
 
 
-      setSelectedMenuItem(null);
+            const handleBackToMenu = () => {
 
 
 
-    };
+              setSelectedMenuItem(null);
 
 
 
-  
+            };
 
 
 
-    const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => {
+          
 
 
 
-      const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+            const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => {
 
 
 
-  
+              const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
 
 
 
-      const addItemToCart = (isNewCart = false) => {
+          
 
 
 
-        const cartItemId = `${item.id}-${customizedIngredients.map(i => i.name).sort().join('-')}`;
+              const addItemToCart = (isNewCart = false) => {
 
 
 
-        
+                const cartItemId = `${item.id}-${customizedIngredients.map(i => i.name).sort().join('-')}`;
 
 
 
-        if (isNewCart) {
+                
 
 
 
-          const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients, restaurant };
+                if (isNewCart) {
 
 
 
-          setCart([newCartItem]);
+                  const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients, restaurant };
 
 
 
-        } else {
+                  setCart([newCartItem]);
 
 
 
-          setCart(prevCart => {
+                } else {
 
 
 
-            const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
+                  setCart(prevCart => {
 
 
 
-            if (existingItem) {
+                    const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
 
 
 
-              return prevCart.map(cartItem =>
+                    if (existingItem) {
 
 
 
-                cartItem.id === cartItemId
+                      return prevCart.map(cartItem =>
 
 
 
-                  ? { ...cartItem, quantity: cartItem.quantity + quantity }
+                        cartItem.id === cartItemId
 
 
 
-                  : cartItem
+                          ? { ...cartItem, quantity: cartItem.quantity + quantity }
 
 
 
-              );
+                          : cartItem
 
 
 
-            }
+                      );
 
 
 
-            return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients, restaurant }];
+                    }
 
 
 
-          });
+                    return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients, restaurant }];
 
 
 
-        }
+                  });
 
 
 
-        
+                }
 
 
 
-        setIsCartAnimating(true);
+                
 
 
 
-        setTimeout(() => setIsCartAnimating(false), 500);
+                setIsCartAnimating(true);
 
 
 
-        showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
+                setTimeout(() => setIsCartAnimating(false), 500);
 
 
 
-      };
+                showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
 
 
 
-  
+              };
 
 
 
-      if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
+          
 
 
 
-        requestConfirmation(
+              if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
 
 
 
-          'Vaciar Carrito',
+                requestConfirmation(
 
 
 
-          'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
+                  'Vaciar Carrito',
 
 
 
-          () => addItemToCart(true) // onConfirm
+                  'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
 
 
 
-        );
+                  () => addItemToCart(true) // onConfirm
 
 
 
-      } else {
+                );
 
 
 
-        addItemToCart(false);
+              } else {
 
 
 
-      }
+                addItemToCart(false);
 
 
 
-    };
+              }
 
 
 
-  
+            };
 
 
 
-    const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
+          
 
 
 
-      if (newQuantity <= 0) {
+            const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
 
 
 
-         handleRemoveFromCart(cartItemId);
+              if (newQuantity <= 0) {
 
 
 
-      } else {
+                 handleRemoveFromCart(cartItemId);
 
 
 
-        setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
+              } else {
 
 
 
-      }
+                setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
 
 
 
-    };
+              }
 
 
 
-  
+            };
 
 
 
-    const handleRemoveFromCart = (cartItemId: string) => {
+          
 
 
 
-      setCart(cart => cart.filter(item => item.id !== cartItemId));
+            const handleRemoveFromCart = (cartItemId: string) => {
 
 
 
-    };
+              setCart(cart => cart.filter(item => item.id !== cartItemId));
 
 
 
-  
+            };
 
 
 
-    const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
+          
 
 
 
-      try {
+            const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
 
 
 
-        await confirmarPedido(cart, userDetails, deliveryFee);
+              try {
 
 
 
-        showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
+                await confirmarPedido(cart, userDetails, deliveryFee);
 
 
 
-        setCart([]);
+                showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
 
 
 
-      } catch (error) {
+                setCart([]);
 
 
 
-        console.error("Order confirmation failed:", error);
+              } catch (error) {
 
 
 
-        showToast("Hubo un problema al confirmar el pedido.", 'error');
+                console.error("Order confirmation failed:", error);
 
 
 
-      }
+                showToast("Hubo un problema al confirmar el pedido.", 'error');
 
 
 
-    };
+              }
 
 
 
-  
+            };
 
 
 
-    const handleModalConfirm = () => {
+          
 
 
 
-      if (confirmation?.onConfirm) {
+            const handleModalConfirm = () => {
 
 
 
-        confirmation.onConfirm();
+              if (confirmation?.onConfirm) {
 
 
 
-      }
+                confirmation.onConfirm();
 
 
 
-      setConfirmation(null);
+              }
 
 
 
-    };
+              setConfirmation(null);
 
 
 
-  
+            };
 
 
 
-    const handleModalCancel = () => {
+          
 
 
 
-      setConfirmation(null);
+            const handleModalCancel = () => {
 
 
 
-    };
+              setConfirmation(null);
 
 
 
-  
+            };
 
 
 
-    const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+          
 
 
 
-  
+            const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
 
 
-        const value = {
+          
 
 
 
-  
+                const value = {
 
 
 
-          user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
+          
 
 
 
-  
+                  user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
 
 
 
-          isProductModalOpen,
+          
 
 
 
-  
+                  isProductModalOpen,
 
 
 
-          isBottomNavVisible,
+          
 
 
 
-  
+                  isBottomNavVisible,
 
 
 
-          toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+                  bottomNavCustomContent,
 
 
 
-  
+          
 
 
 
-          setIsProductModalOpen,
+                  toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
 
 
 
-  
+          
 
 
 
-          setBottomNavVisible: setIsBottomNavVisible
+                  setIsProductModalOpen,
 
 
 
-  
+          
 
 
 
-        };
+                  setBottomNavVisible: setIsBottomNavVisible,
+
+
+
+                  setBottomNavCustomContent
+
+
+
+          
+
+
+
+                };
 
 
 

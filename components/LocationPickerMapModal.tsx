@@ -16,7 +16,7 @@ interface LocationPickerMapModalProps {
 
 const mapContainerStyle = {
   width: '100%',
-  height: 'calc(100vh - 200px)', // Adjust height as needed
+  height: 'calc(100vh - 120px)', // Adjust height as needed
 };
 
 const defaultCenter = {
@@ -350,7 +350,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
                   />
                 )}
               </GoogleMap>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-3 p-2 bg-white rounded-full shadow-lg z-50">
+              <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:max-w-sm mx-auto bg-white/80 backdrop-blur-sm shadow-lg rounded-full border border-gray-200/80 p-2 flex justify-around items-center h-16 z-50">
                 <button
                   onClick={onClose}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-bold hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon, ChartBarIcon, BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, LogoutIcon } from './icons';
@@ -46,7 +46,7 @@ const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, show
 };
 
 export const BottomNav: React.FC = () => {
-  const { cartItemCount, userRole, handleLogout, isBottomNavVisible } = useAppContext();
+  const { cartItemCount, userRole, handleLogout, isBottomNavVisible, bottomNavCustomContent } = useAppContext();
   const navigate = useNavigate();
   const isLoggedIn = userRole !== 'guest';
 
@@ -82,21 +82,27 @@ export const BottomNav: React.FC = () => {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="bottom-nav fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:max-w-sm mx-auto bg-white/80 backdrop-blur-sm shadow-lg rounded-full border border-gray-200/80" style={{ zIndex: 9999 }}>
       <div className="flex justify-around items-center h-16">
-        {pagesToRender.map((page) => (
-          <NavItem key={page.to} {...page} />
-        ))}
-        {userRole === 'admin' && (
-          <button
-            onClick={() => {
-              handleLogout();
-              navigate('/login');
-            }}
-            className="flex flex-col items-center justify-center w-full h-full pt-2 pb-1 text-red-500"
-            // Add similar motion props if desired
-          >
-            <LogoutIcon className="w-6 h-6 mb-1" />
-            <span className="text-xs font-medium">Salir</span>
-          </button>
+        {bottomNavCustomContent ? (
+          bottomNavCustomContent
+        ) : (
+          <>
+            {pagesToRender.map((page) => (
+              <NavItem key={page.to} {...page} />
+            ))}
+            {userRole === 'admin' && (
+              <button
+                onClick={() => {
+                  handleLogout();
+                  navigate('/login');
+                }}
+                className="flex flex-col items-center justify-center w-full h-full pt-2 pb-1 text-red-500"
+                // Add similar motion props if desired
+              >
+                <LogoutIcon className="w-6 h-6 mb-1" />
+                <span className="text-xs font-medium">Salir</span>
+              </button>
+            )}
+          </>
         )}
       </div>
     </motion.div>
