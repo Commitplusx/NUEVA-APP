@@ -18,34 +18,69 @@ import {
   ShoppingBagIcon,
   CreditCardIcon,
   LogOutIcon,
+  PackageIcon,
+  HeadphonesIcon,
+  TicketIcon,
+  StarIcon,
+  CrownIcon,
+  LocationIcon,
+  DocumentTextIcon,
+  BellIcon,
+  StoreIcon,
+  MotorcycleIcon,
+  UserIcon,
+  SparklesIcon
 } from './icons';
 import { PaymentMethod } from './PaymentMethod';
 import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 
-interface MenuItemProps {
-  icon: React.ReactNode;
-  label: string;
-  onClick?: () => void;
-  iconColor: string;
-  iconBgColor: string;
+
+
+const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className="" }) => (
+  <div className={`mb-6 ${className}`}>
+    <h2 className="px-4 text-xl font-bold text-gray-900 mb-3">{title}</h2>
+    <div>{children}</div>
+  </div>
+);
+
+interface ListItemProps {
+    icon: React.ReactNode;
+    text: string;
+    subtext?: string;
+    value?: string;
+    onClick?: () => void;
+    hasChevron?: boolean;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ icon, label, onClick, iconColor, iconBgColor }) => {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-    >
-      <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 ${iconBgColor} rounded-lg flex items-center justify-center`}>
-          {React.cloneElement(icon as React.ReactElement, { className: `w-5 h-5 ${iconColor}` })}
+const ListItem: React.FC<ListItemProps> = ({ icon, text, subtext, value, onClick, hasChevron = true }) => {
+    const content = (
+        <div className="flex items-center p-4 bg-white">
+            <div className="mr-4 text-gray-600">{icon}</div>
+            <div className="flex-1">
+                <p className="font-semibold text-gray-800">{text}</p>
+                {subtext && <p className="text-sm text-gray-500">{subtext}</p>}
+            </div>
+            {value && <p className="font-semibold text-gray-800">{value}</p>}
+            {hasChevron && <ChevronRightIcon className="w-5 h-5 text-gray-400 ml-4" />}
         </div>
-        <span className="text-gray-700 font-medium">{label}</span>
-      </div>
-      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
-    </button>
-  );
+    );
+
+    if (onClick) {
+        return (
+            <button onClick={onClick} className="w-full text-left transition-colors duration-200 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl">
+               {content}
+            </button>
+        )
+    }
+    return <div className="first:rounded-t-xl last:rounded-b-xl">{content}</div>;
 };
+
+const QuickActionButton: React.FC<{icon: React.ReactNode, label: string, onClick: () => void}> = ({ icon, label, onClick }) => (
+    <button onClick={onClick} className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-sm border border-gray-200 hover:bg-gray-50 hover:shadow-md transition-all duration-200">
+        <div className="text-gray-700">{icon}</div>
+        <span className="mt-2 font-semibold text-sm text-gray-800">{label}</span>
+    </button>
+);
 
 interface AddressManagerModalProps {
   isOpen: boolean;
@@ -293,117 +328,143 @@ export const UserProfile: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
+    return <div className="flex justify-center items-center h-screen bg-white"><Spinner /></div>;
   }
 
   if (showPaymentMethod) {
     return <PaymentMethod onBack={() => setShowPaymentMethod(false)} />;
   }
 
+  const comingSoon = () => showToast('Próximamente disponible', 'info'); // Placeholder for now
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full overflow-y-auto bg-white pb-8">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       
-      <div className="bg-white pb-6">
-        <div className="flex items-center justify-between p-4">
-          <button
-            onClick={handleBack}
-            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-          >
-            <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
-          </button>
-          <h1 className="text-xl font-semibold text-gray-800">Profile</h1>
-          <button
-            onClick={() => showToast('Próximamente disponible', 'info')}
-            className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-          >
-            <MenuDots className="w-5 h-5 text-gray-700" />
-          </button>
-        </div>
+      <header className="p-4 pt-6 flex items-center justify-between bg-white">
+        <button
+          onClick={handleBack}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+        >
+          <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
+        </button>
+        <h1 className="text-4xl font-bold text-gray-900">Cuenta</h1>
+        <button
+          onClick={comingSoon}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+        >
+          <MenuDots className="w-5 h-5 text-gray-700" />
+        </button>
+      </header>
 
-        <div className="flex flex-col items-center mt-6 px-4">
-          <div className="w-28 h-28 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+      <div className="px-4 mb-6">
+        <div className="flex items-center">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-500 text-2xl font-bold mr-4 border-4 border-white shadow-lg">
             {profile?.avatar ? (
               <Avatar
                 url={profile.avatar}
-                size={104}
+                size={64} // Adjusted size for consistency
                 onUpload={() => {}}
                 loading={false}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
-              </div>
+              <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
             )}
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mt-4">
+          <div>
             <input
               type="text"
               value={profile?.full_name || ''}
               onChange={(e) => setProfile(p => p ? { ...p, full_name: e.target.value } : null)}
-              className="text-center bg-transparent font-bold text-2xl w-full"
+              className="text-lg font-bold text-gray-900 bg-transparent w-full"
               placeholder="Tu nombre"
             />
-          </h2>
-          <p className="text-gray-400 text-sm mt-1">
-            {formatAddress(profile)}
-          </p>
-          <div className="mt-2 relative flex items-center">
-            <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-            <input
-              type="tel"
-              value={profile?.phone || ''}
-              onChange={(e) => setProfile(p => p ? { ...p, phone: e.target.value } : null)}
-              className="w-full py-2 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Tu teléfono (Ej: +521...)"
-            />
+            <button onClick={comingSoon} className="text-sm font-semibold text-gray-800 hover:text-gray-600">
+              Editar perfil ›
+            </button>
           </div>
         </div>
-      </div>
-
-      <div className="mt-4 mx-4">
+        <div className="mt-4 relative flex items-center">
+          <PhoneIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+          <input
+            type="tel"
+            value={profile?.phone || ''}
+            onChange={(e) => setProfile(p => p ? { ...p, phone: e.target.value } : null)}
+            className="w-full py-2 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-800"
+            placeholder="Tu teléfono (Ej: +521...)"
+          />
+        </div>
         <button
           onClick={handleSave}
-          className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-lg"
+          className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors shadow-lg mt-4"
         >
           Guardar Cambios
         </button>
       </div>
 
-      <div className="mt-4 mx-4 bg-white rounded-2xl overflow-hidden shadow-sm">
-        <MenuItem
-          icon={<ShoppingBagIcon />}
-          label="Cart"
-          onClick={() => navigate('/cart')}
-          iconColor="text-blue-500"
-          iconBgColor="bg-blue-50"
-        />
-        <div className="h-px bg-gray-100" />
-        <MenuItem
-          icon={<MapIcon />}
-          label="Direcciones"
-          onClick={() => setShowAddressModal(true)}
-          iconColor="text-green-500"
-          iconBgColor="bg-green-50"
-        />
-        <div className="h-px bg-gray-100" />
-        <MenuItem
-          icon={<CreditCardIcon />}
-          label="Payment Method"
-          onClick={() => setShowPaymentMethod(true)}
-          iconColor="text-blue-500"
-          iconBgColor="bg-blue-50"
-        />
+      <div className="grid grid-cols-3 gap-3 px-4 mb-8">
+          <QuickActionButton icon={<PackageIcon className="w-7 h-7" />} label="Pedidos" onClick={comingSoon} />
+          <QuickActionButton icon={<HeadphonesIcon className="w-7 h-7" />} label="Ayuda" onClick={comingSoon} />
+          <QuickActionButton icon={<CreditCardIcon className="w-7 h-7" />} label="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
       </div>
+      
+      <div className="px-4 space-y-8">
+          <Section title="Amigos e Influencers">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem icon={<UserIcon className="w-6 h-6" />} text="Mis amigos" subtext="Selecciona tus amigos y lo que pueden ver" onClick={comingSoon} />
+                  <hr className="border-gray-200" />
+                  <ListItem icon={<SparklesIcon className="w-6 h-6" />} text="Influencers" subtext="Sigue a los influencers y ve sus recomendaciones" onClick={comingSoon} />
+              </div>
+          </Section>
 
-      <div className="mt-4 mx-4 mb-24 bg-white rounded-2xl overflow-hidden shadow-sm">
-        <MenuItem
-          icon={<LogOutIcon />}
-          label="Log Out"
-          onClick={handleLogoutClick}
-          iconColor="text-red-500"
-          iconBgColor="bg-red-50"
-        />
+          <Section title="Beneficios">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem 
+                      icon={<div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">CR</div>} 
+                      text="Créditos" 
+                      value="$0.00"
+                      hasChevron={false}
+                  />
+                  <hr className="border-gray-200" />
+                  <ListItem icon={<TicketIcon className="w-6 h-6" />} text="Cupones" onClick={comingSoon} />
+                  <hr className="border-gray-200" />
+                  <ListItem icon={<StarIcon className="w-6 h-6 text-yellow-500" />} text="Loyalty" onClick={comingSoon} />
+              </div>
+          </Section>
+          
+          <Section title="Mi cuenta">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem icon={<CrownIcon className="w-6 h-6" />} text="RappiPro" onClick={comingSoon} />
+                   <hr className="border-gray-200" />
+                  <ListItem icon={<LocationIcon className="w-6 h-6" />} text="Direcciones" onClick={() => setShowAddressModal(true)} />
+                   <hr className="border-gray-200" />
+                  <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
+                   <hr className="border-gray-200" />
+                  <ListItem icon={<DocumentTextIcon className="w-6 h-6" />} text="Datos de facturación" onClick={comingSoon} />
+                   <hr className="border-gray-200" />
+                  <ListItem icon={<HeadphonesIcon className="w-6 h-6" />} text="Ayuda" onClick={comingSoon} />
+              </div>
+          </Section>
+
+          <Section title="Configuración">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem icon={<BellIcon className="w-6 h-6" />} text="Notificaciones" onClick={comingSoon} />
+              </div>
+          </Section>
+          
+          <Section title="Más información">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem icon={<StoreIcon className="w-6 h-6" />} text="Quiero ser Aliado Estrella" onClick={comingSoon} />
+                   <hr className="border-gray-200" />
+                  <ListItem icon={<MotorcycleIcon className="w-6 h-6" />} text="Quiero ser Repartidor" onClick={comingSoon} />
+              </div>
+          </Section>
+
+          <Section title="Sesión">
+              <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
+                  <ListItem icon={<LogOutIcon className="w-6 h-6 text-red-600" />} text="Cerrar Sesión" onClick={handleLogoutClick} />
+              </div>
+          </Section>
       </div>
 
       <AddressManagerModal

@@ -384,3 +384,35 @@ export const CheckIcon: React.FC<{ className?: string }> = (props) => (
   </svg>
 );
 
+export const HeadphonesIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z"/>
+    </svg>
+);
+
+export const CrownIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10V6H2v4l9 4 1-4 9 4zM12 15l-3.5 3.5L12 22l3.5-3.5L12 15z"/>
+    </svg>
+);
+
+export const SparklesIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L14.5 7.5L20 9L14.5 10.5L12 16L9.5 10.5L4 9L9.5 7.5L12 2zM20 20L18.5 17.5L16 16L18.5 14.5L20 12L21.5 14.5L24 16L21.5 17.5L20 20zM4 4L5.5 6.5L8 8L5.5 9.5L4 12L2.5 9.5L0 8L2.5 6.5L4 4z"/>
+    </svg>
+);
+
+export const TicketIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 13h20v-2H2v2zM20 5H4a2 2 0 0 0-2 2v2h20V7a2 2 0 0 0-2-2zM20 19H4a2 2 0 0 1-2-2v-2h20v2a2 2 0 0 1-2 2z"/>
+    </svg>
+);
+
+export const StoreIcon: React.FC<IconProps> = (props) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+);
+
