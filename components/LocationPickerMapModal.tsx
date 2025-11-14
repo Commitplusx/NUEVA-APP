@@ -333,34 +333,41 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
               <Spinner className="animate-spin w-8 h-8 text-orange-500" />
             </div>
           ) : (
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={selectedPosition || defaultCenter}
-              zoom={selectedPosition ? 15 : 13}
-              options={mapOptions}
-              onLoad={handleMapLoad}
-              onClick={handleMapClick}
-            >
-              {selectedPosition && (
-                <MarkerF
-                  position={selectedPosition}
-                  draggable={true}
-                  onDragEnd={handleMarkerDragEnd}
-                />
-              )}
-            </GoogleMap>
+            <>
+              <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                center={selectedPosition || defaultCenter}
+                zoom={selectedPosition ? 15 : 13}
+                options={mapOptions}
+                onLoad={handleMapLoad}
+                onClick={handleMapClick}
+              >
+                {selectedPosition && (
+                  <MarkerF
+                    position={selectedPosition}
+                    draggable={true}
+                    onDragEnd={handleMarkerDragEnd}
+                  />
+                )}
+              </GoogleMap>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-3 p-2 bg-white rounded-full shadow-lg z-50">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-bold hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmClick}
+                  className="px-4 py-2 bg-green-500 text-white rounded-full font-bold hover:bg-green-600 transition-colors flex items-center gap-2 text-sm"
+                  disabled={!selectedPosition || !selectedAddress}
+                >
+                  <Icons.CheckCircleIcon className="w-5 h-5" />
+                  Confirmar Ubicación
+                </button>
+              </div>
+            </>
           )}
-        </div>
-
-        <div className="p-4 border-t border-gray-200 flex justify-end">
-          <button
-            onClick={handleConfirmClick}
-            className="px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg flex items-center gap-2"
-            disabled={!selectedPosition || !selectedAddress}
-          >
-            <Icons.CheckCircleIcon className="w-5 h-5" />
-            Confirmar Ubicación
-          </button>
         </div>
       </div>
     </div>

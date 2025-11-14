@@ -25,7 +25,7 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Distance in km
 };
 
@@ -97,7 +97,7 @@ const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
 
 export const RequestService: React.FC = () => {
   useThemeColor('#f97316');
-  const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError } = useAppContext();
+  const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError, setBottomNavVisible } = useAppContext();
   const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<Step>('details');
@@ -283,12 +283,14 @@ export const RequestService: React.FC = () => {
     setOrigin(address);
     setOriginCoords({ lat, lng });
     setShowOriginMapPicker(false);
+    setBottomNavVisible(true);
   };
 
   const handleConfirmDestination = (address: string, lat: number, lng: number) => {
     setDestination(address);
     setDestinationCoords({ lat, lng });
     setShowDestinationMapPicker(false);
+    setBottomNavVisible(true);
   };
   
   const getFormattedScheduledDate = () => {
@@ -564,6 +566,7 @@ export const RequestService: React.FC = () => {
                 <button
                   onClick={() => {
                     setInitialOriginLocation(originCoords || undefined);
+                    setBottomNavVisible(false);
                     setShowOriginMapPicker(true);
                   }}
                   className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
@@ -595,6 +598,7 @@ export const RequestService: React.FC = () => {
                 <button
                   onClick={() => {
                     setInitialDestinationLocation(destinationCoords || undefined);
+                    setBottomNavVisible(false);
                     setShowDestinationMapPicker(true);
                   }}
                   className="flex-shrink-0 bg-orange-500 text-white text-xs font-bold py-2 px-4 rounded-r-lg hover:bg-orange-600 transition-colors"
@@ -755,7 +759,10 @@ export const RequestService: React.FC = () => {
 
       <LocationPickerMapModal
         isOpen={showOriginMapPicker}
-        onClose={() => setShowOriginMapPicker(false)}
+        onClose={() => {
+          setShowOriginMapPicker(false);
+          setBottomNavVisible(true);
+        }}
         onConfirm={handleConfirmOrigin}
         initialLocation={initialOriginLocation}
         title="Seleccionar Origen"
@@ -763,7 +770,10 @@ export const RequestService: React.FC = () => {
 
       <LocationPickerMapModal
         isOpen={showDestinationMapPicker}
-        onClose={() => setShowDestinationMapPicker(false)}
+        onClose={() => {
+          setShowDestinationMapPicker(false);
+          setBottomNavVisible(true);
+        }}
         onConfirm={handleConfirmDestination}
         initialLocation={initialDestinationLocation}
         title="Seleccionar Destino"
