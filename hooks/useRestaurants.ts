@@ -33,13 +33,7 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
       let restaurantIdsForCategories: number[] | null = null;
 
       if (filters.categories && filters.categories.length > 0) {
-        const { data: catData, error: catError } = await supabase
-          .from('categories')
-          .select('id')
-          .in('name', filters.categories);
-        if (catError) throw catError;
-
-        const categoryIds = catData.map(c => c.id);
+        const categoryIds = filters.categories.map(c => Number(c));
 
         const { data: restCatData, error: restCatError } = await supabase
           .from('restaurant_categories')

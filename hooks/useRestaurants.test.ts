@@ -17,14 +17,16 @@ jest.mock('../services/supabase', () => ({
 }));
 
 // Mock de datos
-const mockRestaurantsPage1 = [
-  { id: 1, name: 'Restaurant A', image_url: '' },
-  { id: 2, name: 'Restaurant B', image_url: '' },
-];
-const mockRestaurantsPage2 = [
-  { id: 3, name: 'Restaurant C', image_url: '' },
-  { id: 4, name: 'Restaurant D', image_url: '' },
-];
+const mockRestaurantsPage1 = Array.from({ length: 8 }, (_, i) => ({
+  id: i + 1,
+  name: `Restaurant ${String.fromCharCode(65 + i)}`,
+  image_url: '',
+}));
+const mockRestaurantsPage2 = Array.from({ length: 2 }, (_, i) => ({
+  id: i + 9,
+  name: `Restaurant ${String.fromCharCode(65 + i + 8)}`,
+  image_url: '',
+}));
 const mockCategories = [{ id: 1, name: 'Pizza' }];
 const mockRestaurantCategories = [{ restaurant_id: 1, category_id: 1 }];
 const mockMenuItems = [{ id: 1, restaurant_id: 1, name: 'Margherita' }];
@@ -43,6 +45,7 @@ describe('useRestaurants', () => {
       ilike: jest.fn().mockReturnThis(),
       in: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data, error: null }),
     };
     if (table === 'restaurants') return mock;
@@ -65,10 +68,10 @@ describe('useRestaurants', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.restaurants).toHaveLength(2);
+    expect(result.current.restaurants).toHaveLength(8);
     expect(result.current.restaurants[0].name).toBe('Restaurant A');
     expect(result.current.restaurants[0].categories).toEqual([{ id: 1, name: 'Pizza' }]);
-    expect(result.current.restaurants[0].menu).toEqual([{ id: 1, restaurant_id: 1, name: 'Margherita' }]);
+    expect(result.current.restaurants[0].menu).toEqual([{ id: 1, restaurant_id: 1, name: 'Margherita', imageUrl: '' }]);
   });
 
   it('should handle pagination with loadMore', async () => {
@@ -79,21 +82,24 @@ describe('useRestaurants', () => {
         page++;
         return mockSupabaseResponse(table, data);
       }
+      if (table === 'categories') return mockSupabaseResponse(table, mockCategories);
+      if (table === 'restaurant_categories') return mockSupabaseResponse(table, mockRestaurantCategories);
+      if (table === 'menu_items') return mockSupabaseResponse(table, mockMenuItems);
       return mockSupabaseResponse(table, []);
     });
 
     const { result } = renderHook(() => useRestaurants({}));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.restaurants).toHaveLength(2);
+    expect(result.current.restaurants).toHaveLength(8);
 
     act(() => {
       result.current.loadMore();
     });
 
     await waitFor(() => expect(result.current.loadingMore).toBe(false));
-    expect(result.current.restaurants).toHaveLength(4);
-    expect(result.current.restaurants[3].name).toBe('Restaurant D');
+    expect(result.current.restaurants).toHaveLength(10);
+    expect(result.current.restaurants[9].name).toBe('Restaurant J');
   });
 
   it('should filter by search query on the server', async () => {
@@ -104,6 +110,7 @@ describe('useRestaurants', () => {
         return {
           select: jest.fn().mockReturnThis(),
           ilike: ilikeMock,
+          order: jest.fn().mockReturnThis(),
           range: rangeMock,
         };
       }
@@ -127,26 +134,26 @@ describe('useRestaurants', () => {
     const rangeMock = jest.fn().mockResolvedValue({ data: [{ id: 1, name: 'Restaurant A' }], error: null });
 
     fromMock.mockImplementation((table: string) => {
-      if (table === 'categories') return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), single: jest.fn().mockResolvedValue({ data: { id: 99 }, error: null }) };
-      if (table === 'restaurant_categories') return { select: jest.fn().mockReturnThis(), eq: jest.fn().mockResolvedValue({ data: [{ restaurant_id: 1 }], error: null }) };
+      if (table === 'restaurant_categories') return { select: jest.fn().mockReturnThis(), in: inMock };
       if (table === 'restaurants') {
         return {
           select: jest.fn().mockReturnThis(),
-          in: inMock,
+          in: jest.fn().mockReturnThis(), // Assuming this `in` is for restaurant IDs
+          order: jest.fn().mockReturnThis(),
           range: rangeMock,
         };
       }
       return mockSupabaseResponse(table, []);
     });
 
-    const { rerender } = renderHook(({ categoryName }) => useRestaurants({ categoryName }), {
-      initialProps: { categoryName: 'All' },
+    const { rerender } = renderHook(({ filters }) => useRestaurants({ filters }), {
+      initialProps: { filters: { categories: [] } },
     });
 
-    rerender({ categoryName: 'Pizza' });
+    rerender({ filters: { categories: ['1'] } });
 
     await waitFor(() => {
-      expect(inMock).toHaveBeenCalledWith('id', [1]);
+      expect(inMock).toHaveBeenCalledWith('category_id', [1]);
       expect(rangeMock).toHaveBeenCalled();
     });
   });

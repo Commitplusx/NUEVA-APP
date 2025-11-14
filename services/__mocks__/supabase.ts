@@ -8,6 +8,7 @@ export const supabase = {
     ilike: jest.fn().mockReturnThis(),
     in: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue({ data: {}, error: null }),
   })),
   channel: jest.fn(() => ({
