@@ -10,6 +10,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
     "@lottiefiles/dotlottie-react": "^0.17.6",
     "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.76.1",
