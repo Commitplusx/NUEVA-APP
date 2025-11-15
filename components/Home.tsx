@@ -56,7 +56,7 @@ const sectionVariants = {
 };
 
 export const Home: React.FC = () => {
-  const { user: userObject, userRole } = useAppContext();
+  const { user: userObject, userRole, profile } = useAppContext();
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(0);
 
@@ -100,7 +100,7 @@ export const Home: React.FC = () => {
               className="relative p-6 w-full h-full flex flex-col justify-center items-center text-center"
             >
               <div className="flex justify-between items-center w-full max-w-md absolute top-6 px-6">
-                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {userRole === 'admin' ? 'Administrador' : userObject?.email || 'Bienvenido'}!</h1>
+                <h1 className="text-2xl font-bold text-gray-800">¡Hola, {userRole === 'admin' ? 'Administrador' : profile?.full_name || 'Bienvenido/a'}!</h1>
                 <UserCircleIcon className="w-8 h-8 text-gray-800" />
               </div>
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>

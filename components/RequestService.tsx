@@ -1,20 +1,23 @@
 
+import { ScheduleModal } from './ScheduleModal';
+import { SubmittedStep } from './SubmittedStep';
+import { ConfirmationStep } from './ConfirmationStep';
+import { PriceSkeleton } from './PriceSkeleton';
+import { Geolocation } from '@capacitor/geolocation';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import * as Icons from './icons';
 import { ServiceRequest, Profile } from '../types';
-import { createServiceRequest, getProfile, geocodeAddress } from '../services/api';
+import { createServiceRequest, getProfile, geocodeAddress, reverseGeocode } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { Spinner } from './Spinner';
-
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { LocationPickerMapModal } from './LocationPickerMapModal';
 import Lottie from 'lottie-react';
 import deliveryAnimation from './animations/delivery-animation.json';
-
-type Step = 'details' | 'confirmation' | 'submitted';
+import { Stepper, Step } from './Stepper';
 
 // --- Helper Functions ---
 
@@ -56,46 +59,6 @@ const PRICE_PER_KM = 10; // $10 per km
 
 // --- Components ---
 
-const Stepper: React.FC<{ currentStep: Step }> = ({ currentStep }) => {
-  const steps = ['details', 'confirmation', 'submitted'];
-  const currentStepIndex = steps.indexOf(currentStep);
-
-  const getStepName = (step: Step) => {
-    if (step === 'details') return 'Detalles';
-    if (step === 'confirmation') return 'Confirmar';
-    return 'Enviado';
-  }
-
-  return (
-    <div className="flex items-center w-full mb-8 px-2">
-      {steps.map((step, index) => (
-        <React.Fragment key={step}>
-          <div className="flex flex-col items-center text-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                              index <= currentStepIndex ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
-                            }`}
-                            >
-                              {index < currentStepIndex ? <Icons.CheckCircleIcon className="w-6 h-6" /> : index + 1}
-                            </div>
-                            <p
-                              className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                                index <= currentStepIndex ? 'text-green-600' : 'text-gray-500'
-                              }`}
-                            >
-                              {getStepName(step as Step)}
-                            </p>
-                          </div>
-                          {index < steps.length - 1 && (
-                            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-                              index < currentStepIndex ? 'border-green-600' : 'border-gray-200'
-                            }`}></div>          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-};
-
 export const RequestService: React.FC = () => {
   useThemeColor('var(--color-rappi-primary)');
   const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError, setBottomNavVisible } = useAppContext();
@@ -109,8 +72,6 @@ export const RequestService: React.FC = () => {
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [scheduleTime, setScheduleTime] = useState<string>('');
 
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -247,6 +208,43 @@ export const RequestService: React.FC = () => {
     }
   };
 
+  const handleGetCurrentLocation = async () => {
+    try {
+      const position = await Geolocation.getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+
+      const comitanBounds = {
+        north: 16.3,
+        south: 16.2,
+        east: -92.0,
+        west: -92.2,
+      };
+
+      if (
+        latitude > comitanBounds.north ||
+        latitude < comitanBounds.south ||
+        longitude > comitanBounds.east ||
+        longitude < comitanBounds.west
+      ) {
+        showToast('Tu ubicación está fuera de nuestra área de servicio.', 'warning');
+        return;
+      }
+
+      const address = await reverseGeocode(latitude, longitude);
+      if (address) {
+        setOrigin(address);
+        setOriginCoords({ lat: latitude, lng: longitude });
+        setInitialOriginLocation({ lat: latitude, lng: longitude });
+        showToast('Ubicación actual obtenida.', 'success');
+      } else {
+        showToast('No se pudo encontrar una dirección para tu ubicación.', 'error');
+      }
+    } catch (error) {
+      console.error('Error getting location', error);
+      showToast('No se pudo obtener la ubicación. Asegúrate de tener los permisos activados.', 'error');
+    }
+  };
+
   const handleProceedToConfirmation = () => {
     if (!origin || !destination || !description) {
       showToast('Por favor, completa todos los campos.', 'error');
@@ -299,18 +297,12 @@ export const RequestService: React.FC = () => {
   };
 
   const handleScheduleSubmit = (date: Date, time: string) => {
-    if (date && time) {
-      setConfirmedSchedule({ date: date, time: time });
-      setShowScheduleModal(false);
-    } else {
-      showToast('Por favor, selecciona un día y una hora.', 'error');
-    }
+    setConfirmedSchedule({ date, time });
+    setShowScheduleModal(false);
   };
 
   const handleScheduleCancel = () => {
     setShowScheduleModal(false);
-    setSelectedDate(null);
-    setScheduleTime('');
   };
 
   const handleConfirmOrigin = (address: string, lat: number, lng: number) => {
@@ -351,6 +343,17 @@ export const RequestService: React.FC = () => {
   const mapOptions = {
     disableDefaultUI: true,
     zoomControl: true,
+    restriction: {
+      latLngBounds: {
+        north: 16.3,
+        south: 16.2,
+        east: -92.0,
+        west: -92.2,
+      },
+      strictBounds: false,
+    },
+    minZoom: 12,
+    maxZoom: 18,
     styles: [
       {
         "elementType": "geometry",
@@ -478,108 +481,22 @@ export const RequestService: React.FC = () => {
   };
 
   if (step === 'submitted') {
-    const trackWhatsappMessage = encodeURIComponent(`Hola, quiero rastrear mi pedido con ID: ${newRequestId}`);
-    const trackWhatsappUrl = `https://wa.me/${whatsappNumber}?text=${trackWhatsappMessage}`;
-
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8 text-gray-600 animate-fade-in">
-        <Stepper currentStep={step} />
-        <div className="p-6 bg-green-100 rounded-full">
-          <Icons.CheckCircleIcon className="w-16 h-16 text-green-500" />
-        </div>
-        <h1 className="text-3xl font-bold text-gray-800 mt-6">¡Solicitud Recibida!</h1>
-        <p className="mt-4 max-w-sm">
-          Hemos recibido tu solicitud de servicio. Nos pondremos en contacto contigo en breve.
-        </p>
-        <div className="mt-8 w-full max-w-xs">
-                      <a
-                      href={trackWhatsappUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-black text-white w-full py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center gap-2"
-                    >            Rastrear por WhatsApp
-          </a>
-        </div>
-      </div>
-    );
+    return <SubmittedStep newRequestId={newRequestId} whatsappNumber={whatsappNumber} />;
   }
   
   if (step === 'confirmation') {
     return (
-        <div className="p-4 space-y-6 animate-fade-in">
-            <Stepper currentStep={step} />
-            <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">CONFIRMA TU SOLICITUD</h1>
-            <Lottie animationData={deliveryAnimation} loop={true} style={{ height: 150, marginBottom: '1rem' }} />
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
-                <div className="pb-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.MapPinIcon className="w-5 h-5 text-green-600" />
-                        Detalles del Servicio
-                    </h2>
-                    <div className="space-y-4">
-                        <div className="flex items-start text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-[var(--color-rappi-success)] flex-shrink-0 mt-1" />
-                            <div className="flex-1">
-                                <p className="text-xs font-bold text-gray-500">ORIGEN</p>
-                                <p className="font-semibold text-gray-900">{origin}</p>
-                            </div>
-                        </div>
-                        <div className="h-4 w-px bg-gray-300 ml-2.5"></div>
-                        <div className="flex items-start text-gray-700">
-                            <Icons.LocationIcon className="w-5 h-5 mr-3 text-[var(--color-rappi-danger)] flex-shrink-0 mt-1" />
-                            <div className="flex-1">
-                                <p className="text-xs font-bold text-gray-500">DESTINO</p>
-                                <p className="font-semibold text-gray-900">{destination}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="pb-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.PackageIcon className="w-5 h-5 text-[var(--color-rappi-primary)]" />
-                        Descripción del Paquete
-                    </h2>
-                    <p className="text-sm text-gray-700">{description}</p>
-                </div>
-                
-                <div className="pb-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                        <Icons.DollarSignIcon className="w-5 h-5 text-green-600" />
-                        Costo del Envío
-                    </h2>
-                    <p className="text-3xl font-bold text-gray-900">${shippingCost?.toFixed(2)}</p>
-                    <p className="text-sm text-gray-600">Distancia: {distance?.toFixed(2)} km</p>
-                </div>
-
-                {confirmedSchedule && (
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <h2 className="text-lg font-bold text-green-800 mb-3 flex items-center gap-2">
-                            <Icons.CalendarIcon className="w-5 h-5 text-green-600" />
-                            Recogida Programada
-                        </h2>
-                        <p className="text-base font-semibold text-green-900">{getFormattedScheduledDate()} a las {confirmedSchedule.time} hrs.</p>
-                    </div>
-                )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4">
-                <button
-                    onClick={() => setStep('details')}
-                    className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors shadow-sm"
-                >
-                    <Icons.EditIcon className="w-5 h-5" />
-                    Modificar
-                </button>
-                <button
-                    onClick={handleSubmit}
-                    className="bg-black text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors shadow-lg"
-                >
-                    Confirmar
-                    <Icons.ArrowRightIcon className="w-5 h-5" />
-                </button>
-            </div>
-        </div>
+      <ConfirmationStep
+        origin={origin}
+        destination={destination}
+        description={description}
+        shippingCost={shippingCost!}
+        distance={distance}
+        confirmedSchedule={confirmedSchedule}
+        getFormattedScheduledDate={getFormattedScheduledDate}
+        onModify={() => setStep('details')}
+        onConfirm={handleSubmit}
+      />
     );
   }
 
@@ -616,6 +533,12 @@ export const RequestService: React.FC = () => {
                   Usar mi dirección guardada
               </button>
             )}
+            <button
+                onClick={handleGetCurrentLocation}
+                className="text-xs font-medium underline text-green-600 hover:text-green-800 ml-1 mt-1"
+              >
+                  Usar mi ubicación actual
+              </button>
         </div>
 
         <div className="flex items-center justify-center py-1">
@@ -647,15 +570,17 @@ export const RequestService: React.FC = () => {
 
       <section className="bg-white p-4 rounded-lg">
         {isCalculating ? (
-            <div className="flex items-center gap-2 text-gray-500">
-                <Spinner /> <span>Calculando...</span>
-            </div>
+            <PriceSkeleton />
         ) : shippingCost ? (
             <>
-                <div>
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
                     <p className="text-3xl font-bold text-gray-800">${shippingCost.toFixed(2)}</p>
                     <p className="text-sm text-gray-600">Distancia aproximada: {distance?.toFixed(2)} km</p>
-                </div>
+                </motion.div>
                   <motion.div
                     className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -727,64 +652,13 @@ export const RequestService: React.FC = () => {
         </a>
       </div>
 
-
-
-      <AnimatePresence>
-        {showScheduleModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Programar Recogida</h2>
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                  <select
-                    id="schedule-date"
-                    className="w-full py-2 px-3 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
-                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                  >
-                    <option value="">Selecciona una fecha</option>
-                    {weekDays.map((day) => (
-                      <option key={day.toISOString()} value={day.toISOString().split('T')[0]}>
-                        {day.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-                  <select
-                    id="schedule-time"
-                    className="w-full py-2 px-3 bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                  >
-                    <option value="">Selecciona una hora</option>
-                    {timeSlots.map((slot) => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={handleScheduleCancel}
-                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-semibold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => handleScheduleSubmit(selectedDate!, scheduleTime)}
-                  className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-semibold disabled:bg-gray-600 disabled:cursor-not-allowed"
-                  disabled={!selectedDate || !scheduleTime}
-                >
-                  Confirmar Horario
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ScheduleModal
+        isOpen={showScheduleModal}
+        onClose={handleScheduleCancel}
+        onSubmit={handleScheduleSubmit}
+        weekDays={weekDays}
+        timeSlots={timeSlots}
+      />
 
       <AnimatePresence>
         {showOriginMapPicker && (
