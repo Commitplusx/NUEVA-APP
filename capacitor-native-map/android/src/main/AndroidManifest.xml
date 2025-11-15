@@ -7,10 +7,9 @@
             android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
         <!-- Add the Google Maps API Key -->
-        <!-- IMPORTANT: Replace YOUR_GOOGLE_MAPS_API_KEY with your actual key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCDHnsZ9hWEq-Q_oNR50jyRi-44s9ZX5yE />
+            android:value="AIzaSyCDHnsZ9hWEq-Q_oNR50jyRi-44s9ZX5yE" />
 
     </application>
 

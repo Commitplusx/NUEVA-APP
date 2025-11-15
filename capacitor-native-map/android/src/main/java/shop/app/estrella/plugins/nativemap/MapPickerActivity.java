@@ -56,6 +56,7 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.d("MI_MAPA_DEBUG", "¡¡¡ onMapReady FUE LLAMADO !!!");
         mMap = googleMap;
         mMap.setOnMarkerDragListener(this);
 

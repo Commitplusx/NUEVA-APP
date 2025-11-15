@@ -17,8 +17,8 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_menu_send"
-        app:backgroundTint="@android:color/holo_orange_dark"
-        app:tint="@android.color/white"
+        app:backgroundTint="@color/colorAccent"
+        app:tint="@color/white"
         android:contentDescription="Confirmar Ubicacion" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
