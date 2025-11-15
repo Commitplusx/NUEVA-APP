@@ -14,7 +14,7 @@ import { Spinner } from './Spinner';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
-import { LocationPickerMapModal } from './LocationPickerMapModal';
+import { NativeMap } from 'capacitor-native-map';
 import Lottie from 'lottie-react';
 import deliveryAnimation from './animations/delivery-animation.json';
 import { Stepper, Step } from './Stepper';
@@ -77,14 +77,8 @@ export const RequestService: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showOriginMapPicker, setShowOriginMapPicker] = useState(false);
-  const [showDestinationMapPicker, setShowDestinationMapPicker] = useState(false);
-  const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
-  const [initialDestinationLocation, setInitialDestinationLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
   
   const mapRef = useRef<google.maps.Map | null>(null);
-
-
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -115,49 +109,6 @@ export const RequestService: React.FC = () => {
       fetchProfile();
     }
   }, [userRole, showToast]);
-
-  // Debounced geocoding for origin
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (origin) {
-        try {
-          const coords = await geocodeAddress(origin);
-          setOriginCoords(coords);
-        } catch (error) {
-          console.error("Error geocoding origin:", error);
-          setOriginCoords(null);
-        }
-      } else {
-        setOriginCoords(null);
-      }
-    }, 1500); // Increased debounce to 1.5 seconds
-
-    return () => clearTimeout(handler);
-  }, [origin]);
-
-  // Debounced geocoding for destination
-  useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (destination) {
-        try {
-          const coords = await geocodeAddress(destination);
-          if (coords) {
-            setDestinationCoords(coords);
-          } else {
-            setDestinationCoords(null);
-            showToast('No se pudo encontrar la dirección de destino.', 'error');
-          }
-        } catch (error) {
-          console.error("Error geocoding destination:", error);
-          setDestinationCoords(null);
-        }
-      } else {
-        setDestinationCoords(null);
-      }
-    }, 1500); // Increased debounce to 1.5 seconds
-
-    return () => clearTimeout(handler);
-  }, [destination, showToast]);
 
   // Calculate distance and price whenever coordinates change
   useEffect(() => {
@@ -200,7 +151,6 @@ export const RequestService: React.FC = () => {
       if (formattedAddress && userProfile.lat && userProfile.lng) {
         setOrigin(formattedAddress);
         setOriginCoords({ lat: userProfile.lat, lng: userProfile.lng });
-        setInitialOriginLocation({ lat: userProfile.lat, lng: userProfile.lng });
         showToast('Dirección de origen establecida desde tu perfil.', 'success');
       } else {
         showToast('No tienes una dirección completa guardada en tu perfil.', 'info');
@@ -234,7 +184,6 @@ export const RequestService: React.FC = () => {
       if (address) {
         setOrigin(address);
         setOriginCoords({ lat: latitude, lng: longitude });
-        setInitialOriginLocation({ lat: latitude, lng: longitude });
         showToast('Ubicación actual obtenida.', 'success');
       } else {
         showToast('No se pudo encontrar una dirección para tu ubicación.', 'error');
@@ -242,6 +191,31 @@ export const RequestService: React.FC = () => {
     } catch (error) {
       console.error('Error getting location', error);
       showToast('No se pudo obtener la ubicación. Asegúrate de tener los permisos activados.', 'error');
+    }
+  };
+  
+  const openNativeMapPicker = async (type: 'origin' | 'destination') => {
+    try {
+        const currentCoords = type === 'origin' ? originCoords : destinationCoords;
+        const result = await NativeMap.pickLocation({
+            initialPosition: currentCoords ? { latitude: currentCoords.lat, longitude: currentCoords.lng } : undefined
+        });
+
+        if (result) {
+            if (type === 'origin') {
+                setOrigin(result.address);
+                setOriginCoords({ lat: result.latitude, lng: result.longitude });
+            } else {
+                setDestination(result.address);
+                setDestinationCoords({ lat: result.latitude, lng: result.longitude });
+            }
+            showToast('Ubicación seleccionada con éxito', 'success');
+        }
+    } catch (err: any) {
+        if (err.message !== 'Action canceled by user.') {
+            console.error('Error opening native map picker', err);
+            showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
+        }
     }
   };
 
@@ -263,13 +237,13 @@ export const RequestService: React.FC = () => {
       return;
     }
 
-    setIsCalculating(true); // Use this for a loading state during submission
+    setIsCalculating(true);
 
     try {
       let scheduledAt = null;
       if (confirmedSchedule) {
         const date = confirmedSchedule.date.toISOString().split('T')[0];
-        scheduledAt = `${date}T${confirmedSchedule.time}:00`; // Format to ISO string
+        scheduledAt = `${date}T${confirmedSchedule.time}:00`;
       }
 
       const newServiceRequest: ServiceRequest = {
@@ -277,11 +251,11 @@ export const RequestService: React.FC = () => {
         destination,
         description,
         price: shippingCost,
-        distance: distance || 0, // Assuming distance is calculated, default to 0 if not
+        distance: distance || 0,
         user_id: userProfile.user_id,
         scheduled_at: scheduledAt,
-        status: 'pending', // Default status
-        phone: userProfile.phone || undefined, // Include phone if available
+        status: 'pending',
+        phone: userProfile.phone || undefined,
       };
 
       const createdRequest = await createServiceRequest(newServiceRequest);
@@ -303,20 +277,6 @@ export const RequestService: React.FC = () => {
 
   const handleScheduleCancel = () => {
     setShowScheduleModal(false);
-  };
-
-  const handleConfirmOrigin = (address: string, lat: number, lng: number) => {
-    setOrigin(address);
-    setOriginCoords({ lat, lng });
-    setShowOriginMapPicker(false);
-    setBottomNavVisible(true);
-  };
-
-  const handleConfirmDestination = (address: string, lat: number, lng: number) => {
-    setDestination(address);
-    setDestinationCoords({ lat, lng });
-    setShowDestinationMapPicker(false);
-    setBottomNavVisible(true);
   };
   
   const getFormattedScheduledDate = () => {
@@ -354,130 +314,7 @@ export const RequestService: React.FC = () => {
     },
     minZoom: 12,
     maxZoom: 18,
-    styles: [
-      {
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#f5f5f5" }
-        ]
-      },
-      {
-        "elementType": "labels.icon",
-        "stylers": [
-          { "visibility": "off" }
-        ]
-      },
-      {
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#616161" }
-        ]
-      },
-      {
-        "elementType": "labels.text.stroke",
-        "stylers": [
-          { "color": "#f5f5f5" }
-        ]
-      },
-      {
-        "featureType": "administrative.land_parcel",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#bdbdbd" }
-        ]
-      },
-      {
-        "featureType": "poi",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#eeeeee" }
-        ]
-      },
-      {
-        "featureType": "poi",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#757575" }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#e5e5e5" }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#9e9e9e" }
-        ]
-      },
-      {
-        "featureType": "road",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#ffffff" }
-        ]
-      },
-      {
-        "featureType": "road.arterial",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#757575" }
-        ]
-      },
-      {
-        "featureType": "road.highway",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#dadada" }
-        ]
-      },
-      {
-        "featureType": "road.highway",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#616161" }
-        ]
-      },
-      {
-        "featureType": "road.local",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#9e9e9e" }
-        ]
-      },
-      {
-        "featureType": "transit.line",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#e5e5e5" }
-        ]
-      },
-      {
-        "featureType": "transit.station",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#eeeeee" }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "geometry",
-        "stylers": [
-          { "color": "#c9c9c9" }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          { "color": "#9e9e9e" }
-        ]
-      }
-    ]
+    styles: []
   };
 
   if (step === 'submitted') {
@@ -514,11 +351,7 @@ export const RequestService: React.FC = () => {
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-success)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
                 <button
-                  onClick={() => {
-                    setInitialOriginLocation(originCoords || undefined);
-                    setBottomNavVisible(false);
-                    setShowOriginMapPicker(true);
-                  }}
+                  onClick={() => openNativeMapPicker('origin')}
                   className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
@@ -553,11 +386,7 @@ export const RequestService: React.FC = () => {
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-danger)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{destination || 'Selecciona tu dirección de destino'}</p>
                 <button
-                  onClick={() => {
-                    setInitialDestinationLocation(destinationCoords || undefined);
-                    setBottomNavVisible(false);
-                    setShowDestinationMapPicker(true);
-                  }}
+                  onClick={() => openNativeMapPicker('destination')}
                   className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
@@ -660,35 +489,6 @@ export const RequestService: React.FC = () => {
         timeSlots={timeSlots}
       />
 
-      <AnimatePresence>
-        {showOriginMapPicker && (
-          <LocationPickerMapModal
-            isOpen={showOriginMapPicker}
-            onClose={() => {
-              setShowOriginMapPicker(false);
-              setBottomNavVisible(true);
-            }}
-            onConfirm={handleConfirmOrigin}
-            initialLocation={initialOriginLocation}
-            title="Seleccionar Origen"
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showDestinationMapPicker && (
-          <LocationPickerMapModal
-            isOpen={showDestinationMapPicker}
-            onClose={() => {
-              setShowDestinationMapPicker(false);
-              setBottomNavVisible(true);
-            }}
-            onConfirm={handleConfirmDestination}
-            initialLocation={initialDestinationLocation}
-            title="Seleccionar Destino"
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

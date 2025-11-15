@@ -32,8 +32,9 @@ import {
   SparklesIcon
 } from './icons';
 import { PaymentMethod } from './PaymentMethod';
-import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { useJsApiLoader, Autocomplete, GoogleMap, Marker } from '@react-google-maps/api';
 import { supabase } from '../services/supabase';
+import { mapStyles } from './mapStyles';
 
 
 
@@ -97,6 +98,8 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
   const [addressData, setAddressData] = useState<Partial<Profile>>({});
   const [isSaving, setIsSaving] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [mapCenter, setMapCenter] = useState({ lat: 16.2519, lng: -92.1383 }); // Comitan center
+  const [isMapVisible, setIsMapVisible] = useState(false);
 
   const comitanBounds = {
     south: 16.20,
@@ -111,6 +114,15 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
       if (!place.geometry || !place.address_components) {
         showToast('Por favor, selecciona una dirección de la lista.', 'error');
         return;
+      }
+
+      if (place.geometry?.location) {
+        const newCenter = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        };
+        setMapCenter(newCenter);
+        setIsMapVisible(true);
       }
 
       const getAddressComponent = (type: string) => {
@@ -171,6 +183,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
       setAddressData(initialAddress);
     } else if (!isOpen) {
       setAddressData({});
+      setIsMapVisible(false);
       if (searchInputRef.current) {
         searchInputRef.current.value = '';
       }
@@ -207,7 +220,7 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
                 options={{
                   bounds: comitanBounds,
                   strictBounds: true,
-                  componentRestrictions: { country: 'mx' }, // Restrict to Mexico
+                  componentRestrictions: { country: 'mx' },
                   fields: ['address_components', 'geometry'],
                 }}
               >
@@ -220,6 +233,35 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
               </Autocomplete>
             ) : (
               <Spinner />
+            )}
+
+            {isMapVisible && (
+              <motion.div
+                className="mt-4 h-48 w-full rounded-lg overflow-hidden border border-gray-300"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: '12rem' }}
+              >
+                <GoogleMap
+                  mapContainerClassName="w-full h-full"
+                  center={mapCenter}
+                  zoom={17}
+                  options={{
+                    styles: mapStyles,
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                  }}
+                >
+                  <Marker 
+                    position={mapCenter} 
+                    icon={{
+                      url: '/icons/map-pin.svg',
+                      scaledSize: new window.google.maps.Size(40, 40),
+                      origin: new window.google.maps.Point(0, 0),
+                      anchor: new window.google.maps.Point(20, 40),
+                    }}
+                  />
+                </GoogleMap>
+              </motion.div>
             )}
 
             {addressData.street_address && (

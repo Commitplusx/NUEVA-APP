@@ -7,8 +7,17 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
+        https: false, // Desactiva HTTPS
+        // Asegúrate de que el puerto siga siendo 3000 si lo necesitas
         port: 3000,
-        host: '0.0.0.0',
+        host: true,
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3001', // Assuming your API/serverless functions run on port 3001
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+          },
+        }
       },
       plugins: [react(), basicSsl()],
       resolve: {

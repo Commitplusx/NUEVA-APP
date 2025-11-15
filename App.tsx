@@ -31,6 +31,7 @@ const ManageTariffs = lazy(() => import('./components/admin/ManageTariffs').then
 const ManageServiceRequests = lazy(() => import('./components/admin/ManageServiceRequests').then(module => ({ default: module.ManageServiceRequests })));
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
 const VerifyCode = lazy(() => import('./components/VerifyCode').then(module => ({ default: module.VerifyCode })));
+const MapDemoPage = lazy(() => import('./components/MapDemoPage').then(module => ({ default: module.MapDemoPage })));
 
 /**
  * @component PageTransitionWrapper
@@ -100,49 +101,55 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <style>{`.modal-open .bottom-nav { display: none !important; }`}</style>
-
-      <AnimatePresence mode="wait">
-        {shouldShowBottomNav && <BottomNav />}
-        {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
-      </AnimatePresence>
-      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''} ${shouldShowHeader ? 'pt-16' : ''}`}>
-        <AnimatePresence mode="wait">
-          <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
-              <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
-              <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
-              <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
-              <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
-              <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
-              <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-              <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
-              <Route path="/admin" element={<Admin />}>
-                <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
-                <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
-                <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
-                <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
-                <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
-              </Route>
-            </Routes>
-          </Suspense>
-        </AnimatePresence>
-      </main>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
-      {showInstallButton && (
-        <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
-          <button
-            onClick={handleInstallClick}
-            className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
-          >
-            Instalar Aplicación
-          </button>
-        </div>
-      )}
-    </div>
-  );
+            <style>{`
+              .pt-fixed-header {
+                padding-top: 60px; /* Adjust as needed */
+              }
+              .modal-open .bottom-nav { display: none !important; }
+            `}</style>
+      
+            <AnimatePresence mode="wait">
+              {shouldShowBottomNav && <BottomNav />}
+              {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
+            </AnimatePresence>
+            <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''} ${shouldShowHeader ? 'pt-16' : ''} pt-fixed-header`}>
+              <AnimatePresence mode="wait">
+                <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
+                  <Routes location={location} key={location.pathname}>
+                    <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
+                    <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
+                    <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
+                    <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
+                    <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
+                    <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
+                    <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
+                    <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
+                    <Route path="/admin" element={<Admin />}>
+                      <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
+                      <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
+                      <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
+                      <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
+                      <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
+                    </Route>
+                    <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
+                  </Routes>
+                </Suspense>
+              </AnimatePresence>
+            </main>
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      
+            {showInstallButton && (
+              <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
+                <button
+                  onClick={handleInstallClick}
+                  className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
+                >
+                  Instalar Aplicación
+                </button>
+              </div>
+            )}
+          </div>
+        );
 };
 
 /**
