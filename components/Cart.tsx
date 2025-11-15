@@ -7,6 +7,7 @@ import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderUserDetails } from '../types';
 import { Toast, ToastType } from './Toast';
 import { AnimatePresence, motion } from 'framer-motion';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import Lottie from 'lottie-react';
 import orderingAnimation from './animations/ordering-animation.json';
 import deliveryAnimation from './animations/delivery-animation.json';
@@ -78,6 +79,7 @@ export const Cart: React.FC = () => {
     handleUpdateCart,
     handleConfirmOrder,
     baseFee,
+    isMapsLoaded,
     user,
     profile
   } = useAppContext();
@@ -312,70 +314,123 @@ export const Cart: React.FC = () => {
 
   const renderConfirmationStep = () => {
     const restaurant = cartItems.length > 0 ? cartItems[0].restaurant : null;
+    const restaurantCoords = restaurant?.lat && restaurant?.lng ? { lat: restaurant.lat, lng: restaurant.lng } : null;
+
+    const comitanBounds = {
+      north: 16.35,
+      south: 16.15,
+      west: -92.25,
+      east: -92.00,
+    };
+
+    const mapOptions = {
+      disableDefaultUI: true,
+      styles: [
+        { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
+        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+        { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
+        { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dadada" }] },
+        { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9c9c9" }] },
+      ],
+      restriction: {
+        latLngBounds: comitanBounds,
+        strictBounds: false,
+      },
+    };
+
     return (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-4">
-            <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
-            
-            {restaurant && (
-              <div className="my-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border">
-                  <img src={(restaurant as any).image_url || restaurant.imageUrl} alt={restaurant.name} className="w-12 h-12 rounded-full object-cover" />
-                  <div>
-                      <p className="text-sm text-gray-500">Tu pedido de:</p>
-                      <h4 className="font-bold text-md text-gray-800">{restaurant.name}</h4>
-                  </div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+            <div className="p-6 pb-4">
+              <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
+              {restaurant && (
+                <div className="mt-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border">
+                    <img src={(restaurant as any).image_url || restaurant.imageUrl} alt={restaurant.name} className="w-12 h-12 rounded-full object-cover" />
+                    <div>
+                        <p className="text-sm text-gray-500">Tu pedido de:</p>
+                        <h4 className="font-bold text-md text-gray-800">{restaurant.name}</h4>
+                    </div>
+                </div>
+              )}
+            </div>
+
+            {isMapsLoaded && restaurantCoords && userAddressCoords && (
+              <div className="h-40 w-full">
+                <GoogleMap
+                  mapContainerStyle={{ width: '100%', height: '100%' }}
+                  options={mapOptions}
+                  onLoad={(map) => {
+                    const bounds = new window.google.maps.LatLngBounds();
+                    bounds.extend(restaurantCoords);
+                    bounds.extend(userAddressCoords);
+                    map.fitBounds(bounds);
+
+                    const listener = window.google.maps.event.addListener(map, 'idle', () => {
+                      if (map.getZoom() > 16) map.setZoom(16);
+                      window.google.maps.event.removeListener(listener);
+                    });
+                  }}
+                >
+                  <MarkerF position={restaurantCoords} animation={window.google.maps.Animation.DROP} />
+                  <MarkerF position={userAddressCoords} animation={window.google.maps.Animation.DROP} />
+                </GoogleMap>
               </div>
             )}
 
-            <div className="space-y-2 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
-                    <UserCircleIcon className="w-5 h-5 text-orange-500" />
-                    <p><strong>Nombre:</strong> {userDetails.name}</p>
-                </div>
-                <div className="flex items-start gap-2">
-                    <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
-                    <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <MailIcon className="w-5 h-5 text-orange-500" />
-                    <p><strong>Teléfono:</strong> {userDetails.phone}</p>
-                </div>
-            </div>
-            <hr/>
-            <div className="space-y-3">
-                {cartItems.map(item => (
-                    <div key={item.id} className="flex items-center gap-3">
-                        {item.product.imageUrl ? (
-                            <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
-                        ) : (
-                            <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
-                                No Image
-                            </div>
-                        )}
-                        <div className="flex-grow">
-                            <p className="font-semibold text-gray-800">{item.product.name}</p>
-                            <p className="text-sm text-gray-500">{item.quantity} x ${item.product.price.toFixed(2)}</p>
-                        </div>
-                        <p className="font-bold text-md">${(item.product.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                ))}
-            </div>
-            <hr/>
-            <div>
-                <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
-                <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
-                {calculatedDistance !== null && (
-                  <p className="text-xs text-gray-500 text-right mt-1">
-                    ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
-                  </p>
-                )}
-                <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-                <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-                <button onClick={handleFinalOrderConfirmation} disabled={true} className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Confirmar Pedido</button>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                      <UserCircleIcon className="w-5 h-5 text-orange-500" />
+                      <p><strong>Nombre:</strong> {userDetails.name}</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                      <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
+                      <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <MailIcon className="w-5 h-5 text-orange-500" />
+                      <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+                  </div>
+              </div>
+              <hr/>
+              <div className="space-y-3">
+                  {cartItems.map(item => (
+                      <div key={item.id} className="flex items-center gap-3">
+                          {item.product.imageUrl ? (
+                              <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
+                          ) : (
+                              <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
+                                  No Image
+                              </div>
+                          )}
+                          <div className="flex-grow">
+                              <p className="font-semibold text-gray-800">{item.product.name}</p>
+                              <p className="text-sm text-gray-500">{item.quantity} x ${item.product.price.toFixed(2)}</p>
+                          </div>
+                          <p className="font-bold text-md">${(item.product.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                  ))}
+              </div>
+              <hr/>
+              <div>
+                  <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
+                  <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
+                  {calculatedDistance !== null && (
+                    <p className="text-xs text-gray-500 text-right mt-1">
+                      ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
+                    </p>
+                  )}
+                  <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                  <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
+                  <button onClick={handleFinalOrderConfirmation} disabled={!canProceedToConfirmation} className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Confirmar Pedido</button>
+              </div>
             </div>
         </div>
-  )};
+    );
+  };
 
   const renderSuccessStep = () => (
     <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center">

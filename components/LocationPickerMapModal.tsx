@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import * as Icons from './icons';
 import { useAppContext } from '../context/AppContext';
@@ -294,10 +295,14 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-white z-50">
+    <motion.div 
+      className="fixed inset-0 bg-white z-50"
+      initial={{ y: '100%' }}
+      animate={{ y: 0 }}
+      exit={{ y: '100%' }}
+      transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+    >
       <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
@@ -381,6 +386,6 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
