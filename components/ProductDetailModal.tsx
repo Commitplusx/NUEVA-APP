@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ProductDetail } from './ProductDetail';
-import { Restaurant, MenuItem, Ingredient } from '../types';
+import { Restaurant, MenuItem } from '../types';
 import { MinusIcon, PlusIcon } from './icons';
 
 interface ProductDetailModalProps {
@@ -9,17 +9,18 @@ interface ProductDetailModalProps {
   item: MenuItem | null;
   restaurant: Restaurant | null;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[]) => void;
+  onAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[]) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, item, restaurant, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedIngredients, setSelectedIngredients] = useState<Ingredient[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   // Reset state when the item changes (when a new modal is opened)
   useEffect(() => {
     if (item) {
       setQuantity(1);
+      // item.ingredients is already string[], so this is correct now
       setSelectedIngredients(item.ingredients || []);
     }
   }, [item]);
@@ -32,13 +33,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
     setQuantity(prev => Math.max(1, prev + amount));
   };
 
-  const toggleIngredient = (ingredientToToggle: Ingredient) => {
+  const toggleIngredient = (ingredientName: string) => {
     setSelectedIngredients(prev => {
-      const isAlreadySelected = prev.some(ing => ing.name === ingredientToToggle.name);
-      if (isAlreadySelected) {
-        return prev.filter(ing => ing.name !== ingredientToToggle.name);
+      if (prev.includes(ingredientName)) {
+        return prev.filter(ing => ing !== ingredientName);
       } else {
-        return [...prev, ingredientToToggle];
+        return [...prev, ingredientName];
       }
     });
   };
@@ -73,6 +73,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
             onBack={handleBack}
             selectedIngredients={selectedIngredients}
             onToggleIngredient={toggleIngredient}
+            hideAddToCartBar={true} // Hide the bar in the detail component
           />
         </div>
         

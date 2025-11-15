@@ -25,7 +25,7 @@ const MenuItemForm: React.FC<{
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPopular, setIsPopular] = useState(false);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredients, setIngredients] = useState<string[]>([]);
   const [ingredientName, setIngredientName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -37,22 +37,13 @@ const MenuItemForm: React.FC<{
       setImageUrl(menuItem.image_url || '');
       setImagePreview(menuItem.image_url || '');
       setIsPopular(menuItem.is_popular || false);
-      // Normalizar ingredientes: puede venir como string JSON, array o undefined/null
-      const raw = (menuItem as any).ingredients;
-      let normalized: Ingredient[] = [];
-      if (Array.isArray(raw)) {
-        normalized = raw as Ingredient[];
-      } else if (typeof raw === 'string') {
-        try {
-          const parsed = JSON.parse(raw);
-          normalized = Array.isArray(parsed) ? parsed : [];
-        } catch {
-          normalized = [];
-        }
-      } else {
-        normalized = [];
-      }
-      setIngredients(normalized);
+      // Normalizar ingredientes: ahora esperamos string[]
+      const rawIngredients = menuItem.ingredients || [];
+      // Asegurarnos de que sea un array de strings, manejando datos antiguos
+      const normalized = Array.isArray(rawIngredients) 
+        ? rawIngredients.map(ing => typeof ing === 'object' ? ing.name : ing).filter(Boolean)
+        : [];
+      setIngredients(normalized as string[]);
     } else {
       setName('');
       setDescription('');
@@ -75,14 +66,15 @@ const MenuItemForm: React.FC<{
   };
 
   const handleAddIngredient = () => {
-    if (ingredientName.trim() && !ingredients.some(ing => ing.name === ingredientName.trim())) {
-      setIngredients([...ingredients, { name: ingredientName.trim(), icon: 'FoodIcon' }]);
+    const trimmedName = ingredientName.trim();
+    if (trimmedName && !ingredients.includes(trimmedName)) {
+      setIngredients([...ingredients, trimmedName]);
       setIngredientName('');
     }
   };
 
   const handleRemoveIngredient = (name: string) => {
-    setIngredients(ingredients.filter(ing => ing.name !== name));
+    setIngredients(ingredients.filter(ing => ing !== name));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,7 +100,7 @@ const MenuItemForm: React.FC<{
         price: parsedPrice,
         image_url: finalImageUrl,
         is_popular: isPopular,
-        ingredients: ingredients,
+        ingredients: ingredients, // Ahora es un string[]
       };
 
       if (menuItem) {
@@ -152,15 +144,16 @@ const MenuItemForm: React.FC<{
                 placeholder="Añadir ingrediente" 
                 value={ingredientName} 
                 onChange={e => setIngredientName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddIngredient(); }}}
                 className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button type="button" onClick={handleAddIngredient} className="px-4 py-2 text-white font-semibold bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">Añadir</button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {(Array.isArray(ingredients) ? ingredients : []).map(ing => (
-                <div key={ing.name} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-1 rounded-full">
-                  <span>{ing.name}</span>
-                  <button type="button" onClick={() => handleRemoveIngredient(ing.name)} className="text-red-500 hover:text-red-700">
+              {ingredients.map(ing => (
+                <div key={ing} className="flex items-center gap-2 bg-gray-200 text-gray-800 px-3 py-1 rounded-full">
+                  <span>{ing}</span>
+                  <button type="button" onClick={() => handleRemoveIngredient(ing)} className="text-red-500 hover:text-red-700">
                     <XCircleIcon className="w-4 h-4" />
                   </button>
                 </div>

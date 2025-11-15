@@ -453,7 +453,8 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
               <p className="text-gray-600 text-center">No tienes pedidos realizados aún.</p>
             ) : (
               <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
-                {orders.map((order) => (
+                {console.log('UserOrdersModal - orders array IDs:', orders.map(order => order.id))}
+                {orders.map((order, index) => (
                   <div 
                     key={order.id || `order-${index}`} 
                     className="p-4 border border-gray-200 rounded-lg shadow-sm bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -480,7 +481,7 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
                         </ul>
                       </div>
                     )}
-                    {!order.order_items || order.order_items.length === 0 && (
+                    {(!order.order_items || order.order_items.length === 0) && (
                       <p className="text-sm text-gray-500 italic">No hay artículos para este pedido.</p>
                     )}
                   </div>
@@ -563,12 +564,16 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, or
                 <div className="pt-3 border-t border-gray-200">
                   <p className="font-medium text-gray-800 mb-2">Artículos:</p>
                   <ul className="space-y-2">
-                    {order.order_items.map((item: any, itemIndex: number) => (
-                      <li key={item.id || `order-${order.id}-item-${itemIndex}`} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                    {console.log('OrderDetailModal - order.order_items array:', order.order_items)}
+                    {order.order_items.map((item: any, itemIndex: number) => {
+                      console.log('OrderDetailModal - Order Item ID:', item.id, 'Generated Robust Key:', `order-${order.id}-orderitem-${item.id}-menuitem-${item.menu_items.id}-itemindex-${itemIndex}`);
+                      return (
+                      <li key={`order-${order.id}-orderitem-${item.id}-menuitem-${item.menu_items.id}-itemindex-${itemIndex}`} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
                         <span>{item.quantity} x {item.name}</span>
                         <span>${(item.quantity * item.price)?.toFixed(2) || '0.00'}</span>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </div>
               )}

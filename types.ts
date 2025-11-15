@@ -21,37 +21,49 @@ export interface Category {
 
 
 
-export interface Ingredient {
-
-  name: string;
-
-  icon: string; // Icon name as a string
-
-}
-
-
-
 export interface MenuItem {
+
+
 
   id: number;
 
+
+
   restaurant_id: number;
+
+
 
   name: string;
 
+
+
   description: string;
+
+
 
   price: number;
 
+
+
   imageUrl?: string;
+
+
 
   rating?: number;
 
+
+
   reviews?: number;
 
-  ingredients?: Ingredient[];
+
+
+  ingredients?: string[];
+
+
 
   isPopular?: boolean;
+
+
 
 }
 

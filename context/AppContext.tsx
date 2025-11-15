@@ -14,7 +14,7 @@ import { supabase } from '../services/supabase';
 
 import { confirmarPedido, getTariffs, getProfile } from '../services/api';
 
-import { Restaurant, MenuItem, CartItem, Ingredient, UserRole, Tariff, OrderUserDetails, Profile } from '../types';
+import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Profile } from '../types';
 
 import { Toast, ToastType } from '../components/Toast';
 
@@ -118,7 +118,7 @@ interface AppContextType {
 
   
 
-      handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => void;
+      handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => void;
 
   
 
@@ -790,11 +790,7 @@ interface AppContextType {
 
 
 
-            const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: Ingredient[], restaurant: Restaurant) => {
-
-
-
-              const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+            const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
 
 
 
@@ -802,99 +798,7 @@ interface AppContextType {
 
 
 
-              const addItemToCart = (isNewCart = false) => {
-
-
-
-                const cartItemId = `${item.id}-${customizedIngredients.map(i => i.name).sort().join('-')}`;
-
-
-
-                
-
-
-
-                if (isNewCart) {
-
-
-
-                  const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients, restaurant };
-
-
-
-                  setCart([newCartItem]);
-
-
-
-                } else {
-
-
-
-                  setCart(prevCart => {
-
-
-
-                    const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
-
-
-
-                    if (existingItem) {
-
-
-
-                      return prevCart.map(cartItem =>
-
-
-
-                        cartItem.id === cartItemId
-
-
-
-                          ? { ...cartItem, quantity: cartItem.quantity + quantity }
-
-
-
-                          : cartItem
-
-
-
-                      );
-
-
-
-                    }
-
-
-
-                    return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients, restaurant }];
-
-
-
-                  });
-
-
-
-                }
-
-
-
-                
-
-
-
-                setIsCartAnimating(true);
-
-
-
-                setTimeout(() => setIsCartAnimating(false), 500);
-
-
-
-                showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
-
-
-
-              };
+                          const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
 
 
 
@@ -902,43 +806,319 @@ interface AppContextType {
 
 
 
-              if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
+                      
 
 
 
-                requestConfirmation(
+          
 
 
 
-                  'Vaciar Carrito',
+                          const addItemToCart = (isNewCart = false) => {
 
 
 
-                  'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
+          
 
 
 
-                  () => addItemToCart(true) // onConfirm
+                            // ID se genera a partir del array de strings, que es correcto
 
 
 
-                );
+          
 
 
 
-              } else {
+                            const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
 
 
 
-                addItemToCart(false);
+          
 
 
 
-              }
+                            
 
 
 
-            };
+          
+
+
+
+                            // Convertimos el string[] de vuelta a Ingredient[] para que sea compatible con el estado del carrito
+
+
+
+          
+
+
+
+                            const ingredientsForCart: Ingredient[] = customizedIngredients.map(name => ({ name, icon: '' }));
+
+
+
+          
+
+
+
+            
+
+
+
+          
+
+
+
+                            if (isNewCart) {
+
+
+
+          
+
+
+
+                              const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
+
+
+
+          
+
+
+
+                              setCart([newCartItem]);
+
+
+
+          
+
+
+
+                            } else {
+
+
+
+          
+
+
+
+                              setCart(prevCart => {
+
+
+
+          
+
+
+
+                                const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
+
+
+
+          
+
+
+
+                                if (existingItem) {
+
+
+
+          
+
+
+
+                                  return prevCart.map(cartItem =>
+
+
+
+          
+
+
+
+                                    cartItem.id === cartItemId
+
+
+
+          
+
+
+
+                                      ? { ...cartItem, quantity: cartItem.quantity + quantity }
+
+
+
+          
+
+
+
+                                      : cartItem
+
+
+
+          
+
+
+
+                                  );
+
+
+
+          
+
+
+
+                                }
+
+
+
+          
+
+
+
+                                return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
+
+
+
+          
+
+
+
+                              });
+
+
+
+          
+
+
+
+                            }
+
+
+
+          
+
+
+
+                            
+
+
+
+          
+
+
+
+                            setIsCartAnimating(true);
+
+
+
+          
+
+
+
+                            setTimeout(() => setIsCartAnimating(false), 500);
+
+
+
+          
+
+
+
+                            showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
+
+
+
+          
+
+
+
+                          };
+
+
+
+          
+
+
+
+                      
+
+
+
+          
+
+
+
+                          if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
+
+
+
+          
+
+
+
+                            requestConfirmation(
+
+
+
+          
+
+
+
+                              'Vaciar Carrito',
+
+
+
+          
+
+
+
+                              'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
+
+
+
+          
+
+
+
+                              () => addItemToCart(true) // onConfirm
+
+
+
+          
+
+
+
+                            );
+
+
+
+          
+
+
+
+                          } else {
+
+
+
+          
+
+
+
+                            addItemToCart(false);
+
+
+
+          
+
+
+
+                          }
+
+
+
+          
+
+
+
+                        };
 
 
 

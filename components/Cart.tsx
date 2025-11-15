@@ -204,7 +204,7 @@ export const Cart: React.FC = () => {
                 if (allIngredients.length === 0) return null;
 
                 const selectedNames = new Set(item.customizedIngredients.map(i => i.name));
-                const excludedIngredients = allIngredients.filter(i => !selectedNames.has(i.name));
+                const excludedIngredients = allIngredients.filter(i => !selectedNames.has(i));
 
                 // Only show customizations if something was actually removed
                 const hasCustomization = item.customizedIngredients.length < allIngredients.length;
@@ -218,7 +218,7 @@ export const Cart: React.FC = () => {
                       <span key={ing.name} className="mr-2 text-green-700">{`+${ing.name}`}</span>
                     ))}
                     {excludedIngredients.map(ing => (
-                      <span key={ing.name} className="mr-2 text-red-700 line-through">{`${ing.name}`}</span>
+                      <span key={ing} className="mr-2 text-red-700 line-through">{`${ing}`}</span>
                     ))}
                   </div>
                 )
