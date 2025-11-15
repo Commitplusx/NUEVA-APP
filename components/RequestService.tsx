@@ -11,6 +11,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { LocationPickerMapModal } from './LocationPickerMapModal';
+import Lottie from 'lottie-react';
+import deliveryAnimation from './animations/delivery-animation.json';
 
 type Step = 'details' | 'confirmation' | 'submitted';
 
@@ -130,35 +132,28 @@ export const RequestService: React.FC = () => {
 
   // Fetch user profile on mount
   useEffect(() => {
-    const formatAddress = (p: Profile | null): string => {
-        if (!p) return '';
-        const parts = [p.street_address, p.neighborhood, p.city, p.postal_code].filter(Boolean);
-        if (parts.length === 0) return '';
-        return parts.join(', ');
-    };
+    if (userRole === 'guest') {
+      showToast('Por favor, inicie sesión para usar este servicio.', 'info');
+      return;
+    }
 
     const fetchProfile = async () => {
       try {
         const profile = await getProfile();
         if (profile) {
           setUserProfile(profile);
-          const formattedAddress = formatAddress(profile);
-          if (formattedAddress && profile.lat && profile.lng) {
-            setOrigin(formattedAddress);
-            setOriginCoords({ lat: profile.lat, lng: profile.lng });
-            setInitialOriginLocation({ lat: profile.lat, lng: profile.lng });
-          } else {
-            showToast('No tienes una dirección de origen guardada. Ve a tu perfil para añadir una.', 'info');
-          }
         } else {
-            showToast('Ve a tu perfil para configurar tu dirección de origen por defecto.', 'info');
+          showToast('No pudimos cargar tu perfil. Puedes continuar y llenar los datos manualmente.', 'warning');
         }
       } catch (error) {
         showToast('No se pudo cargar tu perfil.', 'error');
       }
     };
-    fetchProfile();
-  }, [showToast]);
+    
+    if (userRole === 'user' || userRole === 'admin') {
+      fetchProfile();
+    }
+  }, [userRole, showToast]);
 
   // Debounced geocoding for origin
   useEffect(() => {
@@ -238,12 +233,17 @@ export const RequestService: React.FC = () => {
 
   // --- Handlers ---
 
-  const handleProfileLinkClick = () => {
-    if (userRole === 'guest') {
-      showToast('Debes iniciar sesión para configurar tu perfil.', 'info');
-      navigate('/login');
-    } else {
-      navigate('/profile');
+  const handleUseProfileAddress = () => {
+    if (userProfile) {
+      const formattedAddress = [userProfile.street_address, userProfile.neighborhood, userProfile.city, userProfile.postal_code].filter(Boolean).join(', ');
+      if (formattedAddress && userProfile.lat && userProfile.lng) {
+        setOrigin(formattedAddress);
+        setOriginCoords({ lat: userProfile.lat, lng: userProfile.lng });
+        setInitialOriginLocation({ lat: userProfile.lat, lng: userProfile.lng });
+        showToast('Dirección de origen establecida desde tu perfil.', 'success');
+      } else {
+        showToast('No tienes una dirección completa guardada en tu perfil.', 'info');
+      }
     }
   };
 
@@ -509,6 +509,7 @@ export const RequestService: React.FC = () => {
         <div className="p-4 space-y-6 animate-fade-in">
             <Stepper currentStep={step} />
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">CONFIRMA TU SOLICITUD</h1>
+            <Lottie animationData={deliveryAnimation} loop={true} style={{ height: 150, marginBottom: '1rem' }} />
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
                 <div className="pb-4 border-b border-gray-100">
                     <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -607,12 +608,12 @@ export const RequestService: React.FC = () => {
                   Mapa
                 </button>
             </div>
-            {!userProfile?.street_address && (
+            {userProfile?.street_address && (
               <button
-                onClick={handleProfileLinkClick}
-                className="text-xs font-medium underline text-[var(--color-rappi-danger)] hover:text-[color-mix(in srgb, var(--color-rappi-danger) 80%, black)] ml-1 mt-1"
+                onClick={handleUseProfileAddress}
+                className="text-xs font-medium underline text-green-600 hover:text-green-800 ml-1 mt-1"
               >
-                  Añadir dirección en perfil
+                  Usar mi dirección guardada
               </button>
             )}
         </div>
