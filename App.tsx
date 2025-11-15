@@ -11,10 +11,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { useAppContext } from './context/AppContext';
-import { ChevronLeftIcon } from './components/icons';
 import { AppProvider } from './context/AppContext';
-import UserRouteGuard from './components/UserRouteGuard';
 import { Spinner } from './components/Spinner';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 // Lazy load de los componentes de página
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
@@ -59,24 +58,27 @@ const App: React.FC = () => {
   const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
-  const hideHeaderPaths = ['/login', '/'];
-  const shouldShowHeader = false;
   const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductModalOpen;
 
-  // Estado para el evento de instalación de PWA
+  useEffect(() => {
+    // Set status bar style to dark on app load
+    const setStatusBarStyle = async () => {
+      await StatusBar.setStyle({ style: Style.Dark });
+    };
+    setStatusBarStyle();
+  }, []);
+
+  // PWA install prompt logic
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
+  
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event);
-      setShowInstallButton(true); // Show the button when the prompt is available
+      setShowInstallButton(true);
     };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
@@ -92,64 +94,54 @@ const App: React.FC = () => {
           console.log('User dismissed the PWA installation');
         }
         setInstallPrompt(null);
-        setShowInstallButton(false); // Hide the button after prompt
+        setShowInstallButton(false);
       });
     }
   };
 
-
-
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-            <style>{`
-              .pt-fixed-header {
-                padding-top: 60px; /* Adjust as needed */
-              }
-              .modal-open .bottom-nav { display: none !important; }
-            `}</style>
+      <AnimatePresence mode="wait">
+        {shouldShowBottomNav && <BottomNav />}
+        {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
+      </AnimatePresence>
+      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+        <AnimatePresence mode="wait">
+          <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
+            <Routes location={location} key={location.pathname}>
+                <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
+                <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
+                <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
+                <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
+                <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
+                <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
+                <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
+                <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
+                <Route path="/admin" element={<Admin />}>
+                    <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
+                    <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
+                    <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
+                    <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
+                    <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
+                </Route>
+                <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
+            </Routes>
+          </Suspense>
+        </AnimatePresence>
+      </main>
       
-            <AnimatePresence mode="wait">
-              {shouldShowBottomNav && <BottomNav />}
-              {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
-            </AnimatePresence>
-            <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''} ${shouldShowHeader ? 'pt-16' : ''} pt-fixed-header`}>
-              <AnimatePresence mode="wait">
-                <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
-                  <Routes location={location} key={location.pathname}>
-                    <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
-                    <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
-                    <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
-                    <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
-                    <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
-                    <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
-                    <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-                    <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
-                    <Route path="/admin" element={<Admin />}>
-                      <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
-                      <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
-                      <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
-                      <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
-                      <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
-                    </Route>
-                    <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
-                  </Routes>
-                </Suspense>
-              </AnimatePresence>
-            </main>
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      
-            {showInstallButton && (
-              <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
-                <button
-                  onClick={handleInstallClick}
-                  className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
-                >
-                  Instalar Aplicación
-                </button>
-              </div>
-            )}
-          </div>
-        );
+      {showInstallButton && (
+        <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
+          <button
+            onClick={handleInstallClick}
+            className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
+          >
+            Instalar Aplicación
+          </button>
+        </div>
+      )}
+    </div>
+  );
 };
 
 /**
