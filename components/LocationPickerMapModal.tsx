@@ -4,9 +4,9 @@ import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import * as Icons from './icons';
 import { useAppContext } from '../context/AppContext';
 import { geocodeAddress, reverseGeocode } from '../services/api';
-import { Spinner } from './Spinner'; // Import Spinner directly
+import { Spinner } from './Spinner';
 
-interface LocationPickerMapModalProps {
+interface LocationPickerPageProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (address: string, lat: number, lng: number) => void;
@@ -16,7 +16,7 @@ interface LocationPickerMapModalProps {
 
 const mapContainerStyle = {
   width: '100%',
-  height: 'calc(100vh - 120px)', // Adjust height as needed
+  height: '100%',
 };
 
 const defaultCenter = {
@@ -28,6 +28,7 @@ const mapOptions = {
   disableDefaultUI: true,
   zoomControl: true,
   styles: [
+    // (Map styles are unchanged)
     {
       "elementType": "geometry",
       "stylers": [
@@ -153,7 +154,19 @@ const mapOptions = {
   ]
 };
 
-export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+};
+
+export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
   isOpen,
   onClose,
   onConfirm,
@@ -166,23 +179,27 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
+  const idleTimeout = useRef<NodeJS.Timeout | null>(null);
+
 
   useEffect(() => {
     if (isOpen && initialLocation) {
       setSelectedPosition(initialLocation);
-      // Reverse geocode initial location to display address
       const fetchAddress = async () => {
+        setIsGeocoding(true);
         try {
           const address = await reverseGeocode(initialLocation.lat, initialLocation.lng);
           setSelectedAddress(address);
         } catch (error) {
           console.error("Error reverse geocoding initial location:", error);
           setSelectedAddress("Ubicación seleccionada");
+        } finally {
+          setIsGeocoding(false);
         }
       };
       fetchAddress();
     } else if (isOpen && !initialLocation) {
-      // If no initial location, try to get current location
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -190,21 +207,11 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
             const currentLoc = { lat: latitude, lng: longitude };
             setSelectedPosition(currentLoc);
             mapRef.current?.panTo(currentLoc);
-            mapRef.current?.setZoom(15);
-            const fetchAddress = async () => {
-              try {
-                const address = await reverseGeocode(latitude, longitude);
-                setSelectedAddress(address);
-              } catch (error) {
-                console.error("Error reverse geocoding current location:", error);
-                setSelectedAddress("Ubicación actual");
-              }
-            };
-            fetchAddress();
+            mapRef.current?.setZoom(16);
           },
           (error) => {
             console.error("Error getting current location:", error);
-            showToast("No se pudo obtener tu ubicación actual. Por favor, selecciona manualmente.", "error");
+            showToast("No se pudo obtener tu ubicación actual.", "error");
             setSelectedPosition(defaultCenter);
             mapRef.current?.panTo(defaultCenter);
             mapRef.current?.setZoom(13);
@@ -222,39 +229,42 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
     mapRef.current = map;
     if (selectedPosition) {
       map.panTo(selectedPosition);
-      map.setZoom(15);
+      map.setZoom(16);
     }
   }, [selectedPosition]);
 
-  const handleMapClick = useCallback(async (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      setSelectedPosition({ lat, lng });
-      try {
-        const address = await reverseGeocode(lat, lng);
-        setSelectedAddress(address);
-      } catch (error) {
-        console.error("Error reverse geocoding on map click:", error);
-        setSelectedAddress("Ubicación seleccionada");
-      }
+  const handleMapIdle = useCallback(() => {
+    if (idleTimeout.current) {
+      clearTimeout(idleTimeout.current);
     }
-  }, []);
 
-  const handleMarkerDragEnd = useCallback(async (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      setSelectedPosition({ lat, lng });
-      try {
-        const address = await reverseGeocode(lat, lng);
-        setSelectedAddress(address);
-      } catch (error) {
-        console.error("Error reverse geocoding on marker drag:", error);
-        setSelectedAddress("Ubicación seleccionada");
+    idleTimeout.current = setTimeout(async () => {
+      if (mapRef.current) {
+        const center = mapRef.current.getCenter();
+        if (center) {
+          const lat = center.lat();
+          const lng = center.lng();
+
+          if (selectedPosition && haversineDistance(lat, lng, selectedPosition.lat, selectedPosition.lng) < 0.01) {
+            return;
+          }
+          
+          setIsGeocoding(true);
+          setSelectedPosition({ lat, lng });
+
+          try {
+            const address = await reverseGeocode(lat, lng);
+            setSelectedAddress(address);
+          } catch (error) {
+            console.error("Error reverse geocoding on idle:", error);
+            setSelectedAddress("No se pudo obtener la dirección");
+          } finally {
+            setIsGeocoding(false);
+          }
+        }
       }
-    }
-  }, []);
+    }, 500); // Debounce time
+  }, [selectedPosition]);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery) return;
@@ -262,11 +272,8 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
     try {
       const coords = await geocodeAddress(searchQuery);
       if (coords) {
-        setSelectedPosition(coords);
         mapRef.current?.panTo(coords);
-        mapRef.current?.setZoom(15);
-        const address = await reverseGeocode(coords.lat, coords.lng);
-        setSelectedAddress(address);
+        mapRef.current?.setZoom(17);
       } else {
         showToast("No se encontró la dirección. Intenta ser más específico.", "error");
       }
@@ -290,81 +297,85 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-[90vh] flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <Icons.XIcon className="w-6 h-6" />
+    <div className="fixed inset-0 bg-white z-50">
+      <div className="w-full h-full flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
+            <Icons.ChevronLeftIcon className="w-6 h-6 text-gray-700" />
           </button>
+          <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+          <div className="w-8"></div> {/* Spacer to balance the header */}
         </div>
 
-        <div className="p-4 flex-shrink-0">
+        {/* Search Section */}
+        <div className="p-4 flex-shrink-0 bg-white z-10 shadow-sm">
           <div className="relative flex items-center">
             <input
               type="text"
-              placeholder="Buscar dirección..."
-              className="w-full py-2 px-3 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="Buscar una calle, colonia o lugar..."
+              className="w-full py-3 px-4 pl-12 bg-gray-50 border-2 border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => { if (e.key === 'Enter') handleSearch(); }}
             />
-            <Icons.SearchIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-            <button
-              onClick={handleSearch}
-              className="ml-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center gap-1"
-              disabled={isSearching}
-            >
-              {isSearching ? <Spinner className="animate-spin w-5 h-5" /> : <Icons.SearchIcon className="w-5 h-5" />}
-              Buscar
-            </button>
+            <Icons.SearchIcon className="absolute left-4 w-5 h-5 text-gray-400" />
+            {isSearching && <Spinner className="absolute right-4 animate-spin w-5 h-5 text-orange-500" />}
           </div>
-          {selectedAddress && (
-            <p className="mt-2 text-sm text-gray-700 flex items-center gap-2">
-              <Icons.MapPinIcon className="w-4 h-4 text-orange-500" />
-              Dirección seleccionada: <span className="font-semibold">{selectedAddress}</span>
-            </p>
-          )}
         </div>
 
+        {/* Map and Confirmation */}
         <div className="flex-grow relative">
           {!isMapsLoaded ? (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-              <Spinner className="animate-spin w-8 h-8 text-orange-500" />
+              <div className="text-center">
+                <Spinner className="animate-spin w-8 h-8 text-orange-500 mx-auto" />
+                <p className="mt-2 text-gray-600">Cargando mapa...</p>
+              </div>
             </div>
           ) : (
             <>
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
                 center={selectedPosition || defaultCenter}
-                zoom={selectedPosition ? 15 : 13}
+                zoom={16}
                 options={mapOptions}
                 onLoad={handleMapLoad}
-                onClick={handleMapClick}
+                onIdle={handleMapIdle}
               >
-                {selectedPosition && (
-                  <MarkerF
-                    position={selectedPosition}
-                    draggable={true}
-                    onDragEnd={handleMarkerDragEnd}
-                  />
-                )}
+                {/* No marker, the center of the map is the selection point */}
               </GoogleMap>
-              <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] md:max-w-sm mx-auto bg-white/80 backdrop-blur-sm shadow-lg rounded-full border border-gray-200/80 p-2 flex justify-around items-center h-16 z-50">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-bold hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirmClick}
-                  className="px-4 py-2 bg-green-500 text-white rounded-full font-bold hover:bg-green-600 transition-colors flex items-center gap-2 text-sm"
-                  disabled={!selectedPosition || !selectedAddress}
-                >
-                  <Icons.CheckCircleIcon className="w-5 h-5" />
-                  Confirmar Ubicación
-                </button>
+              
+              {/* Center crosshair */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                  <Icons.MapPinIcon className="w-10 h-10 text-orange-500 drop-shadow-lg" />
+              </div>
+
+              {/* Bottom Confirmation Section */}
+              <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 border-t border-gray-200 shadow-top">
+                <div className="max-w-4xl mx-auto">
+                  <div className="mb-3 min-h-[40px] flex flex-col justify-center">
+                    <p className="text-xs font-bold text-gray-500 uppercase">UBICACIÓN SELECCIONADA</p>
+                    {isGeocoding ? (
+                      <div className="flex items-center gap-2">
+                        <Spinner className="animate-spin w-4 h-4 text-gray-500" />
+                        <p className="text-gray-600 text-sm">Obteniendo dirección...</p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-800 font-semibold truncate">
+                        {selectedAddress || 'Mueve el mapa para seleccionar una dirección'}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleConfirmClick}
+                    className="w-full py-3 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={!selectedPosition || !selectedAddress || isGeocoding}
+                  >
+                    <Icons.CheckCircleIcon className="w-6 h-6" />
+                    Confirmar Ubicación
+                  </button>
+                </div>
               </div>
             </>
           )}
@@ -372,4 +383,4 @@ export const LocationPickerMapModal: React.FC<LocationPickerMapModalProps> = ({
       </div>
     </div>
   );
-};
+}
