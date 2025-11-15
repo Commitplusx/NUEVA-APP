@@ -9,6 +9,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import org.json.JSONException;
 
 @CapacitorPlugin(name = "NativeMap")
 public class NativeMapPlugin extends Plugin {
@@ -19,8 +20,13 @@ public class NativeMapPlugin extends Plugin {
 
         JSObject initialPosition = call.getObject("initialPosition");
         if (initialPosition != null && initialPosition.has("latitude") && initialPosition.has("longitude")) {
-            intent.putExtra("initial_latitude", initialPosition.getDouble("latitude"));
-            intent.putExtra("initial_longitude", initialPosition.getDouble("longitude"));
+            try {
+                intent.putExtra("initial_latitude", initialPosition.getDouble("latitude"));
+                intent.putExtra("initial_longitude", initialPosition.getDouble("longitude"));
+            } catch (JSONException e) {
+                call.reject("Invalid initialPosition format.", e);
+                return;
+            }
         }
 
         startActivityForResult(call, intent, "pickLocationResult");
