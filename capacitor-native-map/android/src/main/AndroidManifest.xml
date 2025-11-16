@@ -4,7 +4,7 @@
         <!-- Declare the new MapPickerActivity -->
         <activity
             android:name=".MapPickerActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <!-- Add the Google Maps API Key -->
         <meta-data

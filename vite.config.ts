@@ -7,13 +7,12 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        https: false, // Desactiva HTTPS
-        // Asegúrate de que el puerto siga siendo 3000 si lo necesitas
+        https: false,
         port: 3000,
         host: true,
         proxy: {
           '/api': {
-            target: 'http://localhost:3001', // Assuming your API/serverless functions run on port 3001
+            target: 'http://localhost:3001',
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/api/, ''),
           },
@@ -23,6 +22,9 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          // Forzar una única copia de React para evitar el error de "Invalid hook call"
+          'react': path.resolve(__dirname, 'node_modules/react'),
+          'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
         }
       },
       optimizeDeps: {

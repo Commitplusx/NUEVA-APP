@@ -72,6 +72,8 @@ interface AppContextType {
 
   isProductModalOpen: boolean;
 
+  isAddressModalOpen: boolean;
+
     isBottomNavVisible: boolean;
 
     bottomNavCustomContent: ReactNode | null;
@@ -139,6 +141,8 @@ interface AppContextType {
   
 
       setIsProductModalOpen: (isOpen: boolean) => void;
+
+      setIsAddressModalOpen: (isOpen: boolean) => void;
 
       
 
@@ -291,6 +295,8 @@ interface AppContextType {
 
 
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
 
 
@@ -1288,6 +1294,8 @@ interface AppContextType {
 
                   isProductModalOpen,
 
+                  isAddressModalOpen,
+
 
 
           
@@ -1315,6 +1323,8 @@ interface AppContextType {
 
 
                   setIsProductModalOpen,
+
+                  setIsAddressModalOpen,
 
 
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:usesCleartextTraffic="true"
@@ -28,6 +29,13 @@
             </intent-filter>
 
         </activity>
+
+        <!-- Apply the custom opaque theme to the MapPickerActivity -->
+        <activity
+            android:name="shop.app.estrella.plugins.nativemap.MapPickerActivity"
+            android:theme="@style/AppTheme.MapPicker.Opaque"
+            android:exported="false"
+            tools:replace="android:theme" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

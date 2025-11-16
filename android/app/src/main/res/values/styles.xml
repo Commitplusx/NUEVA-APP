@@ -15,6 +15,13 @@
         <item name="android:background">@null</item>
     </style>
 
+    <!-- The Silver Bullet Theme to kill the translucent ghost window -->
+    <style name="AppTheme.MapPicker.Opaque" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item> <!-- Esta línea es la que faltaba -->
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item> <!-- Set a default solid color -->
+    </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>

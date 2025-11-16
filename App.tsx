@@ -14,6 +14,7 @@ import { useAppContext } from './context/AppContext';
 import { AppProvider } from './context/AppContext';
 import { Spinner } from './components/Spinner';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 // Lazy load de los componentes de página
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
@@ -55,17 +56,28 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
  * Gestiona la visibilidad de la cabecera y el sidebar basándose en la ruta actual y el rol del usuario.
  */
 const App: React.FC = () => {
-  const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen } = useAppContext();
+  const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen, isAddressModalOpen } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
-  const shouldShowBottomNav = location.pathname !== '/' && !isCustomizationModalOpen && !isProductModalOpen;
+
+  const shouldShowBottomNav = 
+    location.pathname !== '/' && 
+    !isCustomizationModalOpen && 
+    !isProductModalOpen &&
+    !isAddressModalOpen;
+
 
   useEffect(() => {
-    // Set status bar style to dark on app load
-    const setStatusBarStyle = async () => {
-      await StatusBar.setStyle({ style: Style.Dark });
+    const setupPlatform = async () => {
+      if (Capacitor.isNativePlatform()) {
+        // Prevent the webview from overlapping the status bar
+        await StatusBar.setOverlaysWebView({ overlay: false });
+        // Set status bar style to dark text
+        await StatusBar.setStyle({ style: Style.Light });
+        await StatusBar.setBackgroundColor({ color: '#000000' });
+      }
     };
-    setStatusBarStyle();
+    setupPlatform();
   }, []);
 
   // PWA install prompt logic
@@ -105,7 +117,7 @@ const App: React.FC = () => {
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
-      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+      <main className={`flex-grow overflow-y-auto pt-10 ${shouldShowBottomNav ? 'pb-28' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
             <Routes location={location} key={location.pathname}>

@@ -81,7 +81,7 @@ export const Home: React.FC = () => {
 
   return (
     <motion.div 
-      className="fixed top-0 left-0 w-full h-full bg-white"
+      className="fixed top-0 left-0 w-full h-full bg-white pt-16"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}

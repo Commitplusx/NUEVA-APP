@@ -4,6 +4,7 @@ import { SubmittedStep } from './SubmittedStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { PriceSkeleton } from './PriceSkeleton';
 import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import * as Icons from './icons';
 import { ServiceRequest, Profile } from '../types';
@@ -15,13 +16,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { NativeMap } from 'capacitor-native-map';
+import { LocationPickerMapModal } from './LocationPickerMapModal';
 import Lottie from 'lottie-react';
 import deliveryAnimation from './animations/delivery-animation.json';
 import { Stepper, Step } from './Stepper';
 
 // --- Helper Functions ---
 
-// Haversine formula to calculate distance between two lat/lng points
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Radius of the Earth in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -72,12 +73,15 @@ export const RequestService: React.FC = () => {
   const [shippingCost, setShippingCost] = useState<number | null>(null);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
-
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  
+  const [showOriginMapPicker, setShowOriginMapPicker] = useState(false);
+  const [showDestinationMapPicker, setShowDestinationMapPicker] = useState(false);
+  const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [initialDestinationLocation, setInitialDestinationLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
+
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const weekDays = useMemo(() => getNext7Days(), []);
@@ -85,13 +89,11 @@ export const RequestService: React.FC = () => {
 
   // --- Effects ---
 
-  // Fetch user profile on mount
   useEffect(() => {
     if (userRole === 'guest') {
       showToast('Por favor, inicie sesión para usar este servicio.', 'info');
       return;
     }
-
     const fetchProfile = async () => {
       try {
         const profile = await getProfile();
@@ -104,13 +106,11 @@ export const RequestService: React.FC = () => {
         showToast('No se pudo cargar tu perfil.', 'error');
       }
     };
-    
     if (userRole === 'user' || userRole === 'admin') {
       fetchProfile();
     }
   }, [userRole, showToast]);
 
-  // Calculate distance and price whenever coordinates change
   useEffect(() => {
     if (originCoords && destinationCoords) {
       setIsCalculating(true);
@@ -125,10 +125,8 @@ export const RequestService: React.FC = () => {
     }
   }, [originCoords, destinationCoords, baseFee]);
 
-  // Effect to fit map bounds when coords change
   useEffect(() => {
     if (!mapRef.current) return;
-
     if (originCoords && destinationCoords) {
       const bounds = new window.google.maps.LatLngBounds();
       bounds.extend(originCoords);
@@ -151,6 +149,7 @@ export const RequestService: React.FC = () => {
       if (formattedAddress && userProfile.lat && userProfile.lng) {
         setOrigin(formattedAddress);
         setOriginCoords({ lat: userProfile.lat, lng: userProfile.lng });
+        setInitialOriginLocation({ lat: userProfile.lat, lng: userProfile.lng });
         showToast('Dirección de origen establecida desde tu perfil.', 'success');
       } else {
         showToast('No tienes una dirección completa guardada en tu perfil.', 'info');
@@ -162,28 +161,11 @@ export const RequestService: React.FC = () => {
     try {
       const position = await Geolocation.getCurrentPosition();
       const { latitude, longitude } = position.coords;
-
-      const comitanBounds = {
-        north: 16.3,
-        south: 16.2,
-        east: -92.0,
-        west: -92.2,
-      };
-
-      if (
-        latitude > comitanBounds.north ||
-        latitude < comitanBounds.south ||
-        longitude > comitanBounds.east ||
-        longitude < comitanBounds.west
-      ) {
-        showToast('Tu ubicación está fuera de nuestra área de servicio.', 'warning');
-        return;
-      }
-
       const address = await reverseGeocode(latitude, longitude);
       if (address) {
         setOrigin(address);
         setOriginCoords({ lat: latitude, lng: longitude });
+        setInitialOriginLocation({ lat: latitude, lng: longitude });
         showToast('Ubicación actual obtenida.', 'success');
       } else {
         showToast('No se pudo encontrar una dirección para tu ubicación.', 'error');
@@ -193,29 +175,43 @@ export const RequestService: React.FC = () => {
       showToast('No se pudo obtener la ubicación. Asegúrate de tener los permisos activados.', 'error');
     }
   };
-  
-  const openNativeMapPicker = async (type: 'origin' | 'destination') => {
-    try {
+
+  const handleMapPick = async (type: 'origin' | 'destination') => {
+    const isNative = Capacitor.getPlatform() === 'android';
+
+    if (isNative) {
+      try {
         const currentCoords = type === 'origin' ? originCoords : destinationCoords;
         const result = await NativeMap.pickLocation({
-            initialPosition: currentCoords ? { latitude: currentCoords.lat, longitude: currentCoords.lng } : undefined
+          initialPosition: currentCoords ? { latitude: currentCoords.lat, longitude: currentCoords.lng } : undefined
         });
-
         if (result) {
-            if (type === 'origin') {
-                setOrigin(result.address);
-                setOriginCoords({ lat: result.latitude, lng: result.longitude });
-            } else {
-                setDestination(result.address);
-                setDestinationCoords({ lat: result.latitude, lng: result.longitude });
-            }
-            showToast('Ubicación seleccionada con éxito', 'success');
+          if (type === 'origin') {
+            setOrigin(result.address);
+            setOriginCoords({ lat: result.latitude, lng: result.longitude });
+          } else {
+            setDestination(result.address);
+            setDestinationCoords({ lat: result.latitude, lng: result.longitude });
+          }
+          showToast('Ubicación seleccionada con éxito', 'success');
         }
-    } catch (err: any) {
+      } catch (err: any) {
         if (err.message !== 'Action canceled by user.') {
-            console.error('Error opening native map picker', err);
-            showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
+          console.error('Error opening native map picker', err);
+          showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
         }
+      }
+    } else {
+      // Web fallback
+      if (type === 'origin') {
+        setInitialOriginLocation(originCoords || undefined);
+        setBottomNavVisible(false);
+        setShowOriginMapPicker(true);
+      } else {
+        setInitialDestinationLocation(destinationCoords || undefined);
+        setBottomNavVisible(false);
+        setShowDestinationMapPicker(true);
+      }
     }
   };
 
@@ -236,16 +232,13 @@ export const RequestService: React.FC = () => {
       showToast('Faltan datos para crear la solicitud.', 'error');
       return;
     }
-
     setIsCalculating(true);
-
     try {
       let scheduledAt = null;
       if (confirmedSchedule) {
         const date = confirmedSchedule.date.toISOString().split('T')[0];
         scheduledAt = `${date}T${confirmedSchedule.time}:00`;
       }
-
       const newServiceRequest: ServiceRequest = {
         origin,
         destination,
@@ -257,7 +250,6 @@ export const RequestService: React.FC = () => {
         status: 'pending',
         phone: userProfile.phone || undefined,
       };
-
       const createdRequest = await createServiceRequest(newServiceRequest);
       setNewRequestId(createdRequest.id?.toString() || null);
       setStep('submitted');
@@ -278,7 +270,21 @@ export const RequestService: React.FC = () => {
   const handleScheduleCancel = () => {
     setShowScheduleModal(false);
   };
-  
+
+  const handleConfirmOrigin = (address: string, lat: number, lng: number) => {
+    setOrigin(address);
+    setOriginCoords({ lat, lng });
+    setShowOriginMapPicker(false);
+    setBottomNavVisible(true);
+  };
+
+  const handleConfirmDestination = (address: string, lat: number, lng: number) => {
+    setDestination(address);
+    setDestinationCoords({ lat, lng });
+    setShowDestinationMapPicker(false);
+    setBottomNavVisible(true);
+  };
+
   const getFormattedScheduledDate = () => {
     if (!confirmedSchedule) return '';
     return confirmedSchedule.date.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -290,37 +296,14 @@ export const RequestService: React.FC = () => {
 
   // --- Render Logic ---
 
-  const mapContainerStyle = {
-    width: '100%',
-    height: '100%',
-  };
-
-  const defaultCenter = {
-    lat: 16.25, // Default to Comitán
-    lng: -92.13
-  };
-
-  const mapOptions = {
-    disableDefaultUI: true,
-    zoomControl: true,
-    restriction: {
-      latLngBounds: {
-        north: 16.3,
-        south: 16.2,
-        east: -92.0,
-        west: -92.2,
-      },
-      strictBounds: false,
-    },
-    minZoom: 12,
-    maxZoom: 18,
-    styles: []
-  };
+  const mapContainerStyle = { width: '100%', height: '100%' };
+  const defaultCenter = { lat: 16.25, lng: -92.13 };
+  const mapOptions = { disableDefaultUI: true, zoomControl: true, styles: [] };
 
   if (step === 'submitted') {
     return <SubmittedStep newRequestId={newRequestId} whatsappNumber={whatsappNumber} />;
   }
-  
+
   if (step === 'confirmation') {
     return (
       <ConfirmationStep
@@ -351,7 +334,7 @@ export const RequestService: React.FC = () => {
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-success)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
                 <button
-                  onClick={() => openNativeMapPicker('origin')}
+                  onClick={() => handleMapPick('origin')}
                   className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
@@ -386,7 +369,7 @@ export const RequestService: React.FC = () => {
                 <Icons.LocationIcon className="absolute left-3 w-5 h-5 text-[var(--color-rappi-danger)]" />
                 <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{destination || 'Selecciona tu dirección de destino'}</p>
                 <button
-                  onClick={() => openNativeMapPicker('destination')}
+                  onClick={() => handleMapPick('destination')}
                   className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg hover:bg-gray-800 transition-colors shadow-md flex items-center justify-center gap-1"
                 >
                   <Icons.MapIcon className="w-4 h-4" />
@@ -424,8 +407,8 @@ export const RequestService: React.FC = () => {
                         options={mapOptions}
                         onLoad={(map) => { mapRef.current = map; }}
                       >
-                        {originCoords && <MarkerF position={originCoords} animation={window.google.maps.Animation.DROP} />}
-                        {destinationCoords && <MarkerF position={destinationCoords} animation={window.google.maps.Animation.DROP} />}
+                        {originCoords && <MarkerF position={originCoords} />}
+                        {destinationCoords && <MarkerF position={destinationCoords} />}
                       </GoogleMap>
                     ) : (
                       <div className="h-full w-full flex items-center justify-center bg-gray-200">
@@ -489,6 +472,35 @@ export const RequestService: React.FC = () => {
         timeSlots={timeSlots}
       />
 
+      <AnimatePresence>
+        {showOriginMapPicker && (
+          <LocationPickerMapModal
+            isOpen={showOriginMapPicker}
+            onClose={() => {
+              setShowOriginMapPicker(false);
+              setBottomNavVisible(true);
+            }}
+            onConfirm={handleConfirmOrigin}
+            initialLocation={initialOriginLocation}
+            title="Seleccionar Origen"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDestinationMapPicker && (
+          <LocationPickerMapModal
+            isOpen={showDestinationMapPicker}
+            onClose={() => {
+              setShowDestinationMapPicker(false);
+              setBottomNavVisible(true);
+            }}
+            onConfirm={handleConfirmDestination}
+            initialLocation={initialDestinationLocation}
+            title="Seleccionar Destino"
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

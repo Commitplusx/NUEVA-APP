@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import * as Icons from './icons';
 import { useAppContext } from '../context/AppContext';
 import { geocodeAddress, reverseGeocode } from '../services/api';
@@ -225,6 +227,24 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
       }
     }
   }, [isOpen, initialLocation, showToast]);
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      const setStatusBarStyle = async () => {
+        if (isOpen) {
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        }
+      };
+      setStatusBarStyle();
+
+      // Return a cleanup function to restore the style when the modal closes
+      return () => {
+        StatusBar.setStyle({ style: Style.Light });
+        StatusBar.setBackgroundColor({ color: '#000000' });
+      };
+    }
+  }, [isOpen]);
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
