@@ -6,8 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     // 👇 ¡AQUÍ ESTÁ EL CAMBIO! 👇
-    url: 'https://app-estrella.shop',
-    androidScheme: 'https', // Usar https para producción
+    url: 'http://192.168.1.79:3000',
+    androidScheme: 'http', // Usar https para producción
     cleartext: false // Desactivar para producción por seguridad
   },
   plugins: {
