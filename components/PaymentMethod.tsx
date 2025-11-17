@@ -17,6 +17,7 @@ const PaymentOptionCard: React.FC<{
     onClick={onClick}
     className={`payment-option-card ${selected ? 'payment-option-selected' : ''}`}
     whileTap={{ scale: 0.95 }}
+    whileHover={{ scale: 1.05, y: -3 }}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
@@ -29,7 +30,7 @@ const PaymentOptionCard: React.FC<{
     {selected && (
       <div className="payment-checkmark">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#FF6B35" />
+          <circle cx="12" cy="12" r="10" fill="black" />
           <path
             d="M8 12l2 2 4-4"
             stroke="white"
@@ -48,13 +49,14 @@ const AddNewPaymentCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
         onClick={onClick}
         className="add-new-card"
         whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.05, y: -3 }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2, delay: 0.2 }}
     >
         <div className="add-new-icon-wrapper">
-            <PlusIcon className="w-6 h-6 text-orange-500" />
+            <PlusIcon className="w-6 h-6 text-black" />
         </div>
         <p className="add-new-label">AÑADIR NUEVA</p>
     </motion.button>
@@ -65,11 +67,11 @@ const CashIcon = () => (
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
     <path
       d="M24 20c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"
-      fill="#FF6B35"
+      fill="currentColor"
     />
     <path
       d="M30 18H18c-2.21 0-4 1.79-4 4v4c0 2.21 1.79 4 4 4h12c2.21 0 4-1.79 4-4v-4c0-2.21-1.79-4-4-4zm2 8c0 1.1-.9 2-2 2H18c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v4z"
-      fill="#FF6B35"
+      fill="currentColor"
     />
   </svg>
 );
@@ -170,22 +172,24 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
           background: white;
           border-radius: 16px;
           padding: 16px;
-          border: 2px solid transparent;
+          border: 2px solid #e5e7eb;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 8px;
           cursor: pointer;
           transition: all 0.2s;
+          color: #4b5563;
         }
 
         .payment-option-card:hover {
-          border-color: #FFE5DC;
+          border-color: #d1d5db;
         }
 
         .payment-option-selected {
-          border-color: #FF6B35;
-          background: #FFF9F7;
+          border-color: #000;
+          background: #f9fafb;
+          color: #000;
         }
 
         .payment-icon-wrapper {
@@ -227,7 +231,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
           max-width: 340px;
           height: 200px;
           margin: 0 auto 24px;
-          background: linear-gradient(135deg, #FF6B35 0%, #FF8F6B 50%, #FFBD9D 100%);
+          background: linear-gradient(135deg, #3a3a3a 0%, #1c1c1c 100%);
           border-radius: 16px;
           position: relative;
           overflow: hidden;
@@ -235,29 +239,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
           flex-direction: column;
           justify-content: space-between;
           padding: 20px;
-          box-shadow: 0 8px 24px rgba(255, 107, 53, 0.2);
-        }
-
-        .card-visual::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          right: -20%;
-          width: 200px;
-          height: 200px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 50%;
-        }
-
-        .card-visual::after {
-          content: '';
-          position: absolute;
-          bottom: -30%;
-          left: -10%;
-          width: 150px;
-          height: 150px;
-          background: rgba(255, 189, 157, 0.3);
-          border-radius: 50%;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .mastercard-logo {
@@ -270,7 +252,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         .card-chip {
           width: 50px;
           height: 40px;
-          background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+          background: linear-gradient(135deg, #d4af37 0%, #c09b2d 100%);
           border-radius: 6px;
           position: relative;
           z-index: 1;
@@ -305,7 +287,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
 
         .card-label {
           font-size: 10px;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(255, 255, 255, 0.7);
           text-transform: uppercase;
           letter-spacing: 1px;
         }
@@ -348,8 +330,8 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
             transition: all 0.2s;
         }
         .add-new-card:hover {
-            border-color: #FF6B35;
-            background: #FFF9F7;
+            border-color: #000;
+            background: #f9fafb;
         }
         .add-new-icon-wrapper {
             width: 56px;
@@ -363,7 +345,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         .add-new-label {
             font-size: 14px;
             font-weight: 600;
-            color: #FF6B35;
+            color: #1f2937;
             margin: 0;
         }
       `}</style>
@@ -445,7 +427,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center"
           >
             <motion.div
               initial={{ y: "100vh" }}

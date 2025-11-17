@@ -51,7 +51,7 @@ export const AddCardForm: React.FC<AddCardFormProps> = ({ onCancel, onSave }) =>
                         value={formatCardNumber(cardNumber)}
                         onChange={(e) => setCardNumber(e.target.value.replace(/\s/g, ''))}
                         placeholder="Número de Tarjeta" 
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black" 
                     />
                 </div>
                 <div className="mb-3">
@@ -60,7 +60,7 @@ export const AddCardForm: React.FC<AddCardFormProps> = ({ onCancel, onSave }) =>
                         value={cardName}
                         onChange={(e) => setCardName(e.target.value)}
                         placeholder="Nombre del Titular" 
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black" 
                     />
                 </div>
                 <div className="flex gap-3 mb-4">
@@ -71,7 +71,7 @@ export const AddCardForm: React.FC<AddCardFormProps> = ({ onCancel, onSave }) =>
                             value={formatExpiryDate(expiryDate)}
                             onChange={(e) => setExpiryDate(e.target.value)}
                             placeholder="MM/YY" 
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black" 
                         />
                     </div>
                     <div className="w-1/2">
@@ -81,12 +81,12 @@ export const AddCardForm: React.FC<AddCardFormProps> = ({ onCancel, onSave }) =>
                             value={cvv}
                             onChange={(e) => setCvv(e.target.value)}
                             placeholder="CVV" 
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black" 
                         />
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                    <button type="submit" className="w-full bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition-colors">
                         Guardar Tarjeta
                     </button>
                     <button type="button" onClick={onCancel} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">
