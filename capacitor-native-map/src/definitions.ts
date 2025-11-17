@@ -32,4 +32,25 @@ export interface NativeMap {
    * @since 1.0.0
    */
   pickLocation(options?: PickLocationOptions): Promise<PickLocationResult>;
+
+  /**
+   * Calculates a route between two points and returns distance and polyline.
+   *
+   * @since 1.1.0
+   */
+  calculateRoute(options: {
+    origin: MapPoint;
+    destination: MapPoint;
+  }): Promise<{ distance: number; polyline: string }>;
+
+  /**
+   * Opens the native map and draws the specified route.
+   *
+   * @since 1.1.0
+   */
+  showRouteOnMap(options: {
+    origin: MapPoint;
+    destination: MapPoint;
+    polyline: string;
+  }): Promise<void>;
 }

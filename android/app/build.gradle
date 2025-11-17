@@ -27,7 +27,8 @@ android {
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['storeFile'])
+                // Corrected path to look in the root project directory
+                storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
@@ -63,6 +64,8 @@ dependencies {
 
     // Added Google Maps dependency for testing
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    // Add Maps Utils library for PolyUtil
+    implementation 'com.google.maps.android:android-maps-utils:2.2.0'
 }
 
 apply from: 'capacitor.build.gradle'

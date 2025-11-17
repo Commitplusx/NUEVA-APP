@@ -1,6 +1,7 @@
 import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
+import { NativeMap, MapPoint } from 'capacitor-native-map';
 
 // --- Profile Services ---
 export const getProfile = async (): Promise<Profile> => {
@@ -520,4 +521,24 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string |
   }
 
   return null; // Devuelve null si todo falla
+};
+
+// --- Native Map Services ---
+export const calculateAndShowNativeRoute = async (
+  origin: MapPoint,
+  destination: MapPoint
+): Promise<number | null> => {
+  try {
+    // 1. Call NativeMap.calculateRoute
+    const { distance, polyline } = await NativeMap.calculateRoute({ origin, destination });
+
+    // 2. Call NativeMap.showRouteOnMap
+    // await NativeMap.showRouteOnMap({ origin, destination, polyline });
+
+    // 3. Return the distance
+    return distance;
+  } catch (error) {
+    console.error('Error calculating or showing native route:', error);
+    return null;
+  }
 };

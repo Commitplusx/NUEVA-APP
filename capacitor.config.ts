@@ -5,15 +5,15 @@ const config: CapacitorConfig = {
   appName: 'NUEVA-APP',
   webDir: 'dist',
   server: {
-    // 👇 ¡AQUÍ ESTÁ EL CAMBIO! 👇
-    url: 'http://192.168.1.79:3000',
-    androidScheme: 'http', // Usar https para producción
-    cleartext: false // Desactivar para producción por seguridad
+    url: 'http://192.168.0.110:3000', // Usando la IP local proporcionada
+    cleartext: true // Necesario para Android en desarrollo con HTTP
   },
+  // NO INCLUIR LA SECCIÓN "server" PARA BUILDS DE PRODUCCIÓN
   plugins: {
     StatusBar: {
+      // Esta es la línea clave para que la app respete la barra de estado.
       overlaysWebView: false,
-      style: 'dark'
+      style: 'dark' // Puedes dejarlo o quitarlo, pero 'false' lo arregla.
     }
   }
 };

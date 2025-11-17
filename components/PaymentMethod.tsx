@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeftIcon, XIcon } from './icons';
+import { ChevronLeftIcon, XIcon, PlusIcon } from './icons';
 import { AddCardForm } from './AddCardForm';
 
 interface PaymentMethodProps {
@@ -17,6 +17,10 @@ const PaymentOptionCard: React.FC<{
     onClick={onClick}
     className={`payment-option-card ${selected ? 'payment-option-selected' : ''}`}
     whileTap={{ scale: 0.95 }}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -20 }}
+    transition={{ duration: 0.2 }}
   >
     <div className="payment-icon-wrapper">
       {icon}
@@ -38,6 +42,24 @@ const PaymentOptionCard: React.FC<{
     )}
   </motion.button>
 );
+
+const AddNewPaymentCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+    <motion.button
+        onClick={onClick}
+        className="add-new-card"
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2, delay: 0.2 }}
+    >
+        <div className="add-new-icon-wrapper">
+            <PlusIcon className="w-6 h-6 text-orange-500" />
+        </div>
+        <p className="add-new-label">AÑADIR NUEVA</p>
+    </motion.button>
+);
+
 
 const CashIcon = () => (
   <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
@@ -90,7 +112,7 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   const handleSaveCard = (newCard: { last4: string; expiry: string; type: string }) => {
-    console.log('New card saved:', newCard);
+    console.log('Nueva tarjeta guardada:', newCard);
     // Aquí puedes agregar la lógica para guardar la tarjeta en tu estado o backend
     setIsAddingCard(false);
   };
@@ -138,27 +160,21 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
 
         .payment-options-grid {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
           gap: 16px;
           padding: 20px 16px;
-        }
-
-        @media (min-width: 640px) {
-          .payment-options-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
         }
 
         .payment-option-card {
           position: relative;
           background: white;
           border-radius: 16px;
-          padding: 24px 16px;
+          padding: 16px;
           border: 2px solid transparent;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 12px;
+          gap: 8px;
           cursor: pointer;
           transition: all 0.2s;
         }
@@ -173,8 +189,8 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         }
 
         .payment-icon-wrapper {
-          width: 64px;
-          height: 64px;
+          width: 56px;
+          height: 56px;
           background: #F8F9FA;
           border-radius: 12px;
           display: flex;
@@ -318,32 +334,37 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
           line-height: 1.5;
         }
 
-        .add-new-btn {
-          width: 100%;
-          background: white;
-          border: 2px dashed #FF6B35;
-          border-radius: 12px;
-          padding: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          color: #FF6B35;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin: 0 16px 24px;
+        .add-new-card {
+            background: white;
+            border: 2px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-
-        .add-new-btn:hover {
-          background: #FFF9F7;
-          border-color: #FF8F6B;
+        .add-new-card:hover {
+            border-color: #FF6B35;
+            background: #FFF9F7;
         }
-
-        .plus-icon {
-          font-size: 24px;
-          font-weight: 700;
+        .add-new-icon-wrapper {
+            width: 56px;
+            height: 56px;
+            background: #F8F9FA;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-new-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FF6B35;
+            margin: 0;
         }
       `}</style>
 
@@ -351,67 +372,36 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
         <button onClick={onBack} className="payment-back-btn">
           <ChevronLeftIcon className="w-6 h-6 text-gray-700" />
         </button>
-        <h1 className="payment-title">Payment</h1>
+        <h1 className="payment-title">Métodos de Pago</h1>
       </div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         <div className="payment-options-grid">
-          <motion.div
-            key="cash"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-          >
             <PaymentOptionCard
               icon={<CashIcon />}
-              label="Cash"
+              label="Efectivo"
               selected={selectedPayment === 'cash'}
               onClick={() => setSelectedPayment('cash')}
             />
-          </motion.div>
-          <motion.div
-            key="visa"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2, delay: 0.05 }}
-          >
             <PaymentOptionCard
               icon={<VisaIcon />}
               label="Visa"
               selected={selectedPayment === 'visa'}
               onClick={() => setSelectedPayment('visa')}
             />
-          </motion.div>
-          <motion.div
-            key="mastercard"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2, delay: 0.1 }}
-          >
             <PaymentOptionCard
               icon={<MastercardIcon />}
               label="Mastercard"
               selected={selectedPayment === 'mastercard'}
               onClick={() => setSelectedPayment('mastercard')}
             />
-          </motion.div>
-          <motion.div
-            key="paypal"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2, delay: 0.15 }}
-          >
             <PaymentOptionCard
               icon={<PayPalIcon />}
               label="PayPal"
               selected={selectedPayment === 'paypal'}
               onClick={() => setSelectedPayment('paypal')}
             />
-          </motion.div>
+            <AddNewPaymentCard onClick={() => setIsAddingCard(true)} />
         </div>
       </AnimatePresence>
 
@@ -430,35 +420,24 @@ export const PaymentMethod: React.FC<PaymentMethodProps> = ({ onBack }) => {
             <div className="card-number">•••• •••• •••• ••••</div>
             <div className="card-bottom">
               <div className="card-holder">
-                <span className="card-label">Card Holder</span>
-                <span className="card-value">Add Card</span>
+                <span className="card-label">Titular de la Tarjeta</span>
+                <span className="card-value">Añadir Tarjeta</span>
               </div>
               <div className="card-expiry">
-                <span className="card-label">Expiry</span>
-                <span className="card-value">MM/YY</span>
+                <span className="card-label">Expira</span>
+                <span className="card-value">MM/AA</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="no-card-message">
-          <h3 className="no-card-title">No master card added</h3>
+          <h3 className="no-card-title">No has añadido ninguna tarjeta</h3>
           <p className="no-card-subtitle">
-            You can add a mastercard and<br />save it for later
+            Puedes añadir una tarjeta y<br />guardarla para después
           </p>
         </div>
       </motion.div>
-
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.4 }}
-        className="add-new-btn"
-        onClick={() => setIsAddingCard(true)}
-      >
-        <span className="plus-icon">+</span>
-        ADD NEW
-      </motion.button>
 
       <AnimatePresence>
         {isAddingCard && (
