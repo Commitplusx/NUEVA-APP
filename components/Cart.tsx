@@ -34,14 +34,14 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
           <div className="flex flex-col items-center text-center">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                index <= currentStepIndex ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {index < currentStepIndex ? <ChevronLeftIcon className="w-6 h-6 rotate-180" /> : index + 1}
             </div>
             <p
               className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
+                index <= currentStepIndex ? 'text-black' : 'text-gray-500'
               }`}
             >
               {getStepName(step)}
@@ -49,7 +49,7 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
           </div>
           {index < steps.length - 1 && (
             <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-              index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
+              index < currentStepIndex ? 'border-black' : 'border-gray-200'
             }`}></div>
           )}
         </React.Fragment>
@@ -266,7 +266,7 @@ export const Cart: React.FC = () => {
             </div>
             <button 
                 onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
-                className="font-semibold text-orange-500 text-sm hover:text-orange-600"
+                className="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-black transition-colors"
             >
                 Cambiar
             </button>
@@ -276,7 +276,7 @@ export const Cart: React.FC = () => {
       <button 
         onClick={() => setStep('details')}
         disabled={!canProceedToDetails}
-        className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+        className="w-full py-3 bg-black text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         Continuar a la Entrega
       </button>
@@ -312,7 +312,7 @@ export const Cart: React.FC = () => {
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto *</label>
           <div className="relative flex items-center">
               <MailIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
+              <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" placeholder="Tu número de WhatsApp" />
           </div>
       </div>
       {calculatedDistance !== null && (
@@ -323,7 +323,7 @@ export const Cart: React.FC = () => {
       )}
       <div className="grid grid-cols-2 gap-4 pt-4">
         <button onClick={() => setStep('cart')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-orange-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Revisar Pedido</button>
+        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-black text-white font-bold py-3 rounded-lg disabled:bg-gray-400 hover:bg-gray-800">Revisar Pedido</button>
       </div>
     </div>
   );
@@ -397,19 +397,19 @@ export const Cart: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex items-center gap-2">
-                      <UserCircleIcon className="w-5 h-5 text-orange-500" />
+                      <UserCircleIcon className="w-5 h-5 text-gray-600" />
                       <p><strong>Nombre:</strong> {userDetails.name}</p>
                   </div>
                   <div className="flex items-start gap-2">
-                      <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
+                      <LocationIcon className="w-5 h-5 text-gray-600 mt-1" />
                       <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                      <MailIcon className="w-5 h-5 text-orange-500" />
+                      <MailIcon className="w-5 h-5 text-gray-600" />
                       <p><strong>Teléfono:</strong> {userDetails.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                      <CreditCardIcon className="w-5 h-5 text-orange-500" />
+                      <CreditCardIcon className="w-5 h-5 text-gray-600" />
                       <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
                   </div>
               </div>
@@ -459,7 +459,7 @@ export const Cart: React.FC = () => {
       <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
       <button 
         onClick={() => navigate('/restaurants')} 
-        className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
+        className="mt-6 px-6 py-3 bg-black text-white font-semibold rounded-full shadow-md hover:bg-gray-800 transition-all"
       >
         Volver a Restaurantes
       </button>
