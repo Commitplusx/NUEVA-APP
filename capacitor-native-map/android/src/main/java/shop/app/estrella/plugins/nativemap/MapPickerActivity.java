@@ -18,6 +18,8 @@ import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.WindowCompat;
@@ -111,6 +113,20 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
         } else {
             btnConfirm.setOnClickListener(view -> confirmLocation());
         }
+
+        // This handles the back gesture to show a confirmation dialog.
+        OnBackPressedCallback callback = new OnBackPressedCallback(true /* enabled by default */) {
+            @Override
+            public void handleOnBackPressed() {
+                new AlertDialog.Builder(MapPickerActivity.this, R.style.CustomAlertDialog)
+                    .setTitle("Confirmar Salida")
+                    .setMessage("¿Estás seguro de que deseas salir del mapa?")
+                    .setPositiveButton("Salir", (dialog, which) -> finish())
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
     @Override

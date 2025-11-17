@@ -26,4 +26,17 @@
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
     </style>
+
+    <!-- Custom Style for AlertDialog -->
+    <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <!-- Background color of the dialog -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- Text color for title -->
+        <item name="android:textColorPrimary">@android:color/black</item>
+        <!-- Text color for message -->
+        <item name="android:textColorSecondary">#424242</item>
+        <!-- Button color -->
+        <item name="colorAccent">@android:color/black</item>
+    </style>
+
 </resources>

@@ -266,7 +266,27 @@ interface AppContextType {
 
 
 
-    const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+    const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(() => {
+      try {
+        const savedRestaurant = window.localStorage.getItem('app-selected-restaurant');
+        return savedRestaurant ? JSON.parse(savedRestaurant) : null;
+      } catch (error) {
+        console.error("Error reading selected restaurant from localStorage", error);
+        return null;
+      }
+    });
+
+    useEffect(() => {
+      try {
+        if (selectedRestaurant) {
+          window.localStorage.setItem('app-selected-restaurant', JSON.stringify(selectedRestaurant));
+        } else {
+          window.localStorage.removeItem('app-selected-restaurant');
+        }
+      } catch (error) {
+        console.error("Error saving selected restaurant to localStorage", error);
+      }
+    }, [selectedRestaurant]);
 
 
 
@@ -274,7 +294,23 @@ interface AppContextType {
 
 
 
-    const [cart, setCart] = useState<CartItem[]>([]);
+    const [cart, setCart] = useState<CartItem[]>(() => {
+      try {
+        const savedCart = window.localStorage.getItem('app-cart');
+        return savedCart ? JSON.parse(savedCart) : [];
+      } catch (error) {
+        console.error("Error reading cart from localStorage", error);
+        return [];
+      }
+    });
+
+    useEffect(() => {
+      try {
+        window.localStorage.setItem('app-cart', JSON.stringify(cart));
+      } catch (error) {
+        console.error("Error saving cart to localStorage", error);
+      }
+    }, [cart]);
 
 
 
@@ -306,15 +342,107 @@ interface AppContextType {
 
 
 
-        const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>('cash');
+        
 
 
 
-    
+        
 
 
 
-        const [baseFee, setBaseFee] = useState(45);
+        
+
+
+
+                const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>(() => {
+
+
+
+                  try {
+
+
+
+                    const savedMethod = window.localStorage.getItem('app-payment-method');
+
+
+
+                    return savedMethod ? JSON.parse(savedMethod) : 'cash';
+
+
+
+                  } catch (error) {
+
+
+
+                    console.error("Error reading payment method from localStorage", error);
+
+
+
+                    return 'cash';
+
+
+
+                  }
+
+
+
+                });
+
+
+
+        
+
+
+
+                useEffect(() => {
+
+
+
+                  try {
+
+
+
+                    window.localStorage.setItem('app-payment-method', JSON.stringify(selectedPaymentMethod));
+
+
+
+                  } catch (error) {
+
+
+
+                    console.error("Error saving payment method to localStorage", error);
+
+
+
+                  }
+
+
+
+                }, [selectedPaymentMethod]);
+
+
+
+        
+
+
+
+        
+
+
+
+        
+
+
+
+            
+
+
+
+        
+
+
+
+                const [baseFee, setBaseFee] = useState(45);
 
 
 
