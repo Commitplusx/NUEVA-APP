@@ -70,7 +70,7 @@ export const AddCardForm: React.FC<AddCardFormProps> = ({ onCancel, onSave }) =>
                             maxLength={5}
                             value={formatExpiryDate(expiryDate)}
                             onChange={(e) => setExpiryDate(e.target.value)}
-                            placeholder="MM/YY" 
+                            placeholder="MM/AA" 
                             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black" 
                         />
                     </div>

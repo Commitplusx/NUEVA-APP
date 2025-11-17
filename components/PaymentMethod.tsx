@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Icons from './icons';
+import { AddCardForm } from './AddCardForm';
+import { useAppContext } from '../context/AppContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // --- Reusable Components ---
 const Header: React.FC<{ title: string; onBack: () => void; onAdd?: () => void; showAdd?: boolean }> = ({ title, onBack, onAdd, showAdd = false }) => (
@@ -20,27 +23,56 @@ const Header: React.FC<{ title: string; onBack: () => void; onAdd?: () => void; 
 );
 
 // --- Main Page Components ---
-const CashPaymentCard = () => (
-  <motion.div 
-    className="relative rounded-2xl bg-gradient-to-br from-green-400 to-teal-500 p-6 text-white shadow-lg mx-4 my-2 overflow-hidden h-40 flex flex-col justify-between"
-    layoutId="cash-card"
-  >
-    <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-    <div className="flex items-center space-x-3 z-10">
-      <div className="w-10 h-10 rounded-full bg-white/25 flex items-center justify-center">
-        <Icons.CurrencyDollarIcon className="w-6 h-6" />
-      </div>
-    </div>
-    <p className="text-2xl font-bold z-10">Efectivo</p>
-  </motion.div>
+const SelectableCard: React.FC<{
+    onClick: () => void;
+    isSelected: boolean;
+    children: React.ReactNode;
+    layoutId: string;
+}> = ({ onClick, isSelected, children, layoutId }) => (
+    <motion.div layoutId={layoutId} onClick={onClick} className="cursor-pointer">
+        <div className="relative">
+            {children}
+            {isSelected && (
+                <motion.div 
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow"
+                    initial={{scale: 0}}
+                    animate={{scale: 1}}
+                >
+                    <Icons.CheckIcon className="w-4 h-4 text-white" />
+                </motion.div>
+            )}
+        </div>
+    </motion.div>
 );
 
-const SettingsListItem: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => (
-    <button onClick={onClick} className="w-full flex items-center justify-between px-4 py-4 bg-transparent hover:bg-gray-100 transition-colors duration-200 rounded-xl">
-      <span className="text-base font-medium text-gray-800">{label}</span>
-      <Icons.ChevronRightIcon className="w-5 h-5 text-gray-400" />
-    </button>
-  );
+const CashPaymentCard: React.FC = () => (
+    <div className="relative rounded-2xl bg-gradient-to-br from-green-400 to-teal-500 p-6 text-white shadow-lg mx-4 my-2 overflow-hidden h-40 flex flex-col justify-between">
+        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+        <div className="flex items-center space-x-3 z-10">
+            <div className="w-10 h-10 rounded-full bg-white/25 flex items-center justify-center">
+                <Icons.CurrencyDollarIcon className="w-6 h-6" />
+            </div>
+        </div>
+        <p className="text-2xl font-bold z-10">Efectivo</p>
+    </div>
+);
+
+const SavedCard: React.FC<{card: {id: string, type: string, last4: string, expiry: string}}> = ({ card }) => (
+    <div className="relative rounded-2xl bg-gradient-to-br from-gray-700 to-gray-900 p-6 text-white shadow-lg mx-4 my-2 overflow-hidden h-40 flex flex-col justify-between">
+        <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
+        <div className="flex items-center justify-between z-10">
+            <p className="font-semibold capitalize">{card.type}</p>
+            <div className="w-10 h-10 rounded-full bg-white/25 flex items-center justify-center">
+                <Icons.CreditCardIcon className="w-6 h-6" />
+            </div>
+        </div>
+        <div className="z-10">
+            <p className="font-mono text-xl tracking-wider">•••• {card.last4}</p>
+            <p className="text-sm opacity-70">Expira: {card.expiry}</p>
+        </div>
+    </div>
+);
+
 
 // --- Add Method Page Components ---
 const AddPaymentOption: React.FC<{ 
@@ -48,10 +80,12 @@ const AddPaymentOption: React.FC<{
   label: string; 
   logos?: React.ReactNode; 
   isSimple?: boolean;
-}> = ({ icon, label, logos, isSimple = false }) => (
+  onClick?: () => void;
+}> = ({ icon, label, logos, isSimple = false, onClick }) => (
   <motion.div 
     className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow duration-300"
     whileTap={{ scale: 0.98 }}
+    onClick={onClick}
   >
     <div className="flex items-center">
       <div className={`${isSimple ? 'w-8' : 'w-10'} h-10 flex items-center justify-center mr-4`}>
@@ -90,14 +124,42 @@ const MercadoPagoLogo = () => (
     <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18.394 4.453l-5.65 5.65-2.825-2.825L4.27 13.597a1 1 0 000 1.414l4.242 4.243a1 1 0 001.414 0L15.575 13.6l2.825 2.825 5.65-5.65-5.65-5.65zM12.75 11.5l3-3 1.5 1.5-3 3-1.5-1.5z" fill="#00AEEF"></path><path d="M18.41 15.6l-2.826-2.825-5.65 5.65 2.825 2.826 5.65-5.65z" fill="#00AEEF"></path></svg>
 );
 
-const VoucherPill: React.FC<{text: string, className?: string}> = ({ text, className }) => (
-    <div className={`px-1.5 py-0.5 rounded-sm text-white text-[10px] font-bold ${className}`}>{text}</div>
-);
-
 // --- Main Component ---
 
-export const PaymentMethod: React.FC<{ onBack: () => void; }> = ({ onBack }) => {
+export const PaymentMethod: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [view, setView] = useState<'main' | 'add'>('main');
+  const [isAddCardModalOpen, setIsAddCardModalOpen] = useState(false);
+  const { selectedPaymentMethod, handleSetPaymentMethod } = useAppContext();
+
+  // Mock data for saved cards
+  const [savedCards, setSavedCards] = useState([
+    { id: 'card_1', type: 'visa', last4: '4242', expiry: '12/24' },
+    { id: 'card_2', type: 'mastercard', last4: '5555', expiry: '08/25' },
+  ]);
+
+  const handleSaveCard = (newCard: { last4: string; expiry: string; type: string }) => {
+    const newCardWithId = { ...newCard, id: `card_${Date.now()}` };
+    setSavedCards(prev => [...prev, newCardWithId]);
+    setIsAddCardModalOpen(false);
+    handleSelectAndGoBack(newCardWithId.id); // Select the new card and go back
+  };
+
+  const handleSelectAndGoBack = (method: string) => {
+    handleSetPaymentMethod(method);
+    if (location.state?.from) {
+      navigate(location.state.from);
+    }
+  };
+
+  const handleBack = () => {
+    if (view === 'add') {
+      setView('main');
+    } else {
+      navigate(location.state?.from || -1);
+    }
+  };
 
   const pageVariants = {
     initial: { x: '100%', opacity: 0 },
@@ -115,11 +177,26 @@ export const PaymentMethod: React.FC<{ onBack: () => void; }> = ({ onBack }) => 
         transition={{ type: 'tween', duration: 0.35, ease: 'easeInOut' }}
         className="absolute w-full"
     >
-      <Header title="Tus métodos de pago" onBack={onBack} onAdd={() => setView('add')} showAdd />
-      <CashPaymentCard />
-      <div className="px-4 mt-6 space-y-3">
-        <SettingsListItem label="Pagos pendientes" />
-        <SettingsListItem label="Método de reembolso" />
+      <Header title="Tus métodos de pago" onBack={handleBack} onAdd={() => setView('add')} showAdd />
+      <div className="p-4 space-y-4">
+        <SelectableCard
+            onClick={() => handleSelectAndGoBack('cash')}
+            isSelected={selectedPaymentMethod === 'cash'}
+            layoutId="cash-card"
+        >
+            <CashPaymentCard />
+        </SelectableCard>
+
+        {savedCards.map(card => (
+            <SelectableCard
+                key={card.id}
+                onClick={() => handleSelectAndGoBack(card.id)}
+                isSelected={selectedPaymentMethod === card.id}
+                layoutId={card.id}
+            >
+                <SavedCard card={card} />
+            </SelectableCard>
+        ))}
       </div>
     </motion.div>
   );
@@ -139,21 +216,12 @@ export const PaymentMethod: React.FC<{ onBack: () => void; }> = ({ onBack }) => 
         <AddPaymentOption 
           icon={<Icons.CreditCardIcon className="w-7 h-7 text-gray-600"/>}
           label="Tarjeta de Crédito/Débito"
+          onClick={() => setIsAddCardModalOpen(true)}
           logos={
             <div className='flex items-center space-x-2'>
               <VisaLogo />
               <MastercardLogo />
               <AmexLogo />
-            </div>
-          }
-        />
-        <AddPaymentOption 
-          icon={<Icons.TicketIcon className="w-7 h-7 text-gray-600"/>}
-          label="Voucher"
-          logos={
-            <div className='flex items-center space-x-1.5'>
-                <VoucherPill text="Up" className="bg-orange-500" />
-                <MastercardLogo />
             </div>
           }
         />
@@ -175,6 +243,30 @@ export const PaymentMethod: React.FC<{ onBack: () => void; }> = ({ onBack }) => 
     <div className="bg-gray-50 min-h-screen relative overflow-x-hidden">
       <AnimatePresence initial={false} custom={view} mode="wait">
         {view === 'main' ? renderMainView() : renderAddView()}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isAddCardModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full max-w-md bg-white rounded-2xl"
+            >
+              <AddCardForm
+                onCancel={() => setIsAddCardModalOpen(false)}
+                onSave={handleSaveCard}
+              />
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon } from './icons';
+import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon, CreditCardIcon } from './icons';
 import { geocodeAddress } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
@@ -81,7 +81,8 @@ export const Cart: React.FC = () => {
     baseFee,
     isMapsLoaded,
     user,
-    profile
+    profile,
+    selectedPaymentMethod
   } = useAppContext();
   const navigate = useNavigate();
   const [step, setStep] = useState<CartStep>('cart');
@@ -257,6 +258,21 @@ export const Cart: React.FC = () => {
         </div>
       </div>
 
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+        <div className="flex justify-between items-center">
+            <div>
+                <p className="text-sm text-gray-600">Método de pago</p>
+                <p className="font-bold text-gray-800 capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</p>
+            </div>
+            <button 
+                onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
+                className="font-semibold text-orange-500 text-sm hover:text-orange-600"
+            >
+                Cambiar
+            </button>
+        </div>
+      </div>
+
       <button 
         onClick={() => setStep('details')}
         disabled={!canProceedToDetails}
@@ -391,6 +407,10 @@ export const Cart: React.FC = () => {
                   <div className="flex items-center gap-2">
                       <MailIcon className="w-5 h-5 text-orange-500" />
                       <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <CreditCardIcon className="w-5 h-5 text-orange-500" />
+                      <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
                   </div>
               </div>
               <hr/>

@@ -622,7 +622,6 @@ interface EditProfileModalProps {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-    const [showPaymentMethod, setShowPaymentMethod] = useState(false);
     const [showEditProfileModal, setShowEditProfileModal] = useState(false);
     const [showOrdersModal, setShowOrdersModal] = useState(false);
   
@@ -697,10 +696,6 @@ interface EditProfileModalProps {
       return <div className="flex justify-center items-center h-screen bg-white"><Spinner /></div>;
     }
   
-    if (showPaymentMethod) {
-      return <PaymentMethod onBack={() => setShowPaymentMethod(false)} />;
-    }
-  
     const comingSoon = () => showToast('Próximamente disponible', 'info'); 
   
     return (
@@ -751,7 +746,7 @@ interface EditProfileModalProps {
         <div className="grid grid-cols-3 gap-3 px-4 mb-8">
             <QuickActionButton icon={<PackageIcon className="w-7 h-7" />} label="Pedidos" onClick={() => setShowOrdersModal(true)} />
             <QuickActionButton icon={<HeadphonesIcon className="w-7 h-7" />} label="Editar Perfil" onClick={() => setShowEditProfileModal(true)} />
-            <QuickActionButton icon={<CreditCardIcon className="w-7 h-7" />} label="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
+            <QuickActionButton icon={<CreditCardIcon className="w-7 h-7" />} label="Métodos de pago" onClick={() => navigate('/payment-methods')} />
         </div>
         
         <div className="px-4 space-y-8">
@@ -770,7 +765,7 @@ interface EditProfileModalProps {
                 <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
                     <ListItem icon={<LocationIcon className="w-6 h-6" />} text="Direcciones" onClick={() => setIsAddressModalOpen(true)} />
                      <hr className="border-gray-200" />
-                    <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => setShowPaymentMethod(true)} />
+                    <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => navigate('/payment-methods')} />
                 </div>
             </Section>
   

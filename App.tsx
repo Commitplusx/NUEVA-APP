@@ -32,6 +32,7 @@ const ManageServiceRequests = lazy(() => import('./components/admin/ManageServic
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
 const VerifyCode = lazy(() => import('./components/VerifyCode').then(module => ({ default: module.VerifyCode })));
 const MapDemoPage = lazy(() => import('./components/MapDemoPage').then(module => ({ default: module.MapDemoPage })));
+const PaymentMethod = lazy(() => import('./components/PaymentMethod').then(module => ({ default: module.PaymentMethod })));
 
 /**
  * @component PageTransitionWrapper
@@ -129,6 +130,7 @@ const App: React.FC = () => {
                 <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
                 <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
                 <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
+                <Route path="/payment-methods" element={<PageTransitionWrapper><PaymentMethod /></PageTransitionWrapper>} />
                 <Route path="/admin" element={<Admin />}>
                     <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
                     <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />

@@ -14,7 +14,7 @@ import { supabase } from '../services/supabase';
 
 import { confirmarPedido, getTariffs, getProfile } from '../services/api';
 
-import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Profile } from '../types';
+import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Profile, PaymentMethodType } from '../types';
 
 import { Toast, ToastType } from '../components/Toast';
 
@@ -74,9 +74,11 @@ interface AppContextType {
 
   isAddressModalOpen: boolean;
 
-    isBottomNavVisible: boolean;
+  isBottomNavVisible: boolean;
 
-    bottomNavCustomContent: ReactNode | null;
+  bottomNavCustomContent: ReactNode | null;
+
+  selectedPaymentMethod: PaymentMethodType;
 
   
 
@@ -149,6 +151,8 @@ interface AppContextType {
       setBottomNavVisible: (isVisible: boolean) => void;
 
       setBottomNavCustomContent: (content: ReactNode | null) => void;
+
+      handleSetPaymentMethod: (method: PaymentMethodType) => void;
 
     }
 
@@ -294,73 +298,123 @@ interface AppContextType {
 
 
 
-    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-
-    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+        const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
 
 
-    const [baseFee, setBaseFee] = useState(45);
+        const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
 
 
-        const [profile, setProfile] = useState<Profile | null>(null);
+        const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>('cash');
 
 
 
-                const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
+    
 
 
 
-                const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
+        const [baseFee, setBaseFee] = useState(45);
 
 
 
-                const [bottomNavCustomContent, setBottomNavCustomContent] = useState<ReactNode | null>(null);
+    
 
 
 
-          
+            const [profile, setProfile] = useState<Profile | null>(null);
 
 
 
-            const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
+    
 
 
 
-              googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+                    const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
 
 
 
-              libraries,
+    
 
 
 
-            });
+                    const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
 
 
-          
+    
 
 
 
-          
+                    const [bottomNavCustomContent, setBottomNavCustomContent] = useState<ReactNode | null>(null);
 
 
 
-            useEffect(() => {
+    
 
 
 
-              const fetchBaseFee = async () => {
+              
 
 
 
-                try {
+                const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
 
 
 
-                  const tariffs = await getTariffs();
+                  googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+
+
+
+                  libraries,
+
+
+
+                });
+
+
+
+    
+
+
+
+                const handleSetPaymentMethod = (method: PaymentMethodType) => {
+
+
+
+                    setSelectedPaymentMethod(method);
+
+
+
+                    showToast(`Método de pago cambiado a ${method}`, 'info');
+
+
+
+                };
+
+
+
+              
+
+
+
+              
+
+
+
+                useEffect(() => {
+
+
+
+                  const fetchBaseFee = async () => {
+
+
+
+                    try {
+
+
+
+                      const tariffs = await getTariffs();
 
 
 
@@ -1276,7 +1330,7 @@ interface AppContextType {
 
 
 
-                const value = {
+                                const value = {
 
 
 
@@ -1284,7 +1338,7 @@ interface AppContextType {
 
 
 
-                  user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
+                                  user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
 
 
 
@@ -1292,9 +1346,7 @@ interface AppContextType {
 
 
 
-                  isProductModalOpen,
-
-                  isAddressModalOpen,
+                                  isProductModalOpen,
 
 
 
@@ -1302,11 +1354,7 @@ interface AppContextType {
 
 
 
-                  isBottomNavVisible,
-
-
-
-                  bottomNavCustomContent,
+                                  isAddressModalOpen,
 
 
 
@@ -1314,7 +1362,7 @@ interface AppContextType {
 
 
 
-                  toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+                                  isBottomNavVisible,
 
 
 
@@ -1322,9 +1370,7 @@ interface AppContextType {
 
 
 
-                  setIsProductModalOpen,
-
-                  setIsAddressModalOpen,
+                                  bottomNavCustomContent,
 
 
 
@@ -1332,11 +1378,7 @@ interface AppContextType {
 
 
 
-                  setBottomNavVisible: setIsBottomNavVisible,
-
-
-
-                  setBottomNavCustomContent
+                                  selectedPaymentMethod,
 
 
 
@@ -1344,7 +1386,55 @@ interface AppContextType {
 
 
 
-                };
+                                  toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+
+
+
+          
+
+
+
+                                  setIsProductModalOpen,
+
+
+
+          
+
+
+
+                                  setIsAddressModalOpen,
+
+
+
+          
+
+
+
+                                  setBottomNavVisible: setIsBottomNavVisible,
+
+
+
+          
+
+
+
+                                  setBottomNavCustomContent,
+
+
+
+          
+
+
+
+                                  handleSetPaymentMethod
+
+
+
+          
+
+
+
+                                };
 
 
 

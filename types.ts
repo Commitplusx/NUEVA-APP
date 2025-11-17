@@ -53,6 +53,8 @@ export interface CartItem {
 
 export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'admin' | 'login';
 
+export type PaymentMethodType = string;
+
 export type UserRole = 'admin' | 'user' | 'guest' | null;
 
 export interface Service {
