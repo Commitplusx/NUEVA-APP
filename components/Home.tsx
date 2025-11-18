@@ -58,9 +58,18 @@ const sectionVariants = {
 export const Home: React.FC = () => {
   const { user: userObject, userRole, profile } = useAppContext();
   const navigate = useNavigate();
-  const [currentSection, setCurrentSection] = useState(0);
+  
+  // Use localStorage instead of sessionStorage for persistence across app restarts
+  const [currentSection, setCurrentSection] = useState(() => {
+    return localStorage.getItem('hasSeenIntro') === 'true' ? 2 : 0;
+  });
 
   useEffect(() => {
+    // If already seen (in localStorage), skip animations
+    if (localStorage.getItem('hasSeenIntro') === 'true') {
+        return;
+    }
+
     document.body.style.overflow = 'hidden';
 
     const interval = setInterval(() => {
@@ -69,15 +78,26 @@ export const Home: React.FC = () => {
           return prevSection + 1;
         }
         clearInterval(interval);
+        // Mark as seen in localStorage when we reach the end
+        localStorage.setItem('hasSeenIntro', 'true');
         return prevSection;
       });
-    }, 3000); // Cambia cada 3 segundos
+    }, 3000); 
 
     return () => {
       document.body.style.overflow = 'auto';
-      clearInterval(interval); // Limpiar el intervalo al desmontar el componente
+      clearInterval(interval); 
     };
   }, []);
+
+  useEffect(() => {
+      return () => {
+          if (currentSection === 2) {
+             localStorage.setItem('hasSeenIntro', 'true');
+          }
+      }
+  }, [currentSection]);
+
 
   return (
     <motion.div 
