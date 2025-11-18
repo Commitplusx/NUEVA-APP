@@ -118,7 +118,8 @@ const App: React.FC = () => {
         {shouldShowBottomNav && <BottomNav />}
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
-      <main className={`flex-grow overflow-y-auto pt-10 ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+      {/* Removed pt-10 to eliminate white space on desktop, kept flex-grow and overflow handling */}
+      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
             <Routes location={location} key={location.pathname}>

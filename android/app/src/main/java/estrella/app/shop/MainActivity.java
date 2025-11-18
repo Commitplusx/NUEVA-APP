@@ -13,12 +13,13 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
-import com.google.firebase.messaging.FirebaseMessaging;
+// import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends BridgeActivity {
 
   private static final String TAG = "MainActivity";
 
+  /*
   // Declare the launcher for the notification permission request.
   private final ActivityResultLauncher<String> requestPermissionLauncher = registerForActivityResult(
       new ActivityResultContracts.RequestPermission(),
@@ -32,6 +33,7 @@ public class MainActivity extends BridgeActivity {
         }
       }
   );
+  */
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -56,9 +58,10 @@ public class MainActivity extends BridgeActivity {
     getOnBackPressedDispatcher().addCallback(this, callback);
 
     // Ask for notification permission
-    askNotificationPermission();
+    // askNotificationPermission();
   }
 
+  /*
   private void askNotificationPermission() {
     // This is only required for API level 33 (TIRAMISU) and above.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -92,4 +95,5 @@ public class MainActivity extends BridgeActivity {
     // For example, using an HTTP client or a Supabase function call.
     Log.d(TAG, "(Placeholder) Sending token to server: " + token);
   }
+  */
 }

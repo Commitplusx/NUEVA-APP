@@ -15,12 +15,12 @@
         <item name="android:background">@null</item>
     </style>
 
-    <!-- The Silver Bullet Theme to kill the translucent ghost window -->
+    <!-- Custom theme to override the library's translucent theme -->
     <style name="AppTheme.MapPicker.Opaque" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:windowBackground">@android:color/white</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item> <!-- Esta línea es la que faltaba -->
-        <item name="android:statusBarColor">@color/colorPrimaryDark</item> <!-- Set a default solid color -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
     </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
@@ -29,14 +29,9 @@
 
     <!-- Custom Style for AlertDialog -->
     <style name="CustomAlertDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <!-- Background color of the dialog -->
         <item name="android:windowBackground">@android:color/white</item>
-        <!-- Text color for title -->
         <item name="android:textColorPrimary">@android:color/black</item>
-        <!-- Text color for message -->
         <item name="android:textColorSecondary">#424242</item>
-        <!-- Button color -->
         <item name="colorAccent">@android:color/black</item>
     </style>
-
 </resources>

@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'NUEVA-APP',
   webDir: 'dist',
   server: {
-    url: 'https://app-estrella.shop',
+    url: 'http://192.168.1.79:3000',
     cleartext: true
   },
   plugins: {

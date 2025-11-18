@@ -30,14 +30,15 @@
 
         </activity>
 
-        <!-- The MapPickerActivity, which needs to be declared in the main manifest -->
+        <!-- The MapPickerActivity with a standard theme to fix the crash -->
         <activity
             android:name="shop.app.estrella.plugins.nativemap.MapPickerActivity"
-            android:theme="@style/AppTheme.MapPicker.Opaque"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:exported="false"
             tools:replace="android:theme" />
 
         <!-- Declare the new Firebase Messaging Service -->
+        <!--
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
@@ -45,6 +46,7 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        -->
 
         <provider
             android:name="androidx.core.content.FileProvider"

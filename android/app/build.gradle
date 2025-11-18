@@ -67,9 +67,9 @@ dependencies {
     // Add Maps Utils library for PolyUtil
     implementation 'com.google.maps.android:android-maps-utils:2.2.0'
 
-    // Firebase - For Push Notifications
-    implementation platform('com.google.firebase:firebase-bom:33.1.1')
-    implementation 'com.google.firebase:firebase-messaging'
+    // Firebase - Comentado temporalmente hasta tener google-services.json
+    // implementation platform('com.google.firebase:firebase-bom:33.1.1')
+    // implementation 'com.google.firebase:firebase-messaging'
 }
 
 apply from: 'capacitor.build.gradle'
