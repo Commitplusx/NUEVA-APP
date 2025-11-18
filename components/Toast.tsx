@@ -17,9 +17,22 @@ const toastVariants = {
 };
 
 const toastStyles = {
-  success: { bg: 'bg-green-500', border: 'border-green-600', icon: <CheckCircleIcon className="w-6 h-6 text-white" /> },
-  error: { bg: 'bg-red-500', border: 'border-red-600', icon: <XCircleIcon className="w-6 h-6 text-white" /> },
-  info: { bg: 'bg-blue-500', border: 'border-blue-600', icon: <InfoIcon className="w-6 h-6 text-white" /> },
+  // Black background, specific colored borders and icons
+  success: { 
+      bg: 'bg-black', 
+      border: 'border-green-500', 
+      icon: <CheckCircleIcon className="w-6 h-6 text-green-500" /> 
+  },
+  error: { 
+      bg: 'bg-black', 
+      border: 'border-red-500', 
+      icon: <XCircleIcon className="w-6 h-6 text-red-500" /> 
+  },
+  info: { 
+      bg: 'bg-black', 
+      border: 'border-blue-500', 
+      icon: <InfoIcon className="w-6 h-6 text-blue-500" /> 
+  },
 };
 
 export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
@@ -36,11 +49,11 @@ export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
           className="fixed bottom-24 left-1/2 w-auto z-[9999]"
           onHoverEnd={onClose}
         >
-          <div className={`${selectedStyle.bg} text-white font-bold py-3 px-5 rounded-xl shadow-2xl flex items-center gap-3 relative overflow-hidden border-2 ${selectedStyle.border}`}>
+          <div className={`${selectedStyle.bg} text-white font-bold py-3 px-5 rounded-xl shadow-2xl flex items-center gap-3 relative overflow-hidden border ${selectedStyle.border}`}>
             {selectedStyle.icon}
-            <span className="pr-2">{message}</span>
+            <span className="pr-2 text-sm md:text-base">{message}</span>
             <motion.div
-              className="absolute bottom-0 left-0 h-1 bg-white/30"
+              className="absolute bottom-0 left-0 h-0.5 bg-white/20"
               initial={{ width: '100%' }}
               animate={{ width: '0%' }}
               transition={{ duration: 3, ease: 'linear' }}
