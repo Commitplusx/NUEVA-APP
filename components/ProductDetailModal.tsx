@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProductDetail } from './ProductDetail';
 import { Restaurant, MenuItem } from '../types';
 import { MinusIcon, PlusIcon } from './icons';
@@ -15,12 +15,17 @@ interface ProductDetailModalProps {
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, item, restaurant, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
-  // Reset state when the item changes (when a new modal is opened)
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     if (item) {
       setQuantity(1);
-      // item.ingredients is already string[], so this is correct now
       setSelectedIngredients(item.ingredients || []);
     }
   }, [item]);
@@ -53,69 +58,85 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
     onAddToCart(item, quantity, selectedIngredients);
   };
 
-  return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: "0%" }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", stiffness: 400, damping: 40 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-gray-50 rounded-t-2xl shadow-xl w-full max-w-lg relative flex flex-col max-h-[85vh]"
-      >
-        <div className="overflow-y-auto no-scrollbar">
-          <ProductDetail 
-            item={item} 
-            restaurant={restaurant} 
-            onBack={handleBack}
-            selectedIngredients={selectedIngredients}
-            onToggleIngredient={toggleIngredient}
-            hideAddToCartBar={true} // Hide the bar in the detail component
-          />
-        </div>
-        
-        {/* --- Bottom Action Bar --- */}
-        <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm border-t border-gray-200 rounded-b-2xl">
-          <div className="flex items-center justify-between p-4">
-              {/* Left side: Price */}
-              <div className="flex flex-col">
-                  <span className="text-xs text-gray-500">Total</span>
-                  <span className="text-2xl font-bold text-gray-900">${totalPrice}</span>
-              </div>
+  const modalVariants = {
+    initial: isDesktop 
+        ? { opacity: 0, scale: 0.95 } 
+        : { opacity: 1, y: "100%" },
+    animate: isDesktop 
+        ? { opacity: 1, scale: 1 } 
+        : { opacity: 1, y: "0%" },
+    exit: isDesktop 
+        ? { opacity: 0, scale: 0.95 } 
+        : { opacity: 1, y: "100%" }
+  };
 
-              {/* Right side: Actions */}
-              <div className="flex items-center gap-4">
-                  {/* Quantity Selector */}
-                  <div className="flex items-center gap-3 p-1 bg-gray-100 rounded-full">
-                      <button 
-                          onClick={() => handleQuantityChange(-1)} 
-                          className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-50" 
-                          disabled={quantity <= 1}
-                      >
-                          <MinusIcon className="w-5 h-5" />
-                      </button>
-                      <span className="text-lg font-bold w-8 text-center">{quantity}</span>
-                      <button 
-                          onClick={() => handleQuantityChange(1)} 
-                          className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-800 hover:bg-gray-50 transition-colors"
-                      >
-                          <PlusIcon className="w-5 h-5" />
-                      </button>
-                  </div>
-                  {/* Add to Cart Button */}
-                  <button 
-                      onClick={handleAddToCartClick}
-                      className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full hover:bg-orange-600 transition-all shadow-lg"
-                  >
-                      Añadir
-                  </button>
-              </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+  return (
+    <AnimatePresence>
+        {isOpen && (
+            <div 
+            className={`fixed inset-0 z-50 flex justify-center ${isDesktop ? 'items-center bg-black/40 backdrop-blur-sm p-4' : 'items-end bg-black/40 backdrop-blur-sm'}`}
+            onClick={onClose}
+            >
+            <motion.div
+                variants={modalVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                onClick={(e) => e.stopPropagation()}
+                className={`bg-white w-full relative flex flex-col overflow-hidden shadow-2xl ${
+                    isDesktop 
+                    ? 'max-w-4xl h-[80vh] rounded-2xl' 
+                    : 'max-w-lg max-h-[90vh] rounded-t-3xl'
+                }`}
+            >
+                {/* Modified: overflow-y-auto for mobile to allow scrolling the entire product detail */}
+                {/* On desktop (md:), we hide overflow here because ProductDetail handles internal scrolling */}
+                <div className="flex-grow overflow-y-auto md:overflow-hidden bg-white no-scrollbar">
+                    <ProductDetail 
+                        item={item} 
+                        restaurant={restaurant} 
+                        onBack={handleBack}
+                        selectedIngredients={selectedIngredients}
+                        onToggleIngredient={toggleIngredient}
+                        hideAddToCartBar={true} 
+                    />
+                </div>
+                
+                {/* --- Minimalist Bottom Action Bar --- */}
+                <div className={`bg-white border-t border-gray-100 p-4 pb-8 md:pb-6 z-20 flex-shrink-0 ${isDesktop ? 'rounded-b-2xl' : ''}`}>
+                    <div className="flex items-center justify-between gap-6 max-w-3xl mx-auto">
+                        {/* Minimalist Quantity Selector */}
+                        <div className="flex items-center gap-6">
+                            <button 
+                                onClick={() => handleQuantityChange(-1)} 
+                                className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors ${quantity <= 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:border-green-600 hover:text-green-600'}`}
+                                disabled={quantity <= 1}
+                            >
+                                <MinusIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-xl font-bold text-gray-900 min-w-[1.5rem] text-center">{quantity}</span>
+                            <button 
+                                onClick={() => handleQuantityChange(1)} 
+                                className="w-10 h-10 rounded-full border border-gray-300 text-gray-700 flex items-center justify-center hover:border-green-600 hover:text-green-600 transition-colors"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Green Vibrant Button */}
+                        <button 
+                            onClick={handleAddToCartClick}
+                            className="flex-grow bg-green-600 text-white h-14 rounded-full hover:bg-green-700 active:scale-95 transition-all shadow-lg shadow-green-600/20 flex justify-between items-center px-6"
+                        >
+                            <span className="font-bold text-base">Agregar</span>
+                            <span className="font-bold text-lg">${totalPrice}</span>
+                        </button>
+                    </div>
+                </div>
+            </motion.div>
+            </div>
+        )}
+    </AnimatePresence>
   );
 };

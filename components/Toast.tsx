@@ -17,11 +17,11 @@ const toastVariants = {
 };
 
 const toastStyles = {
-  // Black background, specific colored borders and icons
+  // Success is green, others are black
   success: { 
-      bg: 'bg-black', 
-      border: 'border-green-500', 
-      icon: <CheckCircleIcon className="w-6 h-6 text-green-500" /> 
+      bg: 'bg-green-500', 
+      border: 'border-green-600', 
+      icon: <CheckCircleIcon className="w-6 h-6 text-white" /> 
   },
   error: { 
       bg: 'bg-black', 
@@ -53,7 +53,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
             {selectedStyle.icon}
             <span className="pr-2 text-sm md:text-base">{message}</span>
             <motion.div
-              className="absolute bottom-0 left-0 h-0.5 bg-white/20"
+              className="absolute bottom-0 left-0 h-1 bg-white/30" // Thicker bar for green toast looks better
               initial={{ width: '100%' }}
               animate={{ width: '0%' }}
               transition={{ duration: 3, ease: 'linear' }}
