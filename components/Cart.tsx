@@ -34,14 +34,14 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
           <div className="flex flex-col items-center text-center">
             <div
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                index <= currentStepIndex ? 'bg-black text-white' : 'bg-gray-200 text-gray-500'
+                index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {index < currentStepIndex ? <ChevronLeftIcon className="w-6 h-6 rotate-180" /> : index + 1}
             </div>
             <p
               className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                index <= currentStepIndex ? 'text-black' : 'text-gray-500'
+                index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
               }`}
             >
               {getStepName(step)}
@@ -49,7 +49,7 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
           </div>
           {index < steps.length - 1 && (
             <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-              index < currentStepIndex ? 'border-black' : 'border-gray-200'
+              index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
             }`}></div>
           )}
         </React.Fragment>
@@ -193,14 +193,14 @@ export const Cart: React.FC = () => {
         {cartItems.map(item => (
           <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm flex items-center gap-4">
             {item.product.imageUrl ? (
-              <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover" />
+              <img src={item.product.imageUrl} alt={item.product.name} className="w-20 h-20 rounded-md object-cover flex-shrink-0" />
             ) : (
-              <div className="w-20 h-20 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-2">
+              <div className="w-20 h-20 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-2 flex-shrink-0">
                 No Image
               </div>
             )}
-            <div className="flex-grow">
-              <h3 className="font-semibold text-gray-800">{item.product.name}</h3>
+            <div className="flex-grow min-w-0"> {/* Added min-w-0 to fix overflow */}
+              <h3 className="font-semibold text-gray-800 break-words">{item.product.name}</h3> {/* Added break-words */}
               <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
               {(() => {
                 const allIngredients = item.product.ingredients || [];
@@ -215,14 +215,16 @@ export const Cart: React.FC = () => {
                 if (!hasCustomization) return null;
 
                 return (
-                  <div className="text-xs text-gray-600 mt-2">
+                  <div className="text-xs text-gray-600 mt-2 break-words"> {/* Added break-words */}
                     <p className="font-bold">Personalización:</p>
-                    {item.customizedIngredients.map(ing => (
-                      <span key={ing.name} className="mr-2 text-green-700">{`+${ing.name}`}</span>
-                    ))}
-                    {excludedIngredients.map(ing => (
-                      <span key={ing} className="mr-2 text-red-700 line-through">{`${ing}`}</span>
-                    ))}
+                    <div className="flex flex-wrap gap-1"> {/* Added flex container for wrapping */}
+                      {item.customizedIngredients.map(ing => (
+                        <span key={ing.name} className="text-green-700 mr-1">{`+${ing.name}`}</span>
+                      ))}
+                      {excludedIngredients.map(ing => (
+                        <span key={ing} className="text-red-700 line-through mr-1">{`${ing}`}</span>
+                      ))}
+                    </div>
                   </div>
                 )
               })()}
@@ -232,7 +234,7 @@ export const Cart: React.FC = () => {
                 <button onClick={() => handleUpdateCart(item.id, item.quantity + 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">+</button>
               </div>
             </div>
-            <p className="font-bold text-lg">${(item.product.price * item.quantity).toFixed(2)}</p>
+            <p className="font-bold text-lg ml-2 flex-shrink-0">${(item.product.price * item.quantity).toFixed(2)}</p>
           </div>
         ))}
       </div>
@@ -266,7 +268,7 @@ export const Cart: React.FC = () => {
             </div>
             <button 
                 onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
-                className="bg-gray-800 text-white text-xs font-bold py-2 px-4 rounded-full hover:bg-black transition-colors"
+                className="font-semibold text-orange-500 text-sm hover:text-orange-600"
             >
                 Cambiar
             </button>
@@ -276,7 +278,7 @@ export const Cart: React.FC = () => {
       <button 
         onClick={() => setStep('details')}
         disabled={!canProceedToDetails}
-        className="w-full py-3 bg-black text-white font-bold rounded-lg shadow-md hover:bg-gray-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+        className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         Continuar a la Entrega
       </button>
@@ -312,7 +314,7 @@ export const Cart: React.FC = () => {
           <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto *</label>
           <div className="relative flex items-center">
               <MailIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black" placeholder="Tu número de WhatsApp" />
+              <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
           </div>
       </div>
       {calculatedDistance !== null && (
@@ -323,7 +325,7 @@ export const Cart: React.FC = () => {
       )}
       <div className="grid grid-cols-2 gap-4 pt-4">
         <button onClick={() => setStep('cart')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-black text-white font-bold py-3 rounded-lg disabled:bg-gray-400 hover:bg-gray-800">Revisar Pedido</button>
+        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-orange-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Revisar Pedido</button>
       </div>
     </div>
   );
@@ -397,19 +399,19 @@ export const Cart: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex items-center gap-2">
-                      <UserCircleIcon className="w-5 h-5 text-gray-600" />
+                      <UserCircleIcon className="w-5 h-5 text-orange-500" />
                       <p><strong>Nombre:</strong> {userDetails.name}</p>
                   </div>
                   <div className="flex items-start gap-2">
-                      <LocationIcon className="w-5 h-5 text-gray-600 mt-1" />
+                      <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
                       <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                      <MailIcon className="w-5 h-5 text-gray-600" />
+                      <MailIcon className="w-5 h-5 text-orange-500" />
                       <p><strong>Teléfono:</strong> {userDetails.phone}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                      <CreditCardIcon className="w-5 h-5 text-gray-600" />
+                      <CreditCardIcon className="w-5 h-5 text-orange-500" />
                       <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
                   </div>
               </div>
@@ -459,7 +461,7 @@ export const Cart: React.FC = () => {
       <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
       <button 
         onClick={() => navigate('/restaurants')} 
-        className="mt-6 px-6 py-3 bg-black text-white font-semibold rounded-full shadow-md hover:bg-gray-800 transition-all"
+        className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
       >
         Volver a Restaurantes
       </button>
@@ -542,5 +544,3 @@ export const Cart: React.FC = () => {
     </div>
   );
 };
-
-
