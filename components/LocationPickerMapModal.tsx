@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { GoogleMap, MarkerF } from '@react-google-maps/api';
+import { GoogleMap } from '@react-google-maps/api';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import * as Icons from './icons';
 import { useAppContext } from '../context/AppContext';
+import { NativeMap } from 'capacitor-native-map';
 import { geocodeAddress, reverseGeocode } from '../services/api';
 import { Spinner } from './Spinner';
 
@@ -184,10 +185,34 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
   const idleTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isNative = Capacitor.isNativePlatform();
+
+  useEffect(() => {
+    if (isOpen && isNative) {
+      const openNativePicker = async () => {
+        try {
+          const result = await NativeMap.pickLocation({
+            initialPosition: initialLocation ? { latitude: initialLocation.lat, longitude: initialLocation.lng } : undefined
+          });
+          if (result && result.latitude && result.longitude) {
+            onConfirm(result.address, result.latitude, result.longitude);
+          }
+        } catch (e: any) {
+          if (e.message !== "pickLocation canceled.") {
+            console.error('Error picking location', e);
+            showToast('No se pudo abrir el selector de mapa.', 'error');
+          }
+        } finally {
+          onClose();
+        }
+      };
+      openNativePicker();
+    }
+  }, [isOpen, isNative, initialLocation, onConfirm, onClose, showToast]);
 
 
   useEffect(() => {
-    if (isOpen && initialLocation) {
+    if (isOpen && !isNative && initialLocation) {
       setSelectedPosition(initialLocation);
       const fetchAddress = async () => {
         setIsGeocoding(true);
@@ -202,7 +227,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
         }
       };
       fetchAddress();
-    } else if (isOpen && !initialLocation) {
+    } else if (isOpen && !isNative && !initialLocation) {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -226,7 +251,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
         mapRef.current?.setZoom(13);
       }
     }
-  }, [isOpen, initialLocation, showToast]);
+  }, [isOpen, isNative, initialLocation, showToast]);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -314,6 +339,17 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
       showToast("Por favor, selecciona una ubicación en el mapa.", "error");
     }
   };
+
+  if (isNative) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div className="text-center">
+          <Spinner className="animate-spin w-8 h-8 text-orange-500 mx-auto" />
+          <p className="mt-2 text-gray-600">Abriendo mapa...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div 

@@ -207,6 +207,10 @@ export const RequestService: React.FC = () => {
         scheduled_at: scheduledAt,
         status: 'pending',
         phone: userProfile.phone || undefined,
+        origin_lat: originCoords?.lat,
+        origin_lng: originCoords?.lng,
+        destination_lat: destinationCoords?.lat,
+        destination_lng: destinationCoords?.lng,
       };
       const createdRequest = await createServiceRequest(newServiceRequest);
       setNewRequestId(createdRequest.id?.toString() || null);

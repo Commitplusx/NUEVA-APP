@@ -83,6 +83,10 @@ export interface ServiceRequest {
     scheduled_at?: string | null;
     status?: string;
     phone?: string;
+    origin_lat?: number;
+    origin_lng?: number;
+    destination_lat?: number;
+    destination_lng?: number;
 }
 
 export interface Profile {
