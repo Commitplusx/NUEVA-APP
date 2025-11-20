@@ -9,6 +9,7 @@ interface UseServiceLocationPickerProps {
   userProfile: Profile | null;
   showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   setBottomNavVisible: (visible: boolean) => void;
+  destinationCoords: { lat: number; lng: number } | null; // Agregado
   setDestinationCoords: (coords: { lat: number; lng: number } | null) => void;
 }
 
@@ -16,6 +17,7 @@ export const useServiceLocationPicker = ({
   userProfile,
   showToast,
   setBottomNavVisible,
+  destinationCoords, // Recibido
   setDestinationCoords,
 }: UseServiceLocationPickerProps) => {
   const [origin, setOrigin] = useState<string>('');
