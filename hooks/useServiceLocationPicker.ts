@@ -9,17 +9,18 @@ interface UseServiceLocationPickerProps {
   userProfile: Profile | null;
   showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   setBottomNavVisible: (visible: boolean) => void;
+  setDestinationCoords: (coords: { lat: number; lng: number } | null) => void;
 }
 
 export const useServiceLocationPicker = ({
   userProfile,
   showToast,
   setBottomNavVisible,
+  setDestinationCoords,
 }: UseServiceLocationPickerProps) => {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showOriginMapPicker, setShowOriginMapPicker] = useState(false);
   const [showDestinationMapPicker, setShowDestinationMapPicker] = useState(false);
   const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
@@ -95,7 +96,7 @@ export const useServiceLocationPicker = ({
         setShowDestinationMapPicker(true);
       }
     }
-  }, [originCoords, destinationCoords, showToast, setBottomNavVisible]);
+  }, [originCoords, destinationCoords, showToast, setBottomNavVisible, setDestinationCoords]);
 
   const handleConfirmOrigin = useCallback((address: string, lat: number, lng: number) => {
     setOrigin(address);
@@ -109,7 +110,7 @@ export const useServiceLocationPicker = ({
     setDestinationCoords({ lat, lng });
     setShowDestinationMapPicker(false);
     setBottomNavVisible(true);
-  }, [setBottomNavVisible]);
+  }, [setBottomNavVisible, setDestinationCoords]);
 
   return {
     origin,
@@ -118,8 +119,6 @@ export const useServiceLocationPicker = ({
     setDestination,
     originCoords,
     setOriginCoords,
-    destinationCoords,
-    setDestinationCoords,
     showOriginMapPicker,
     setShowOriginMapPicker,
     showDestinationMapPicker,

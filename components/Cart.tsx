@@ -13,6 +13,7 @@ import orderingAnimation from './animations/ordering-animation.json';
 import deliveryAnimation from './animations/delivery-animation.json';
 import foodAnimation from './animations/food-animation.json';
 import deliveryManAnimation from './animations/delivery-man-animation.json';
+import { LocationPickerMapModal } from './LocationPickerMapModal'; // Importado
 
 type CartStep = 'cart' | 'details' | 'confirmation' | 'success';
 
@@ -82,13 +83,18 @@ export const Cart: React.FC = () => {
     isMapsLoaded,
     user,
     profile,
-    selectedPaymentMethod
+    selectedPaymentMethod,
+    setDestinationCoords, // Usar setter del contexto
+    setBottomNavVisible,
   } = useAppContext();
   const navigate = useNavigate();
   const [step, setStep] = useState<CartStep>('cart');
   const [userAddressCoords, setUserAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number>(0);
+  
+  // Estado para el mapa
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // State for user details form
   const [userDetails, setUserDetails] = useState<OrderUserDetails>({
@@ -110,26 +116,34 @@ export const Cart: React.FC = () => {
         postalCode: profile.postal_code || prev.postalCode,
         phone: profile.phone || prev.phone,
       }));
+      // Inicializar coords desde perfil si existen
+      if (profile.lat && profile.lng) {
+         const coords = { lat: profile.lat, lng: profile.lng };
+         setUserAddressCoords(coords);
+         setDestinationCoords(coords);
+      }
     }
-  }, [user, profile]);
+  }, [user, profile, setDestinationCoords]);
 
   // Debounced geocoding for user address
   useEffect(() => {
-    if (!userDetails.address) {
-      setUserAddressCoords(null);
+    if (!userDetails.address || userAddressCoords) {
       return;
     }
     const handler = setTimeout(async () => {
       try {
         const coords = await geocodeAddress(userDetails.address);
-        setUserAddressCoords(coords);
+        if (coords) {
+            setUserAddressCoords(coords);
+            setDestinationCoords(coords);
+        }
       } catch (error) {
         console.error("Error geocoding address:", error);
         setUserAddressCoords(null);
       }
     }, 1000);
     return () => clearTimeout(handler);
-  }, [userDetails.address]);
+  }, [userDetails.address]); // Eliminado userAddressCoords de dependencias para evitar loops, pero chequeado en el if
 
   // Calculate distance and price whenever coordinates change
   useEffect(() => {
@@ -148,6 +162,23 @@ export const Cart: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserDetails(prev => ({ ...prev, [name]: value }));
+    if (name === 'address') {
+        setUserAddressCoords(null); // Resetear coords si edita texto manual
+    }
+  };
+
+  const handleOpenMap = () => {
+    setBottomNavVisible(false);
+    setShowMapPicker(true);
+  };
+
+  const handleConfirmLocation = (address: string, lat: number, lng: number) => {
+    const coords = { lat, lng };
+    setUserDetails(prev => ({ ...prev, address: address }));
+    setUserAddressCoords(coords);
+    setDestinationCoords(coords);
+    setShowMapPicker(false);
+    setBottomNavVisible(true);
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -295,13 +326,26 @@ export const Cart: React.FC = () => {
               <input type="text" name="name" id="name" value={userDetails.name} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu nombre" />
           </div>
       </div>
+      
+      {/* SECCIÓN DE DIRECCIÓN CON MAPA */}
       <div>
           <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
-          <div className="relative flex items-center">
-              <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Calle y número" />
+          <div className="flex gap-2">
+             <div className="relative flex-grow flex items-center">
+                <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+                <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Calle y número" />
+             </div>
+             <button 
+               onClick={handleOpenMap}
+               className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors flex items-center gap-1"
+             >
+               <LocationIcon className="w-4 h-4 text-white" />
+               Mapa
+             </button>
           </div>
+          <p className="text-xs text-gray-500 mt-1">Tip: Usa el botón de mapa para que el repartidor llegue exacto.</p>
       </div>
+
       <div>
           <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia</label>
           <input type="text" name="neighborhood" id="neighborhood" value={userDetails.neighborhood} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu barrio o colonia" />
@@ -540,6 +584,23 @@ export const Cart: React.FC = () => {
             </AnimatePresence>
         </div>
       )}
+
+      {/* Modal del Mapa */}
+      <AnimatePresence>
+        {showMapPicker && (
+          <LocationPickerMapModal
+            isOpen={showMapPicker}
+            onClose={() => {
+              setShowMapPicker(false);
+              setBottomNavVisible(true);
+            }}
+            onConfirm={handleConfirmLocation}
+            initialLocation={userAddressCoords || undefined}
+            title="Selecciona Ubicación de Entrega"
+          />
+        )}
+      </AnimatePresence>
+      
       {toastInfo && <Toast message={toastInfo.message} type={toastInfo.type} onClose={() => setToastInfo(null)} />}
     </div>
   );

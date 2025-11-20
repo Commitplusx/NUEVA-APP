@@ -80,11 +80,15 @@ interface AppContextType {
 
   selectedPaymentMethod: PaymentMethodType;
 
+  destinationCoords: { lat: number; lng: number } | null;
+
   
 
       // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
 
   
+
+  setDestinationCoords: (coords: { lat: number; lng: number } | null) => void;
 
       toggleSidebar: () => void;
 
@@ -482,23 +486,7 @@ interface AppContextType {
 
 
 
-              
-
-
-
-                const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
-
-
-
-                  googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-
-
-
-                  libraries,
-
-
-
-                });
+                        
 
 
 
@@ -506,1063 +494,2191 @@ interface AppContextType {
 
 
 
-                const handleSetPaymentMethod = (method: PaymentMethodType) => {
+                                  
 
 
 
-                    setSelectedPaymentMethod(method);
+    
 
 
 
-                    showToast(`Método de pago cambiado a ${method}`, 'info');
+                                    const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
 
 
 
-                };
+    
 
 
 
-              
+                                      googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
 
 
 
-              
+    
 
 
 
-                useEffect(() => {
+                                      libraries,
 
 
 
-                  const fetchBaseFee = async () => {
+    
 
 
 
-                    try {
+                                    });
 
 
 
-                      const tariffs = await getTariffs();
+    
 
 
 
-                  const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
+                    
 
 
 
-                  if (baseTariff) {
+    
 
 
 
-                    setBaseFee(baseTariff.price);
+                                    const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
 
 
 
-                  } else {
+    
 
 
 
-                      console.warn('"Tarifa Base" not found in database, using default value.');
+                        
 
 
 
-                  }
+    
 
 
 
-                } catch (error) {
+                                    const handleSetPaymentMethod = (method: PaymentMethodType) => {
 
 
 
-                  console.error("Failed to fetch tariffs:", error);
+    
 
 
 
-                }
+                                        setSelectedPaymentMethod(method);
 
 
 
-              };
+    
 
 
 
-          
+                                        showToast(`Método de pago cambiado a ${method}`, 'info');
 
 
 
-              fetchBaseFee();
+    
 
 
 
-            }, []);
+                                    };
 
 
 
-          
+    
 
 
 
-            useEffect(() => {
+                                  
 
 
 
-              const fetchUserProfile = async () => {
+    
 
 
 
-                if (user) {
+                                  
 
 
 
-                  try {
+    
 
 
 
-                    const userProfile = await getProfile();
+                                    useEffect(() => {
 
 
 
-                    setProfile(userProfile);
+    
 
 
 
-                  } catch (error) {
+                                      const fetchBaseFee = async () => {
 
 
 
-                    console.error("Error fetching user profile in AppContext:", error);
+    
 
 
 
-                    setProfile(null);
+                                        try {
 
 
 
-                  }
+    
 
 
 
-                } else {
+                                          const tariffs = await getTariffs();
 
 
 
-                  setProfile(null);
+    
 
 
 
-                }
+                                      const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
 
 
 
-              };
+    
 
 
 
-          
+                                      if (baseTariff) {
 
 
 
-              fetchUserProfile();
+    
 
 
 
-            }, [user]);
+                                        setBaseFee(baseTariff.price);
 
 
 
-          
+    
 
 
 
-            useEffect(() => {
+                                      } else {
 
 
 
-              const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    
 
 
 
-                if (session?.user) {
+                                          console.warn('"Tarifa Base" not found in database, using default value.');
 
 
 
-                  setUser(session.user || null);
+    
 
 
 
-                  setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+                                      }
 
 
 
-                } else {
+    
 
 
 
-                  setUser(null);
+                                    } catch (error) {
 
 
 
-                  setUserRole('guest');
+    
 
 
 
-                }
+                                      console.error("Failed to fetch tariffs:", error);
 
 
 
-                setIsLoadingAuth(false);
+    
 
 
 
-              });
+                                    }
 
 
 
-          
+    
 
 
 
-              supabase.auth.getSession().then(({ data: { session } }) => {
+                                  };
 
 
 
-                if (session?.user) {
+    
 
 
 
-                  setUser(session.user || null);
+                              
 
 
 
-                  setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+    
 
 
 
-                }
+                                  fetchBaseFee();
 
 
 
-                setIsLoadingAuth(false);
+    
 
 
 
-              });
+                                }, []);
 
 
 
-          
+    
 
 
 
-              return () => {
+                              
 
 
 
-                authListener.subscription.unsubscribe();
+    
 
 
 
-              };
+                                useEffect(() => {
 
 
 
-            }, []);
+    
 
 
 
-          
+                                  const fetchUserProfile = async () => {
 
 
 
-            const toggleSidebar = () => {
+    
 
 
 
-              setIsSidebarOpen(!isSidebarOpen);
+                                    if (user) {
 
 
 
-            };
+    
 
 
 
-          
+                                      try {
 
 
 
-            const showToast = (message: string, type: ToastType) => {
+    
 
 
 
-              setToastMessage(message);
+                                        const userProfile = await getProfile();
 
 
 
-              setToastType(type);
+    
 
 
 
-              setTimeout(() => {
+                                        setProfile(userProfile);
 
 
 
-                setToastMessage(null);
+    
 
 
 
-              }, 3000);
+                                      } catch (error) {
 
 
 
-            };
+    
 
 
 
-          
+                                        console.error("Error fetching user profile in AppContext:", error);
 
 
 
-            const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
+    
 
 
 
-              setConfirmation({
+                                        setProfile(null);
 
 
 
-                isOpen: true,
+    
 
 
 
-                title,
+                                      }
 
 
 
-                message,
+    
 
 
 
-                onConfirm,
+                                    } else {
 
 
 
-              });
+    
 
 
 
-            };
+                                      setProfile(null);
 
 
 
-          
+    
 
 
 
-            const handleLogin = (username: string, role: UserRole) => {
+                                    }
 
 
 
-              setUserRole(role);
+    
 
 
 
-              setIsSidebarOpen(false);
+                                  };
 
 
 
-              showToast(`¡Bienvenido, ${username}!`, 'success');
+    
 
 
 
-            };
+                              
 
 
 
-          
+    
 
 
 
-            const handleLogout = async () => {
+                                  fetchUserProfile();
 
 
 
-              await supabase.auth.signOut();
+    
 
 
 
-              setUser(null);
+                                }, [user]);
 
 
 
-              setUserRole('guest');
+    
 
 
 
-              setIsSidebarOpen(false);
+                              
 
 
 
-              showToast('Has cerrado sesión.', 'info');
+    
 
 
 
-            };
+                                useEffect(() => {
 
 
 
-          
+    
 
 
 
-            const handleSelectRestaurant = (restaurant: Restaurant) => {
+                                  const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
 
 
 
-              setSelectedRestaurant(restaurant);
+    
 
 
 
-            };
+                                    if (session?.user) {
 
 
 
-            
+    
 
 
 
-            const handleBackToRestaurants = () => {
+                                      setUser(session.user || null);
 
 
 
-              setSelectedRestaurant(null);
+    
 
 
 
-            };
+                                      setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
 
 
-          
+    
 
 
 
-            const handleSelectMenuItem = (item: MenuItem) => {
+                                    } else {
 
 
 
-              setSelectedMenuItem(item);
+    
 
 
 
-            };
+                                      setUser(null);
 
 
 
-          
+    
 
 
 
-            const handleBackToMenu = () => {
+                                      setUserRole('guest');
 
 
 
-              setSelectedMenuItem(null);
+    
 
 
 
-            };
+                                    }
 
 
 
-          
+    
 
 
 
-            const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
+                                    setIsLoadingAuth(false);
 
 
 
-          
+    
 
 
 
-                          const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+                                  });
 
 
 
-          
+    
 
 
 
-                      
+                              
 
 
 
-          
+    
 
 
 
-                          const addItemToCart = (isNewCart = false) => {
+                                  supabase.auth.getSession().then(({ data: { session } }) => {
 
 
 
-          
+    
 
 
 
-                            // ID se genera a partir del array de strings, que es correcto
+                                    if (session?.user) {
 
 
 
-          
+    
 
 
 
-                            const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
+                                      setUser(session.user || null);
 
 
 
-          
+    
 
 
 
-                            
+                                      setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
 
 
-          
+    
 
 
 
-                            // Convertimos el string[] de vuelta a Ingredient[] para que sea compatible con el estado del carrito
+                                    }
 
 
 
-          
+    
 
 
 
-                            const ingredientsForCart: Ingredient[] = customizedIngredients.map(name => ({ name, icon: '' }));
+                                    setIsLoadingAuth(false);
 
 
 
-          
+    
 
 
 
-            
+                                  });
 
 
 
-          
+    
 
 
 
-                            if (isNewCart) {
+                              
 
 
 
-          
+    
 
 
 
-                              const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
+                                  return () => {
 
 
 
-          
+    
 
 
 
-                              setCart([newCartItem]);
+                                    authListener.subscription.unsubscribe();
 
 
 
-          
+    
 
 
 
-                            } else {
+                                  };
 
 
 
-          
+    
 
 
 
-                              setCart(prevCart => {
+                                }, []);
 
 
 
-          
+    
 
 
 
-                                const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
+                              
 
 
 
-          
+    
 
 
 
-                                if (existingItem) {
+                                const toggleSidebar = () => {
 
 
 
-          
+    
 
 
 
-                                  return prevCart.map(cartItem =>
+                                  setIsSidebarOpen(!isSidebarOpen);
 
 
 
-          
-
-
-
-                                    cartItem.id === cartItemId
-
-
-
-          
-
-
-
-                                      ? { ...cartItem, quantity: cartItem.quantity + quantity }
-
-
-
-          
-
-
-
-                                      : cartItem
-
-
-
-          
-
-
-
-                                  );
-
-
-
-          
-
-
-
-                                }
-
-
-
-          
-
-
-
-                                return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
-
-
-
-          
-
-
-
-                              });
-
-
-
-          
-
-
-
-                            }
-
-
-
-          
-
-
-
-                            
-
-
-
-          
-
-
-
-                            setIsCartAnimating(true);
-
-
-
-          
-
-
-
-                            setTimeout(() => setIsCartAnimating(false), 500);
-
-
-
-          
-
-
-
-                            showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
-
-
-
-          
-
-
-
-                          };
-
-
-
-          
-
-
-
-                      
-
-
-
-          
-
-
-
-                          if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
-
-
-
-          
-
-
-
-                            requestConfirmation(
-
-
-
-          
-
-
-
-                              'Vaciar Carrito',
-
-
-
-          
-
-
-
-                              'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
-
-
-
-          
-
-
-
-                              () => addItemToCart(true) // onConfirm
-
-
-
-          
-
-
-
-                            );
-
-
-
-          
-
-
-
-                          } else {
-
-
-
-          
-
-
-
-                            addItemToCart(false);
-
-
-
-          
-
-
-
-                          }
-
-
-
-          
-
-
-
-                        };
-
-
-
-          
-
-
-
-            const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
-
-
-
-              if (newQuantity <= 0) {
-
-
-
-                 handleRemoveFromCart(cartItemId);
-
-
-
-              } else {
-
-
-
-                setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
-
-
-
-              }
-
-
-
-            };
-
-
-
-          
-
-
-
-            const handleRemoveFromCart = (cartItemId: string) => {
-
-
-
-              setCart(cart => cart.filter(item => item.id !== cartItemId));
-
-
-
-            };
-
-
-
-          
-
-
-
-            const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
-
-
-
-              try {
-
-
-
-                await confirmarPedido(cart, userDetails, deliveryFee);
-
-
-
-                showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
-
-
-
-                setCart([]);
-
-
-
-              } catch (error) {
-
-
-
-                console.error("Order confirmation failed:", error);
-
-
-
-                showToast("Hubo un problema al confirmar el pedido.", 'error');
-
-
-
-              }
-
-
-
-            };
-
-
-
-          
-
-
-
-            const handleModalConfirm = () => {
-
-
-
-              if (confirmation?.onConfirm) {
-
-
-
-                confirmation.onConfirm();
-
-
-
-              }
-
-
-
-              setConfirmation(null);
-
-
-
-            };
-
-
-
-          
-
-
-
-            const handleModalCancel = () => {
-
-
-
-              setConfirmation(null);
-
-
-
-            };
-
-
-
-          
-
-
-
-            const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-
-
-          
-
-
-
-                                const value = {
-
-
-
-          
-
-
-
-                                  user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
-
-
-
-          
-
-
-
-                                  isProductModalOpen,
-
-
-
-          
-
-
-
-                                  isAddressModalOpen,
-
-
-
-          
-
-
-
-                                  isBottomNavVisible,
-
-
-
-          
-
-
-
-                                  bottomNavCustomContent,
-
-
-
-          
-
-
-
-                                  selectedPaymentMethod,
-
-
-
-          
-
-
-
-                                  toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
-
-
-
-          
-
-
-
-                                  setIsProductModalOpen,
-
-
-
-          
-
-
-
-                                  setIsAddressModalOpen,
-
-
-
-          
-
-
-
-                                  setBottomNavVisible: setIsBottomNavVisible,
-
-
-
-          
-
-
-
-                                  setBottomNavCustomContent,
-
-
-
-          
-
-
-
-                                  handleSetPaymentMethod
-
-
-
-          
+    
 
 
 
                                 };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const showToast = (message: string, type: ToastType) => {
+
+
+
+    
+
+
+
+                                  setToastMessage(message);
+
+
+
+    
+
+
+
+                                  setToastType(type);
+
+
+
+    
+
+
+
+                                  setTimeout(() => {
+
+
+
+    
+
+
+
+                                    setToastMessage(null);
+
+
+
+    
+
+
+
+                                  }, 3000);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
+
+
+
+    
+
+
+
+                                  setConfirmation({
+
+
+
+    
+
+
+
+                                    isOpen: true,
+
+
+
+    
+
+
+
+                                    title,
+
+
+
+    
+
+
+
+                                    message,
+
+
+
+    
+
+
+
+                                    onConfirm,
+
+
+
+    
+
+
+
+                                  });
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleLogin = (username: string, role: UserRole) => {
+
+
+
+    
+
+
+
+                                  setUserRole(role);
+
+
+
+    
+
+
+
+                                  setIsSidebarOpen(false);
+
+
+
+    
+
+
+
+                                  showToast(`¡Bienvenido, ${username}!`, 'success');
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleLogout = async () => {
+
+
+
+    
+
+
+
+                                  await supabase.auth.signOut();
+
+
+
+    
+
+
+
+                                  setUser(null);
+
+
+
+    
+
+
+
+                                  setUserRole('guest');
+
+
+
+    
+
+
+
+                                  setIsSidebarOpen(false);
+
+
+
+    
+
+
+
+                                  showToast('Has cerrado sesión.', 'info');
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleSelectRestaurant = (restaurant: Restaurant) => {
+
+
+
+    
+
+
+
+                                  setSelectedRestaurant(restaurant);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                                
+
+
+
+    
+
+
+
+                                const handleBackToRestaurants = () => {
+
+
+
+    
+
+
+
+                                  setSelectedRestaurant(null);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleSelectMenuItem = (item: MenuItem) => {
+
+
+
+    
+
+
+
+                                  setSelectedMenuItem(item);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleBackToMenu = () => {
+
+
+
+    
+
+
+
+                                  setSelectedMenuItem(null);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                          
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              const addItemToCart = (isNewCart = false) => {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                // ID se genera a partir del array de strings, que es correcto
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                // Convertimos el string[] de vuelta a Ingredient[] para que sea compatible con el estado del carrito
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                const ingredientsForCart: Ingredient[] = customizedIngredients.map(name => ({ name, icon: '' }));
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                if (isNewCart) {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  setCart([newCartItem]);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                } else {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  setCart(prevCart => {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                    const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                    if (existingItem) {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      return prevCart.map(cartItem =>
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                        cartItem.id === cartItemId
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                          ? { ...cartItem, quantity: cartItem.quantity + quantity }
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                          : cartItem
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      );
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                    }
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                    return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  });
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                }
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                setIsCartAnimating(true);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                setTimeout(() => setIsCartAnimating(false), 500);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                          
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                requestConfirmation(
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  'Vaciar Carrito',
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                  () => addItemToCart(true) // onConfirm
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                );
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              } else {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                addItemToCart(false);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                              }
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                            };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
+
+
+
+    
+
+
+
+                                  if (newQuantity <= 0) {
+
+
+
+    
+
+
+
+                                     handleRemoveFromCart(cartItemId);
+
+
+
+    
+
+
+
+                                  } else {
+
+
+
+    
+
+
+
+                                    setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
+
+
+
+    
+
+
+
+                                  }
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleRemoveFromCart = (cartItemId: string) => {
+
+
+
+    
+
+
+
+                                  setCart(cart => cart.filter(item => item.id !== cartItemId));
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
+
+
+
+    
+
+
+
+                                  try {
+
+
+
+    
+
+
+
+                                    await confirmarPedido(cart, userDetails, deliveryFee, destinationCoords);
+
+
+
+    
+
+
+
+                                    showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
+
+
+
+    
+
+
+
+                                    setCart([]);
+
+
+
+    
+
+
+
+                                  } catch (error) {
+
+
+
+    
+
+
+
+                                    console.error("Order confirmation failed:", error);
+
+
+
+    
+
+
+
+                                    showToast("Hubo un problema al confirmar el pedido.", 'error');
+
+
+
+    
+
+
+
+                                  }
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleModalConfirm = () => {
+
+
+
+    
+
+
+
+                                  if (confirmation?.onConfirm) {
+
+
+
+    
+
+
+
+                                    confirmation.onConfirm();
+
+
+
+    
+
+
+
+                                  }
+
+
+
+    
+
+
+
+                                  setConfirmation(null);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const handleModalCancel = () => {
+
+
+
+    
+
+
+
+                                  setConfirmation(null);
+
+
+
+    
+
+
+
+                                };
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                    const value = {
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      isProductModalOpen,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      isAddressModalOpen,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      isBottomNavVisible,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      bottomNavCustomContent,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      selectedPaymentMethod,
+
+
+
+    
+
+
+
+                                                      destinationCoords,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      setIsProductModalOpen,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      setIsAddressModalOpen,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      setBottomNavVisible: setIsBottomNavVisible,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      setBottomNavCustomContent,
+
+
+
+    
+
+
+
+                              
+
+
+
+    
+
+
+
+                                                      handleSetPaymentMethod,
+
+
+
+    
+
+
+
+                                                      setDestinationCoords
+
+
+
+    
+
+
+
+                                                    };
 
 
 

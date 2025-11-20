@@ -118,7 +118,7 @@ export const getServices = async (): Promise<Service[]> => {
  * @param {OrderUserDetails} userDetails - The user's details for the order.
  * @returns {Promise<Order>} - A promise that resolves with the newly created order.
  */
-export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails, deliveryFee: number): Promise<Order> => {
+export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDetails, deliveryFee: number, destinationCoords: { lat: number; lng: number } | null): Promise<Order> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -129,6 +129,32 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
   const subtotalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const totalAmount = subtotalAmount + deliveryFee;
   const restaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+
+  // --- NUEVO: Obtener coordenadas del restaurante ---
+  let originLat = null;
+  let originLng = null;
+
+  if (restaurantId) {
+    const { data: restaurantData } = await supabase
+        .from('restaurants')
+        .select('lat, lng')
+        .eq('id', restaurantId)
+        .single();
+    
+    if (restaurantData) {
+        originLat = restaurantData.lat;
+        originLng = restaurantData.lng;
+        console.log(`Restaurante coord encontrado: ${originLat}, ${originLng}`);
+    }
+  }
+  // -------------------------------------------------
+
+  // --- DEBUG LOGGING ---
+  console.log(">>> CONFIRMANDO PEDIDO - DATOS COMPLETOS:");
+  console.log("    Usuario:", userDetails.name);
+  console.log("    Origen (Restaurante):", originLat, originLng);
+  console.log("    Destino (Cliente):", destinationCoords);
+  // ---------------------
 
   // 1. Create the order
   const { data: orderData, error: orderError } = await supabase
@@ -141,7 +167,13 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
       total_amount: totalAmount,
       delivery_fee: deliveryFee,
       restaurant_id: restaurantId,
-      status: 'pending',
+      status: 'pending', 
+      
+      // GUARDANDO COORDENADAS COMPLETAS
+      origin_lat: originLat,
+      origin_lng: originLng,
+      destination_lat: destinationCoords?.lat,
+      destination_lng: destinationCoords?.lng,
     })
     .select()
     .single();
@@ -152,6 +184,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
   }
 
   const order = orderData as Order;
+  console.log(">>> PEDIDO CREADO CON ÉXITO:", order); 
 
   // 2. Create the order items
   const orderItems = cart.map(item => ({
@@ -173,7 +206,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     throw itemsError;
   }
 
-  console.log('Order confirmed for:', { userDetails, cart });
+  console.log('Order items confirmed');
   return order;
 };
 
@@ -337,7 +370,7 @@ export const getTariffs = async (): Promise<Tariff[]> => {
 export const addTariff = async (tariff: Omit<Tariff, 'id'>): Promise<Tariff> => {
   const { data, error } = await supabase.from('tariffs').insert([tariff]).select();
   if (error) throw error;
-  return data[0];
+  return data;
 };
 
 export const updateTariff = async (id: number, updates: Partial<Tariff>): Promise<Tariff> => {

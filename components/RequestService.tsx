@@ -62,7 +62,7 @@ const PRICE_PER_KM = 10; // $10 per km
 
 export const RequestService: React.FC = () => {
   useThemeColor('var(--color-rappi-primary)');
-  const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError, setBottomNavVisible } = useAppContext();
+  const { showToast, baseFee, userRole, isMapsLoaded: isLoaded, loadError, setBottomNavVisible, destinationCoords, setDestinationCoords } = useAppContext();
   const navigate = useNavigate();
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<Step>('details');
@@ -78,7 +78,6 @@ export const RequestService: React.FC = () => {
     origin, setOrigin,
     destination, setDestination,
     originCoords, setOriginCoords,
-    destinationCoords, setDestinationCoords,
     showOriginMapPicker, setShowOriginMapPicker,
     showDestinationMapPicker, setShowDestinationMapPicker,
     initialOriginLocation, setInitialOriginLocation,
@@ -88,7 +87,13 @@ export const RequestService: React.FC = () => {
     handleMapPick,
     handleConfirmOrigin,
     handleConfirmDestination,
-  } = useServiceLocationPicker({ userProfile, showToast, setBottomNavVisible });
+  } = useServiceLocationPicker({ userProfile, showToast, setBottomNavVisible, setDestinationCoords });
+
+  useEffect(() => {
+    if (destinationCoords) {
+      handleConfirmDestination(destination, destinationCoords.lat, destinationCoords.lng);
+    }
+  }, []);
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -107,8 +112,6 @@ export const RequestService: React.FC = () => {
         const profile = await getProfile();
         if (profile) {
           setUserProfile(profile);
-        } else {
-          showToast('No pudimos cargar tu perfil. Puedes continuar y llenar los datos manualmente.', 'warning');
         }
       } catch (error) {
         showToast('No se pudo cargar tu perfil.', 'error');
