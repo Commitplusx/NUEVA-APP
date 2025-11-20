@@ -87,7 +87,13 @@ export const RequestService: React.FC = () => {
     handleMapPick,
     handleConfirmOrigin,
     handleConfirmDestination,
-  } = useServiceLocationPicker({ userProfile, showToast, setBottomNavVisible, setDestinationCoords });
+  } = useServiceLocationPicker({ 
+      userProfile, 
+      showToast, 
+      setBottomNavVisible, 
+      destinationCoords, // <--- Pasando el valor corregido
+      setDestinationCoords 
+    });
 
   useEffect(() => {
     if (destinationCoords) {
