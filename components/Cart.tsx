@@ -9,7 +9,7 @@ import { Toast, ToastType } from './Toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import Lottie from 'lottie-react';
-import orderingAnimation from './animations/ordering-animation.json';
+import newCheckoutAnimation from './animations/cart checkout - fast.json';
 import deliveryAnimation from './animations/delivery-animation.json';
 import foodAnimation from './animations/food-animation.json';
 import deliveryManAnimation from './animations/delivery-man-animation.json';
@@ -500,7 +500,7 @@ export const Cart: React.FC = () => {
 
   const renderSuccessStep = () => (
     <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center">
-      <Lottie animationData={orderingAnimation} loop={false} style={{ width: 200, height: 200 }} />
+      <Lottie animationData={newCheckoutAnimation} loop={true} style={{ width: 200, height: 200 }} />
       <h3 className="font-bold text-2xl text-green-600 mt-4">¡Pedido Recibido!</h3>
       <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
       <button 
