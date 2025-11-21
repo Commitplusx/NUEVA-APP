@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
-import { NativeMap } from 'capacitor-native-map';
 import { reverseGeocode } from '../services/api';
 import { Profile } from '../types';
 
@@ -9,20 +8,17 @@ interface UseServiceLocationPickerProps {
   userProfile: Profile | null;
   showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
   setBottomNavVisible: (visible: boolean) => void;
-  destinationCoords: { lat: number; lng: number } | null; // Agregado
-  setDestinationCoords: (coords: { lat: number; lng: number } | null) => void;
 }
 
 export const useServiceLocationPicker = ({
   userProfile,
   showToast,
   setBottomNavVisible,
-  destinationCoords, // Recibido
-  setDestinationCoords,
 }: UseServiceLocationPickerProps) => {
   const [origin, setOrigin] = useState<string>('');
   const [destination, setDestination] = useState<string>('');
   const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [showOriginMapPicker, setShowOriginMapPicker] = useState(false);
   const [showDestinationMapPicker, setShowDestinationMapPicker] = useState(false);
   const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
@@ -56,21 +52,23 @@ export const useServiceLocationPicker = ({
         showToast('No se pudo encontrar una dirección para tu ubicación.', 'error');
       }
     } catch (error) {
-      console.error('Error getting location', error);
       showToast('No se pudo obtener la ubicación. Asegúrate de tener los permisos activados.', 'error');
     }
   }, [showToast]);
 
   const handleMapPick = useCallback(async (type: 'origin' | 'destination') => {
-    const isNative = Capacitor.getPlatform() === 'android';
+    const isNative = Capacitor.getPlatform() !== 'web';
 
     if (isNative) {
       try {
+        const pluginName = 'capacitor-mapbox';
+        const { Mapbox: NativeMap } = await import(/* @vite-ignore */ pluginName);
+
         const currentCoords = type === 'origin' ? originCoords : destinationCoords;
         const result = await NativeMap.pickLocation({
           initialPosition: currentCoords ? { latitude: currentCoords.lat, longitude: currentCoords.lng } : undefined
         });
-        if (result) {
+        if (result && result.latitude && result.longitude) {
           if (type === 'origin') {
             setOrigin(result.address);
             setOriginCoords({ lat: result.latitude, lng: result.longitude });
@@ -81,13 +79,11 @@ export const useServiceLocationPicker = ({
           showToast('Ubicación seleccionada con éxito', 'success');
         }
       } catch (err: any) {
-        if (err.message !== 'Action canceled by user.') {
-          console.error('Error opening native map picker', err);
+        if (err.message !== 'Action canceled by user.' && err.message !== 'pickLocation canceled.') {
           showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
         }
       }
     } else {
-      // Web fallback
       if (type === 'origin') {
         setInitialOriginLocation(originCoords || undefined);
         setBottomNavVisible(false);
@@ -98,7 +94,7 @@ export const useServiceLocationPicker = ({
         setShowDestinationMapPicker(true);
       }
     }
-  }, [originCoords, destinationCoords, showToast, setBottomNavVisible, setDestinationCoords]);
+  }, [originCoords, destinationCoords, showToast, setBottomNavVisible]);
 
   const handleConfirmOrigin = useCallback((address: string, lat: number, lng: number) => {
     setOrigin(address);
@@ -112,23 +108,17 @@ export const useServiceLocationPicker = ({
     setDestinationCoords({ lat, lng });
     setShowDestinationMapPicker(false);
     setBottomNavVisible(true);
-  }, [setBottomNavVisible, setDestinationCoords]);
+  }, [setBottomNavVisible]);
 
   return {
-    origin,
-    setOrigin,
-    destination,
-    setDestination,
-    originCoords,
-    setOriginCoords,
-    showOriginMapPicker,
-    setShowOriginMapPicker,
-    showDestinationMapPicker,
-    setShowDestinationMapPicker,
-    initialOriginLocation,
-    setInitialOriginLocation,
-    initialDestinationLocation,
-    setInitialDestinationLocation,
+    origin, setOrigin,
+    destination, setDestination,
+    originCoords, setOriginCoords,
+    destinationCoords, setDestinationCoords, // Exportar las coordenadas de destino
+    showOriginMapPicker, setShowOriginMapPicker,
+    showDestinationMapPicker, setShowDestinationMapPicker,
+    initialOriginLocation, setInitialOriginLocation,
+    initialDestinationLocation, setInitialDestinationLocation,
     handleUseProfileAddress,
     handleGetCurrentLocation,
     handleMapPick,

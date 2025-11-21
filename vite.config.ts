@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
       server: {
-        https: false,
+        https: true, // Habilitar HTTPS
         port: 3000,
         host: true,
         proxy: {

@@ -70,6 +70,9 @@ dependencies {
     // Firebase - Comentado temporalmente hasta tener google-services.json
     // implementation platform('com.google.firebase:firebase-bom:33.1.1')
     // implementation 'com.google.firebase:firebase-messaging'
+
+    // Mapbox dependency
+    implementation 'com.mapbox.maps:android:10.17.0'
 }
 
 apply from: 'capacitor.build.gradle'

@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon, CreditCardIcon } from './icons';
-import { geocodeAddress } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { OrderUserDetails } from '../types';
 import { Toast, ToastType } from './Toast';
 import { AnimatePresence, motion } from 'framer-motion';
-import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import Lottie from 'lottie-react';
 import newCheckoutAnimation from './animations/cart checkout - fast.json';
-import deliveryAnimation from './animations/delivery-animation.json';
-import foodAnimation from './animations/food-animation.json';
-import deliveryManAnimation from './animations/delivery-man-animation.json';
 import { LocationPickerMapModal } from './LocationPickerMapModal'; // Importado
+import Map, { Marker } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 type CartStep = 'cart' | 'details' | 'confirmation' | 'success';
 
@@ -80,7 +77,6 @@ export const Cart: React.FC = () => {
     handleUpdateCart,
     handleConfirmOrder,
     baseFee,
-    isMapsLoaded,
     user,
     profile,
     selectedPaymentMethod,
@@ -125,46 +121,23 @@ export const Cart: React.FC = () => {
     }
   }, [user, profile, setDestinationCoords]);
 
-  // Debounced geocoding for user address
-  useEffect(() => {
-    if (!userDetails.address || userAddressCoords) {
-      return;
-    }
-    const handler = setTimeout(async () => {
-      try {
-        const coords = await geocodeAddress(userDetails.address);
-        if (coords) {
-            setUserAddressCoords(coords);
-            setDestinationCoords(coords);
-        }
-      } catch (error) {
-        console.error("Error geocoding address:", error);
-        setUserAddressCoords(null);
-      }
-    }, 1000);
-    return () => clearTimeout(handler);
-  }, [userDetails.address]); // Eliminado userAddressCoords de dependencias para evitar loops, pero chequeado en el if
-
   // Calculate distance and price whenever coordinates change
   useEffect(() => {
     const restaurant = cartItems[0]?.restaurant;
     if (userAddressCoords && restaurant?.lat && restaurant?.lng) {
       const dist = haversineDistance(restaurant.lat, restaurant.lng, userAddressCoords.lat, userAddressCoords.lng);
-      const fee = dist * PRICE_PER_KM;
+      const fee = baseFee + (dist * PRICE_PER_KM);
       setCalculatedDistance(dist);
       setCalculatedDeliveryFee(fee);
     } else {
       setCalculatedDistance(null);
-      setCalculatedDeliveryFee(0);
+      setCalculatedDeliveryFee(baseFee);
     }
-  }, [userAddressCoords, cartItems]);
+  }, [userAddressCoords, cartItems, baseFee]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserDetails(prev => ({ ...prev, [name]: value }));
-    if (name === 'address') {
-        setUserAddressCoords(null); // Resetear coords si edita texto manual
-    }
   };
 
   const handleOpenMap = () => {
@@ -182,22 +155,12 @@ export const Cart: React.FC = () => {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const restaurant = cartItems.length > 0 ? cartItems[0].restaurant : null;
   const deliveryFee = calculatedDeliveryFee;
   const total = subtotal + deliveryFee;
 
-  console.log("Debug canProceedToConfirmation:");
-  console.log("  user:", user);
-  console.log("  userDetails.name:", userDetails.name);
-  console.log("  userDetails.address:", userDetails.address);
-  console.log("  userDetails.phone:", userDetails.phone);
-  console.log("  userDetails.name.trim() !== '':", userDetails.name.trim() !== '');
-  console.log("  userDetails.address.trim() !== '':", userDetails.address.trim() !== '');
-  console.log("  userDetails.phone.trim().length >= 10:", userDetails.phone.trim().length >= 10);
-
   const canProceedToDetails = cartItems.length > 0;
   const canProceedToConfirmation = 
-    user !== null && // Add this check
+    user !== null &&
     userDetails.name.trim() !== '' &&
     userDetails.address.trim() !== '' &&
     userDetails.phone.trim().length >= 10;
@@ -205,12 +168,12 @@ export const Cart: React.FC = () => {
   const handleFinalOrderConfirmation = async () => {
     if (!canProceedToConfirmation) {
       setToastInfo({ message: 'Por favor, completa todos los campos requeridos.', type: 'info' });
-      setTimeout(() => setToastInfo(null), 3000); // Ocultar después de 3 segundos
+      setTimeout(() => setToastInfo(null), 3000);
       return;
     }
     try {
       await handleConfirmOrder(userDetails, deliveryFee);
-      setStep('success'); // Set to success step after successful order
+      setStep('success');
     } catch (error) {
       console.error('Order confirmation failed:', error);
       setToastInfo({ message: 'Error al confirmar el pedido. Inténtalo de nuevo.', type: 'error' });
@@ -230,8 +193,8 @@ export const Cart: React.FC = () => {
                 No Image
               </div>
             )}
-            <div className="flex-grow min-w-0"> {/* Added min-w-0 to fix overflow */}
-              <h3 className="font-semibold text-gray-800 break-words">{item.product.name}</h3> {/* Added break-words */}
+            <div className="flex-grow min-w-0"> 
+              <h3 className="font-semibold text-gray-800 break-words">{item.product.name}</h3>
               <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
               {(() => {
                 const allIngredients = item.product.ingredients || [];
@@ -240,20 +203,19 @@ export const Cart: React.FC = () => {
                 const selectedNames = new Set(item.customizedIngredients.map(i => i.name));
                 const excludedIngredients = allIngredients.filter(i => !selectedNames.has(i));
 
-                // Only show customizations if something was actually removed
                 const hasCustomization = item.customizedIngredients.length < allIngredients.length;
 
                 if (!hasCustomization) return null;
 
                 return (
-                  <div className="text-xs text-gray-600 mt-2 break-words"> {/* Added break-words */}
+                  <div className="text-xs text-gray-600 mt-2 break-words">
                     <p className="font-bold">Personalización:</p>
-                    <div className="flex flex-wrap gap-1"> {/* Added flex container for wrapping */}
+                    <div className="flex flex-wrap gap-1">
                       {item.customizedIngredients.map(ing => (
                         <span key={ing.name} className="text-green-700 mr-1">{`+${ing.name}`}</span>
                       ))}
                       {excludedIngredients.map(ing => (
-                        <span key={ing} className="text-red-700 line-through mr-1">{`${ing}`}</span>
+                        <span key={ing.name} className="text-red-700 line-through mr-1">{`${ing.name}`}</span>
                       ))}
                     </div>
                   </div>
@@ -327,7 +289,6 @@ export const Cart: React.FC = () => {
           </div>
       </div>
       
-      {/* SECCIÓN DE DIRECCIÓN CON MAPA */}
       <div>
           <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
           <div className="flex gap-2">
@@ -378,30 +339,6 @@ export const Cart: React.FC = () => {
     const restaurant = cartItems.length > 0 ? cartItems[0].restaurant : null;
     const restaurantCoords = restaurant?.lat && restaurant?.lng ? { lat: restaurant.lat, lng: restaurant.lng } : null;
 
-    const comitanBounds = {
-      north: 16.35,
-      south: 16.15,
-      west: -92.25,
-      east: -92.00,
-    };
-
-    const mapOptions = {
-      disableDefaultUI: true,
-      styles: [
-        { elementType: "geometry", stylers: [{ color: "#f5f5f5" }] },
-        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#616161" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#f5f5f5" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-        { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#dadada" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9c9c9" }] },
-      ],
-      restriction: {
-        latLngBounds: comitanBounds,
-        strictBounds: false,
-      },
-    };
-
     return (
         <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
             <div className="p-6 pb-4">
@@ -417,26 +354,21 @@ export const Cart: React.FC = () => {
               )}
             </div>
 
-            {isMapsLoaded && restaurantCoords && userAddressCoords && (
+            {restaurantCoords && userAddressCoords && (
               <div className="h-40 w-full">
-                <GoogleMap
-                  mapContainerStyle={{ width: '100%', height: '100%' }}
-                  options={mapOptions}
-                  onLoad={(map) => {
-                    const bounds = new window.google.maps.LatLngBounds();
-                    bounds.extend(restaurantCoords);
-                    bounds.extend(userAddressCoords);
-                    map.fitBounds(bounds);
-
-                    const listener = window.google.maps.event.addListener(map, 'idle', () => {
-                      if (map.getZoom() > 16) map.setZoom(16);
-                      window.google.maps.event.removeListener(listener);
-                    });
-                  }}
-                >
-                  <MarkerF position={restaurantCoords} animation={window.google.maps.Animation.DROP} />
-                  <MarkerF position={userAddressCoords} animation={window.google.maps.Animation.DROP} />
-                </GoogleMap>
+                  <Map
+                      initialViewState={{
+                          latitude: (restaurantCoords.lat + userAddressCoords.lat) / 2,
+                          longitude: (restaurantCoords.lng + userAddressCoords.lng) / 2,
+                          zoom: 12
+                      }}
+                      style={{width: '100%', height: '100%'}}
+                      mapStyle="mapbox://styles/mapbox/streets-v11"
+                      mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+                  >
+                      <Marker longitude={restaurantCoords.lng} latitude={restaurantCoords.lat} color="#00B37E" />
+                      <Marker longitude={userAddressCoords.lng} latitude={userAddressCoords.lat} color="#FF5A5F" />
+                  </Map>
               </div>
             )}
 
@@ -585,7 +517,6 @@ export const Cart: React.FC = () => {
         </div>
       )}
 
-      {/* Modal del Mapa */}
       <AnimatePresence>
         {showMapPicker && (
           <LocationPickerMapModal

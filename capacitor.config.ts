@@ -5,13 +5,16 @@ const config: CapacitorConfig = {
   appName: 'NUEVA-APP',
   webDir: 'dist',
   server: {
-    url: 'https://app-estrella.shop/',
+    url: 'app-estrella.shop',
     cleartext: true
   },
   plugins: {
     StatusBar: {
       overlaysWebView: false,
       style: 'dark'
+    },
+    Mapbox: {
+      accessToken: 'pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pODc2ZGcwMDh2bTJscHpucWc1MDIybSJ9'
     }
   }
 };

@@ -3,9 +3,7 @@ package shop.app.estrella.plugins.nativemap;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.content.res.Resources;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,10 +13,12 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -29,57 +29,112 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.mapbox.geojson.Point;
+import com.mapbox.maps.CameraOptions;
+import com.mapbox.maps.MapView;
+import com.mapbox.maps.MapboxMap;
+import com.mapbox.maps.Style;
+import com.mapbox.maps.plugin.animation.CameraAnimationsUtils;
+import com.mapbox.maps.plugin.gestures.GesturesUtils;
+import com.mapbox.maps.plugin.gestures.OnMoveListener;
+import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin;
+import com.mapbox.maps.plugin.locationcomponent.LocationComponentUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapPickerActivity extends AppCompatActivity {
 
     private static final String TAG = "MapPickerActivity";
-    private GoogleMap mMap;
+    private MapView mapView;
+    private MapboxMap mapboxMap;
     private TextView addressText;
     private ImageView centerPin;
     private RequestQueue requestQueue;
-    private String apiKey;
+    // Token público de Mapbox (debería venir de strings.xml o gradle, pero lo pondremos aquí por simplicidad o leeremos de recursos)
+    private String mapboxAccessToken;
 
     private String fullAddress = "";
-    private LatLng origin, destination;
+    private Point initialPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Obtener token de recursos (asegúrate de que esté en strings.xml de la app principal)
+        try {
+            mapboxAccessToken = getString(getResources().getIdentifier("mapbox_access_token", "string", getPackageName()));
+        } catch (Exception e) {
+            // Fallback si no se encuentra, usando el token que nos diste
+            mapboxAccessToken = "pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pODc2ZGcwMDh2bTJscHpucWc1MDIybSJ9.rTZ1DZKFsbw-IH-t-wDlCA";
+        }
+
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         setContentView(R.layout.activity_map_picker);
 
-        // Initialize Volley RequestQueue
         requestQueue = Volley.newRequestQueue(this);
 
-        // Get API Key from Manifest
-        try {
-            ApplicationInfo app = getApplicationContext().getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = app.metaData;
-            apiKey = bundle.getString("com.google.android.geo.API_KEY");
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Failed to load meta-data, NameNotFound: " + e.getMessage());
-        } catch (NullPointerException e) {
-            Log.e(TAG, "Failed to load meta-data, NullPointer: " + e.getMessage());
-        }
+        // Obtener posición inicial del Intent
+        double lat = getIntent().getDoubleExtra("initial_latitude", 16.2519);
+        double lng = getIntent().getDoubleExtra("initial_longitude", -92.1383);
+        initialPosition = Point.fromLngLat(lng, lat);
 
-        Intent intent = getIntent();
-        origin = intent.getParcelableExtra("origin");
-        destination = intent.getParcelableExtra("destination");
+        // Configurar Toolbar y UI
+        setupUI();
 
+        // Inicializar Mapbox MapView programáticamente
+        FrameLayout container = findViewById(R.id.map_picker_container);
+        mapView = new MapView(this);
+        container.addView(mapView);
+        
+        mapboxMap = mapView.getMapboxMap();
+        
+        // Cargar estilo
+        mapboxMap.loadStyleUri(Style.MAPBOX_STREETS, style -> {
+            // Configurar cámara inicial
+            CameraOptions initialCameraOptions = new CameraOptions.Builder()
+                    .center(initialPosition)
+                    .zoom(15.0)
+                    .build();
+            mapboxMap.setCamera(initialCameraOptions);
+
+            // Activar Pulsing Puck (Ubicación del usuario)
+            LocationComponentPlugin locationComponent = LocationComponentUtils.getLocationComponent(mapView);
+            locationComponent.setEnabled(true);
+            locationComponent.setPulsingEnabled(true);
+            locationComponent.setPulsingColor(Color.parseColor("#4A90E2"));
+            locationComponent.setPulsingMaxRadius(20.0f);
+            
+            // Configurar listeners de movimiento
+            setupGestures();
+        });
+
+        addressText = findViewById(R.id.address_text);
+        centerPin = findViewById(R.id.center_pin);
+        FloatingActionButton btnConfirm = findViewById(R.id.fab_confirm_location);
+        
+        // Estilo del botón
+        btnConfirm.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2E3192")));
+        btnConfirm.setOnClickListener(view -> confirmLocation());
+        
+        // Back gesture
+        OnBackPressedCallback callback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                new AlertDialog.Builder(MapPickerActivity.this) // Usar tema por defecto
+                    .setTitle("Confirmar Salida")
+                    .setMessage("¿Estás seguro de que deseas salir del mapa?")
+                    .setPositiveButton("Salir", (dialog, which) -> finish())
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
+    }
+
+    private void setupUI() {
         Window window = getWindow();
         window.setStatusBarColor(Color.WHITE);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
@@ -93,102 +148,29 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+    }
 
-        addressText = findViewById(R.id.address_text);
-        centerPin = findViewById(R.id.center_pin);
-
-        SupportMapFragment mapFragment = SupportMapFragment.newInstance();
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.map_picker_container, mapFragment)
-                .commit();
-        mapFragment.getMapAsync(this);
-
-        FloatingActionButton btnConfirm = findViewById(R.id.fab_confirm_location);
-        btnConfirm.setEnabled(false); // Disable initially
-
-        if (origin != null || destination != null) {
-            btnConfirm.setVisibility(View.GONE);
-            centerPin.setVisibility(View.GONE);
-            addressText.setVisibility(View.GONE);
-        } else {
-            btnConfirm.setOnClickListener(view -> confirmLocation());
-        }
-
-        // This handles the back gesture to show a confirmation dialog.
-        OnBackPressedCallback callback = new OnBackPressedCallback(true /* enabled by default */) {
+    private void setupGestures() {
+        GesturesUtils.getGestures(mapView).addOnMoveListener(new OnMoveListener() {
             @Override
-            public void handleOnBackPressed() {
-                new AlertDialog.Builder(MapPickerActivity.this, R.style.CustomAlertDialog)
-                    .setTitle("Confirmar Salida")
-                    .setMessage("¿Estás seguro de que deseas salir del mapa?")
-                    .setPositiveButton("Salir", (dialog, which) -> finish())
-                    .setNegativeButton("Cancelar", null)
-                    .show();
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        try {
-            googleMap.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style));
-        } catch (Resources.NotFoundException e) {
-            Log.e(TAG, "Can't find style. Error: ", e);
-        }
-
-        if (origin != null && destination != null) {
-            // Display mode (pins only)
-            displayPointsAndFocusCamera();
-        } else {
-            // Picker mode
-            setupPickerMode();
-        }
-    }
-
-    private void displayPointsAndFocusCamera() {
-        mMap.addMarker(new MarkerOptions().position(origin).title("Origin"));
-        mMap.addMarker(new MarkerOptions().position(destination).title("Destination"));
-
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        builder.include(origin);
-        builder.include(destination);
-        LatLngBounds bounds = builder.build();
-
-        int padding = 150; // offset from edges of the map in pixels
-        mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
-    }
-
-    private void setupPickerMode() {
-        double initialLat = getIntent().getDoubleExtra("initial_latitude", 16.2519);
-        double initialLng = getIntent().getDoubleExtra("initial_longitude", -92.1383);
-        LatLng initialPosition = new LatLng(initialLat, initialLng);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(initialPosition, 16f));
-
-        mMap.setOnCameraMoveStartedListener(reason -> {
-            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
+            public void onMoveBegin(@NonNull com.mapbox.android.gestures.MoveGestureDetector detector) {
                 animatePin(true);
                 addressText.setVisibility(View.VISIBLE);
                 setAddressText("Moviendo mapa...");
+                findViewById(R.id.fab_confirm_location).setEnabled(false);
             }
-        });
 
-        mMap.setOnCameraIdleListener(() -> {
-            animatePin(false);
-            LatLng center = mMap.getCameraPosition().target;
-            updateLocation(center);
+            @Override
+            public boolean onMove(@NonNull com.mapbox.android.gestures.MoveGestureDetector detector) {
+                return false;
+            }
+
+            @Override
+            public void onMoveEnd(@NonNull com.mapbox.android.gestures.MoveGestureDetector detector) {
+                animatePin(false);
+                Point center = mapboxMap.getCameraState().getCenter();
+                updateLocation(center);
+            }
         });
     }
 
@@ -199,23 +181,24 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
         animator.start();
     }
 
-    private void updateLocation(LatLng latLng) {
-        reverseGeocodeWithGoogleApi(latLng);
+    private void updateLocation(Point center) {
+        reverseGeocodeWithMapbox(center);
     }
     
-    private void reverseGeocodeWithGoogleApi(LatLng latLng) {
-        String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng="
-                + latLng.latitude + "," + latLng.longitude
-                + "&key=" + apiKey;
+    private void reverseGeocodeWithMapbox(Point point) {
+        // Usar API de Mapbox para geocodificación inversa
+        String url = "https://api.mapbox.com/geocoding/v5/mapbox.places/"
+                + point.longitude() + "," + point.latitude()
+                + ".json?access_token=" + mapboxAccessToken; // Usar token de instancia
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
                     FloatingActionButton btnConfirm = findViewById(R.id.fab_confirm_location);
                     try {
-                        JSONArray results = response.getJSONArray("results");
-                        if (results.length() > 0) {
-                            JSONObject firstResult = results.getJSONObject(0);
-                            fullAddress = firstResult.getString("formatted_address");
+                        JSONArray features = response.getJSONArray("features");
+                        if (features.length() > 0) {
+                            JSONObject firstFeature = features.getJSONObject(0);
+                            fullAddress = firstFeature.getString("place_name");
                             runOnUiThread(() -> {
                                 setAddressText(fullAddress);
                                 btnConfirm.setEnabled(true);
@@ -230,20 +213,13 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
                     } catch (JSONException e) {
                         Log.e(TAG, "JSON parsing error", e);
                         fullAddress = "Error al procesar dirección";
-                        runOnUiThread(() -> {
-                            setAddressText(fullAddress);
-                            btnConfirm.setEnabled(false);
-                        });
+                        runOnUiThread(() -> setAddressText(fullAddress));
                     }
                 },
                 error -> {
-                    FloatingActionButton btnConfirm = findViewById(R.id.fab_confirm_location);
                     Log.e(TAG, "Volley error", error);
-                    fullAddress = "Error de red al obtener dirección";
-                    runOnUiThread(() -> {
-                        setAddressText(fullAddress);
-                        btnConfirm.setEnabled(false);
-                    });
+                    fullAddress = "Error de red";
+                    runOnUiThread(() -> setAddressText(fullAddress));
                 }
         );
 
@@ -265,12 +241,39 @@ public class MapPickerActivity extends AppCompatActivity implements OnMapReadyCa
     }
 
     private void confirmLocation() {
-        LatLng center = mMap.getCameraPosition().target;
+        Point center = mapboxMap.getCameraState().getCenter();
         Intent resultIntent = new Intent();
-        resultIntent.putExtra("latitude", center.latitude);
-        resultIntent.putExtra("longitude", center.longitude);
+        resultIntent.putExtra("latitude", center.latitude());
+        resultIntent.putExtra("longitude", center.longitude());
         resultIntent.putExtra("address", fullAddress);
         setResult(Activity.RESULT_OK, resultIntent);
         finish();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
     }
 }

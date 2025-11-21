@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { GoogleMap } from '@react-google-maps/api';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import * as Icons from './icons';
 import { useAppContext } from '../context/AppContext';
-import { NativeMap } from 'capacitor-native-map';
 import { geocodeAddress, reverseGeocode } from '../services/api';
 import { Spinner } from './Spinner';
+import Map, { MapRef, ViewState } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+// La importación de Mapbox se movió a la lógica nativa para evitar errores en web.
 
 interface LocationPickerPageProps {
   isOpen: boolean;
@@ -18,156 +20,10 @@ interface LocationPickerPageProps {
   title: string;
 }
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%',
-};
-
 const defaultCenter = {
-  lat: 16.25, // Default to Comitán
-  lng: -92.13,
-};
-
-const mapOptions = {
-  disableDefaultUI: true,
-  zoomControl: true,
-  styles: [
-    // (Map styles are unchanged)
-    {
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#f5f5f5" }
-      ]
-    },
-    {
-      "elementType": "labels.icon",
-      "stylers": [
-        { "visibility": "off" }
-      ]
-    },
-    {
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#616161" }
-      ]
-    },
-    {
-      "elementType": "labels.text.stroke",
-      "stylers": [
-        { "color": "#f5f5f5" }
-      ]
-    },
-    {
-      "featureType": "administrative.land_parcel",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#bdbdbd" }
-      ]
-    },
-    {
-      "featureType": "poi",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#eeeeee" }
-      ]
-    },
-    {
-      "featureType": "poi",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#757575" }
-      ]
-    },
-    {
-      "featureType": "poi.park",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#e5e5e5" }
-      ]
-    },
-    {
-      "featureType": "poi.park",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#9e9e9e" }
-      ]
-    },
-    {
-      "featureType": "road",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#ffffff" }
-      ]
-    },
-    {
-      "featureType": "road.arterial",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#757575" }
-      ]
-    },
-    {
-      "featureType": "road.highway",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#dadada" }
-      ]
-    },
-    {
-      "featureType": "road.highway",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#616161" }
-      ]
-    },
-    {
-      "featureType": "road.local",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#9e9e9e" }
-      ]
-    },
-    {
-      "featureType": "transit.line",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#e5e5e5" }
-      ]
-    },
-    {
-      "featureType": "transit.station",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#eeeeee" }
-      ]
-    },
-    {
-      "featureType": "water",
-      "elementType": "geometry",
-      "stylers": [
-        { "color": "#c9c9c9" }
-      ]
-    },
-    {
-      "featureType": "water",
-      "elementType": "labels.text.fill",
-      "stylers": [
-        { "color": "#9e9e9e" }
-      ]
-    }
-  ]
-};
-
-const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Radius of the Earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
+  latitude: 16.25, // Default to Comitán
+  longitude: -92.13,
+  zoom: 13
 };
 
 export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
@@ -177,20 +33,25 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
   initialLocation,
   title,
 }) => {
-  const { isMapsLoaded, showToast } = useAppContext();
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const [selectedPosition, setSelectedPosition] = useState<{ lat: number; lng: number } | null>(initialLocation || null);
+  const { showToast } = useAppContext();
+  const mapRef = useRef<MapRef | null>(null);
+  const [viewState, setViewState] = useState<Partial<ViewState>>(initialLocation ? { latitude: initialLocation.lat, longitude: initialLocation.lng, zoom: 16 } : defaultCenter);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
   const idleTimeout = useRef<NodeJS.Timeout | null>(null);
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = Capacitor.getPlatform() !== 'web';
 
+  // --- Native Logic ---
   useEffect(() => {
     if (isOpen && isNative) {
       const openNativePicker = async () => {
         try {
+          // FIX: Dynamic import to trick Vite
+          const pluginName = 'capacitor-mapbox';
+          const { Mapbox: NativeMap } = await import(/* @vite-ignore */ pluginName);
+
           const result = await NativeMap.pickLocation({
             initialPosition: initialLocation ? { latitude: initialLocation.lat, longitude: initialLocation.lng } : undefined
           });
@@ -198,8 +59,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
             onConfirm(result.address, result.latitude, result.longitude);
           }
         } catch (e: any) {
-          if (e.message !== "pickLocation canceled.") {
-            console.error('Error picking location', e);
+          if (e.message !== "pickLocation canceled." && e.message !== "Action canceled by user.") {
             showToast('No se pudo abrir el selector de mapa.', 'error');
           }
         } finally {
@@ -210,49 +70,51 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
     }
   }, [isOpen, isNative, initialLocation, onConfirm, onClose, showToast]);
 
+  // --- Web Logic ---
+  const handleMapMove = useCallback((evt: any) => {
+    setViewState(evt.viewState);
+    if (idleTimeout.current) clearTimeout(idleTimeout.current);
 
-  useEffect(() => {
-    if (isOpen && !isNative && initialLocation) {
-      setSelectedPosition(initialLocation);
-      const fetchAddress = async () => {
-        setIsGeocoding(true);
-        try {
-          const address = await reverseGeocode(initialLocation.lat, initialLocation.lng);
-          setSelectedAddress(address);
-        } catch (error) {
-          console.error("Error reverse geocoding initial location:", error);
-          setSelectedAddress("Ubicación seleccionada");
-        } finally {
-          setIsGeocoding(false);
-        }
-      };
-      fetchAddress();
-    } else if (isOpen && !isNative && !initialLocation) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const currentLoc = { lat: latitude, lng: longitude };
-            setSelectedPosition(currentLoc);
-            mapRef.current?.panTo(currentLoc);
-            mapRef.current?.setZoom(16);
-          },
-          (error) => {
-            console.error("Error getting current location:", error);
-            showToast("No se pudo obtener tu ubicación actual.", "error");
-            setSelectedPosition(defaultCenter);
-            mapRef.current?.panTo(defaultCenter);
-            mapRef.current?.setZoom(13);
-          }
-        );
-      } else {
-        setSelectedPosition(defaultCenter);
-        mapRef.current?.panTo(defaultCenter);
-        mapRef.current?.setZoom(13);
+    idleTimeout.current = setTimeout(async () => {
+      setIsGeocoding(true);
+      try {
+        const { latitude, longitude } = evt.viewState;
+        const address = await reverseGeocode(latitude, longitude);
+        setSelectedAddress(address || 'Ubicación no encontrada');
+      } catch (error) {
+        setSelectedAddress('Error al obtener dirección');
+      } finally {
+        setIsGeocoding(false);
       }
-    }
-  }, [isOpen, isNative, initialLocation, showToast]);
+    }, 500);
+  }, []);
 
+  const handleSearch = useCallback(async () => {
+    if (!searchQuery) return;
+    setIsSearching(true);
+    try {
+      const coords = await geocodeAddress(searchQuery);
+      if (coords) {
+        mapRef.current?.flyTo({ center: [coords.lng, coords.lat], zoom: 17 });
+      } else {
+        showToast("No se encontró la dirección. Intenta ser más específico.", "error");
+      }
+    } catch (error) {
+      showToast("Error al buscar la dirección.", "error");
+    } finally {
+      setIsSearching(false);
+    }
+  }, [searchQuery, showToast]);
+
+  const handleConfirmClick = () => {
+    if (viewState.latitude && viewState.longitude && selectedAddress) {
+      onConfirm(selectedAddress, viewState.latitude, viewState.longitude);
+      onClose();
+    } else {
+      showToast("Por favor, selecciona una ubicación en el mapa.", "error");
+    }
+  };
+  
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const setStatusBarStyle = async () => {
@@ -262,8 +124,6 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
         }
       };
       setStatusBarStyle();
-
-      // Return a cleanup function to restore the style when the modal closes
       return () => {
         StatusBar.setStyle({ style: Style.Light });
         StatusBar.setBackgroundColor({ color: '#000000' });
@@ -271,105 +131,33 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
     }
   }, [isOpen]);
 
-  const handleMapLoad = useCallback((map: google.maps.Map) => {
-    mapRef.current = map;
-    if (selectedPosition) {
-      map.panTo(selectedPosition);
-      map.setZoom(16);
-    }
-  }, [selectedPosition]);
-
-  const handleMapIdle = useCallback(() => {
-    if (idleTimeout.current) {
-      clearTimeout(idleTimeout.current);
-    }
-
-    idleTimeout.current = setTimeout(async () => {
-      if (mapRef.current) {
-        const center = mapRef.current.getCenter();
-        if (center) {
-          const lat = center.lat();
-          const lng = center.lng();
-
-          if (selectedPosition && haversineDistance(lat, lng, selectedPosition.lat, selectedPosition.lng) < 0.01) {
-            return;
-          }
-          
-          setIsGeocoding(true);
-          setSelectedPosition({ lat, lng });
-
-          try {
-            const address = await reverseGeocode(lat, lng);
-            setSelectedAddress(address);
-          } catch (error) {
-            console.error("Error reverse geocoding on idle:", error);
-            setSelectedAddress("No se pudo obtener la dirección");
-          } finally {
-            setIsGeocoding(false);
-          }
-        }
-      }
-    }, 500); // Debounce time
-  }, [selectedPosition]);
-
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery) return;
-    setIsSearching(true);
-    try {
-      const coords = await geocodeAddress(searchQuery);
-      if (coords) {
-        mapRef.current?.panTo(coords);
-        mapRef.current?.setZoom(17);
-      } else {
-        showToast("No se encontró la dirección. Intenta ser más específico.", "error");
-      }
-    } catch (error) {
-      console.error("Error searching address:", error);
-      showToast("Error al buscar la dirección.", "error");
-    } finally {
-      setIsSearching(false);
-    }
-  }, [searchQuery, showToast]);
-
-  const handleConfirmClick = () => {
-    if (selectedPosition && selectedAddress) {
-      onConfirm(selectedAddress, selectedPosition.lat, selectedPosition.lng);
-      onClose();
-    } else {
-      showToast("Por favor, selecciona una ubicación en el mapa.", "error");
-    }
-  };
-
   if (isNative) {
-    return (
+    return isOpen ? (
       <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
         <div className="text-center">
           <Spinner className="animate-spin w-8 h-8 text-orange-500 mx-auto" />
           <p className="mt-2 text-gray-600">Abriendo mapa...</p>
         </div>
       </div>
-    );
+    ) : null;
   }
 
   return (
     <motion.div 
       className="fixed inset-0 bg-white z-50"
       initial={{ y: '100%' }}
-      animate={{ y: 0 }}
-      exit={{ y: '100%' }}
+      animate={{ y: isOpen ? 0 : '100%' }}
       transition={{ type: 'spring', stiffness: 400, damping: 40 }}
     >
       <div className="w-full h-full flex flex-col">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
             <Icons.ChevronLeftIcon className="w-6 h-6 text-gray-700" />
           </button>
           <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-          <div className="w-8"></div> {/* Spacer to balance the header */}
+          <div className="w-8"></div>
         </div>
 
-        {/* Search Section */}
         <div className="p-4 flex-shrink-0 bg-white z-10 shadow-sm">
           <div className="relative flex items-center">
             <input
@@ -385,34 +173,21 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
           </div>
         </div>
 
-        {/* Map and Confirmation */}
         <div className="flex-grow relative">
-          {!isMapsLoaded ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-              <div className="text-center">
-                <Spinner className="animate-spin w-8 h-8 text-orange-500 mx-auto" />
-                <p className="mt-2 text-gray-600">Cargando mapa...</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={selectedPosition || defaultCenter}
-                zoom={16}
-                options={mapOptions}
-                onLoad={handleMapLoad}
-                onIdle={handleMapIdle}
-              >
-                {/* No marker, the center of the map is the selection point */}
-              </GoogleMap>
+            <Map
+                ref={mapRef}
+                {...viewState}
+                onMove={handleMapMove}
+                style={{width: '100%', height: '100%'}}
+                mapStyle="mapbox://styles/mapbox/streets-v11"
+                mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+            >
+            </Map>
               
-              {/* Center crosshair */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                   <Icons.MapPinIcon className="w-10 h-10 text-orange-500 drop-shadow-lg" />
               </div>
 
-              {/* Bottom Confirmation Section */}
               <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 border-t border-gray-200 shadow-top">
                 <div className="max-w-4xl mx-auto">
                   <div className="mb-3 min-h-[40px] flex flex-col justify-center">
@@ -431,15 +206,13 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
                   <button
                     onClick={handleConfirmClick}
                     className="w-full py-3 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    disabled={!selectedPosition || !selectedAddress || isGeocoding}
+                    disabled={!viewState.latitude || !selectedAddress || isGeocoding}
                   >
                     <Icons.CheckCircleIcon className="w-6 h-6" />
                     Confirmar Ubicación
                   </button>
                 </div>
               </div>
-            </>
-          )}
         </div>
       </div>
     </motion.div>

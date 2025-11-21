@@ -8,13 +8,13 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-import { useJsApiLoader } from '@react-google-maps/api';
+// import { useJsApiLoader } from '@react-google-maps/api'; // ELIMINADO PARA CORREGIR ERROR
 
 import { supabase } from '../services/supabase';
 
 import { confirmarPedido, getTariffs, getProfile } from '../services/api';
 
-import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Profile, PaymentMethodType } from '../types';
+import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Profile, PaymentMethodType, Ingredient } from '../types';
 
 import { Toast, ToastType } from '../components/Toast';
 
@@ -24,7 +24,7 @@ import { User } from '@supabase/supabase-js';
 
 
 
-const libraries: ('places' | 'maps')[] = ['places', 'maps'];
+// const libraries: ('places' | 'maps')[] = ['places', 'maps']; // ELIMINADO PARA CORREGIR ERROR
 
 
 
@@ -502,31 +502,9 @@ interface AppContextType {
 
 
 
-                                    const { isLoaded: isMapsLoaded, loadError } = useJsApiLoader({
-
-
-
-    
-
-
-
-                                      googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
-
-
-
-    
-
-
-
-                                      libraries,
-
-
-
-    
-
-
-
-                                    });
+    // FIX: Se reemplaza el hook de google maps por una constante para no romper la lógica existente.
+    const isMapsLoaded = true;
+    const loadError = undefined;
 
 
 

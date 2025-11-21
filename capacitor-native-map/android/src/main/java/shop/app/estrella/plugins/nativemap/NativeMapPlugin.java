@@ -1,10 +1,6 @@
 package shop.app.estrella.plugins.nativemap;
 
-import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
 import android.util.Log;
 
 import androidx.activity.result.ActivityResult;
@@ -27,22 +23,25 @@ import org.json.JSONObject;
 @CapacitorPlugin(name = "NativeMap")
 public class NativeMapPlugin extends Plugin {
 
-    private String apiKey;
+    private String mapboxAccessToken;
 
     @Override
     public void load() {
         super.load();
         try {
-            ApplicationInfo app = getContext().getApplicationContext().getPackageManager().getApplicationInfo(getContext().getPackageName(), PackageManager.GET_META_DATA);
-            Bundle bundle = app.metaData;
-            apiKey = bundle.getString("com.google.android.geo.API_KEY");
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e("NativeMapPlugin", "Failed to load meta-data, NameNotFound: " + e.getMessage());
-        } catch (NullPointerException e) {
-            Log.e("NativeMapPlugin", "Failed to load meta-data, NullPointer: " + e.getMessage());
+            // Intentar leer el token de strings.xml
+            int resourceId = getContext().getResources().getIdentifier("mapbox_access_token", "string", getContext().getPackageName());
+            if (resourceId != 0) {
+                mapboxAccessToken = getContext().getString(resourceId);
+            } else {
+                // Fallback hardcoded si no se encuentra el recurso
+                mapboxAccessToken = "pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pODc2ZGcwMDh2bTJscHpucWc1MDIybSJ9.rTZ1DZKFsbw-IH-t-wDlCA";
+            }
+        } catch (Exception e) {
+            Log.e("NativeMapPlugin", "Error loading Mapbox token: " + e.getMessage());
+            mapboxAccessToken = "pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pODc2ZGcwMDh2bTJscHpucWc1MDIybSJ9.rTZ1DZKFsbw-IH-t-wDlCA";
         }
     }
-
 
     @PluginMethod
     public void pickLocation(PluginCall call) {
@@ -67,7 +66,7 @@ public class NativeMapPlugin extends Plugin {
         if (call == null) {
             return;
         }
-        if (result.getResultCode() == Activity.RESULT_OK) {
+        if (result.getResultCode() == android.app.Activity.RESULT_OK) {
             Intent data = result.getData();
             if (data != null) {
                 double latitude = data.getDoubleExtra("latitude", 0);
@@ -84,7 +83,7 @@ public class NativeMapPlugin extends Plugin {
                 call.reject("Activity returned OK but no data was provided.");
             }
         } else {
-            call.reject("Action canceled by user.");
+            call.reject("pickLocation canceled.");
         }
     }
 
@@ -104,10 +103,12 @@ public class NativeMapPlugin extends Plugin {
             double destLat = getLatitude(destination);
             double destLng = getLongitude(destination);
 
-            String url = "https://maps.googleapis.com/maps/api/directions/json?origin="
-                    + originLat + "," + originLng
-                    + "&destination=" + destLat + "," + destLng
-                    + "&key=" + apiKey;
+            // Mapbox Directions API
+            // Format: https://api.mapbox.com/directions/v5/mapbox/driving/{coordinates}
+            // coordinates: {longitude},{latitude};{longitude},{latitude}
+            String coordinates = originLng + "," + originLat + ";" + destLng + "," + destLat;
+            String url = "https://api.mapbox.com/directions/v5/mapbox/driving/" + coordinates
+                    + "?geometries=polyline&overview=full&access_token=" + mapboxAccessToken;
 
             RequestQueue requestQueue = Volley.newRequestQueue(getContext());
 
@@ -117,31 +118,26 @@ public class NativeMapPlugin extends Plugin {
                             JSONArray routes = response.getJSONArray("routes");
                             if (routes.length() > 0) {
                                 JSONObject route = routes.getJSONObject(0);
-                                JSONArray legs = route.getJSONArray("legs");
-                                if (legs.length() > 0) {
-                                    JSONObject leg = legs.getJSONObject(0);
-                                    JSONObject distanceObj = leg.getJSONObject("distance");
-                                    int distanceInMeters = distanceObj.getInt("value");
+                                
+                                // Mapbox devuelve la distancia en metros
+                                double distanceInMeters = route.getDouble("distance");
+                                
+                                // Geometría de la ruta (polyline string)
+                                String polyline = route.getString("geometry");
 
-                                    JSONObject overviewPolyline = route.getJSONObject("overview_polyline");
-                                    String polyline = overviewPolyline.getString("points");
-
-                                    JSObject result = new JSObject();
-                                    result.put("distance", distanceInMeters / 1000.0); // Convert to km
-                                    result.put("polyline", polyline);
-                                    call.resolve(result);
-                                } else {
-                                    call.reject("No legs found in route.");
-                                }
+                                JSObject result = new JSObject();
+                                result.put("distance", distanceInMeters / 1000.0); // Convertir a km
+                                result.put("polyline", polyline);
+                                call.resolve(result);
                             } else {
                                 call.reject("No routes found.");
                             }
                         } catch (JSONException e) {
-                            call.reject("Error parsing directions response.", e);
+                            call.reject("Error parsing Mapbox response.", e);
                         }
                     },
                     error -> {
-                        call.reject("Error fetching directions.", error);
+                        call.reject("Error fetching directions from Mapbox.", error);
                     }
             );
 
@@ -154,7 +150,8 @@ public class NativeMapPlugin extends Plugin {
 
     @PluginMethod
     public void showRouteOnMap(PluginCall call) {
-        // Dummy implementation to prevent crashes
+        // Dummy implementation for now - Mapbox implementation pending if needed
+        // Normally this would open another native activity to show navigation
         call.resolve();
     }
 
