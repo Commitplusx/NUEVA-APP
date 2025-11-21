@@ -6,7 +6,7 @@
  * para acceder a este estado y a las funciones para modificarlo.
  */
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 
 

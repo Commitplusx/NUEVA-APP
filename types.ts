@@ -37,7 +37,7 @@ export interface Restaurant {
   postal_code?: string;
   lat?: number;
   lng?: number;
-  categories?: Category[]; 
+  categories?: Category[];
   menu?: MenuItem[];
 }
 
@@ -73,20 +73,20 @@ export interface Tariff {
 }
 
 export interface ServiceRequest {
-    id?: number;
-    origin: string;
-    destination: string;
-    description: string;
-    price?: number;
-    distance?: number;
-    user_id?: string;
-    scheduled_at?: string | null;
-    status?: string;
-    phone?: string;
-    origin_lat?: number;
-    origin_lng?: number;
-    destination_lat?: number;
-    destination_lng?: number;
+  id?: number;
+  origin: string;
+  destination: string;
+  description: string;
+  price?: number;
+  distance?: number;
+  user_id?: string;
+  scheduled_at?: string | null;
+  status?: string;
+  phone?: string;
+  origin_lat?: number;
+  origin_lng?: number;
+  destination_lat?: number;
+  destination_lng?: number;
 }
 
 export interface Profile {
@@ -106,6 +106,7 @@ export interface Profile {
   building_name?: string; // Nombre del edificio
   address_line_2?: string; // Depto./Unidad/Piso
   access_code?: string; // Código de acceso
+  updated_at?: string;
 }
 
 export interface OrderUserDetails {
@@ -114,4 +115,26 @@ export interface OrderUserDetails {
   postalCode: string;
   neighborhood: string;
   phone: string;
+}
+
+export interface Ingredient {
+  name: string;
+  icon: string;
+}
+
+export interface Order {
+  id: number;
+  user_id: string;
+  customer_name: string;
+  customer_phone: string;
+  delivery_address: string;
+  total_amount: number;
+  delivery_fee: number;
+  restaurant_id: number | null;
+  status: string;
+  origin_lat?: number | null;
+  origin_lng?: number | null;
+  destination_lat?: number | null;
+  destination_lng?: number | null;
+  created_at?: string;
 }

@@ -1,4 +1,5 @@
-import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category } from '../types';
+/// <reference types="vite/client" />
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category, MenuItem } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 import { Capacitor } from '@capacitor/core';
@@ -324,8 +325,8 @@ export const getMenuItems = async (restaurantId?: number): Promise<MenuItem[]> =
 
 export const addMenuItem = async (item: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
   const itemToInsert = { ...item };
-  if (itemToInsert.image_url) {
-    itemToInsert.image_url = getPublicImageUrl(itemToInsert.image_url);
+  if (itemToInsert.imageUrl) {
+    itemToInsert.imageUrl = getPublicImageUrl(itemToInsert.imageUrl);
   }
   const { data, error } = await supabase.from('menu_items').insert([itemToInsert]).select();
   if (error) throw error;
@@ -334,8 +335,8 @@ export const addMenuItem = async (item: Omit<MenuItem, 'id'>): Promise<MenuItem>
 
 export const updateMenuItem = async (id: number, updates: Partial<MenuItem>): Promise<MenuItem> => {
   const updatesToApply = { ...updates };
-  if (updatesToApply.image_url) {
-    updatesToApply.image_url = getPublicImageUrl(updatesToApply.image_url);
+  if (updatesToApply.imageUrl) {
+    updatesToApply.imageUrl = getPublicImageUrl(updatesToApply.imageUrl);
   }
   const { data, error } = await supabase.from('menu_items').update(updatesToApply).eq('id', id).select();
   if (error) throw error;
