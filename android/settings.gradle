@@ -1,7 +1,7 @@
 include ':app'
 include ':capacitor-cordova-android-plugins'
-project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
+project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/') // REVERTED TO ORIGINAL PATH
 include ':capacitor-native-map'
-project(':capacitor-native-map').projectDir = new File('../capacitor-native-map')
+project(':capacitor-native-map').projectDir = new File('../capacitor-native-map/android') // CORRECTED PATH
 
 apply from: 'capacitor.settings.gradle'

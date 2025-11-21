@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 
+// Import the plugin class
+import shop.app.estrella.plugins.nativemap.NativeMapPlugin;
 
 public class MainActivity extends BridgeActivity {
 
@@ -22,6 +24,9 @@ public class MainActivity extends BridgeActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    // Register the custom plugin
+    registerPlugin(NativeMapPlugin.class);
 
     // --- MAPBOX INITIALIZATION ---
     // For Mapbox SDK v10+, initialization is handled automatically
