@@ -8,7 +8,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// import { useJsApiLoader } from '@react-google-maps/api'; // ELIMINADO PARA CORREGIR ERROR
+
 
 import { supabase } from '../services/supabase';
 
@@ -24,7 +24,7 @@ import { User } from '@supabase/supabase-js';
 
 
 
-// const libraries: ('places' | 'maps')[] = ['places', 'maps']; // ELIMINADO PARA CORREGIR ERROR
+
 
 
 
@@ -82,2581 +82,2581 @@ interface AppContextType {
 
   destinationCoords: { lat: number; lng: number } | null;
 
-  
 
-      // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
 
-  
+  // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
+
+
 
   setDestinationCoords: (coords: { lat: number; lng: number } | null) => void;
 
-      toggleSidebar: () => void;
+  toggleSidebar: () => void;
 
-  
 
-      showToast: (message: string, type: ToastType) => void;
 
-  
+  showToast: (message: string, type: ToastType) => void;
 
-      requestConfirmation: (title: string, message: string, onConfirm: () => void) => void;
 
-  
 
-      handleLogin: (username: string, role: UserRole) => void;
+  requestConfirmation: (title: string, message: string, onConfirm: () => void) => void;
 
-  
 
-      handleLogout: () => void;
 
-  
+  handleLogin: (username: string, role: UserRole) => void;
 
-      handleSelectRestaurant: (restaurant: Restaurant) => void;
 
-  
 
-      handleBackToRestaurants: () => void;
+  handleLogout: () => void;
 
-  
 
-      handleSelectMenuItem: (item: MenuItem) => void;
 
-  
+  handleSelectRestaurant: (restaurant: Restaurant) => void;
 
-      handleBackToMenu: () => void;
 
-  
 
-      handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => void;
+  handleBackToRestaurants: () => void;
 
-  
 
-      handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
 
-  
+  handleSelectMenuItem: (item: MenuItem) => void;
 
-      handleRemoveFromCart: (cartItemId: string) => void;
 
-  
 
-      handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
+  handleBackToMenu: () => void;
 
-  
 
-      setIsCustomizationModalOpen: (isOpen: boolean) => void;
 
-  
+  handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => void;
 
-      setIsProductModalOpen: (isOpen: boolean) => void;
 
-      setIsAddressModalOpen: (isOpen: boolean) => void;
 
-      
+  handleUpdateCart: (cartItemId: string, newQuantity: number) => void;
 
-      setBottomNavVisible: (isVisible: boolean) => void;
 
-      setBottomNavCustomContent: (content: ReactNode | null) => void;
 
-      handleSetPaymentMethod: (method: PaymentMethodType) => void;
+  handleRemoveFromCart: (cartItemId: string) => void;
+
+
+
+  handleConfirmOrder: (userDetails: OrderUserDetails, deliveryFee: number) => Promise<void>;
+
+
+
+  setIsCustomizationModalOpen: (isOpen: boolean) => void;
+
+
+
+  setIsProductModalOpen: (isOpen: boolean) => void;
+
+  setIsAddressModalOpen: (isOpen: boolean) => void;
+
+
+
+  setBottomNavVisible: (isVisible: boolean) => void;
+
+  setBottomNavCustomContent: (content: ReactNode | null) => void;
+
+  handleSetPaymentMethod: (method: PaymentMethodType) => void;
+
+}
+
+
+
+
+
+
+
+/**
+
+
+
+ * @constant AppContext
+
+
+
+ * @description Crea el objeto Contexto de React. Su valor por defecto es `undefined`,
+
+
+
+ * lo que fuerza a los consumidores a estar dentro de un `AppProvider`.
+
+
+
+ */
+
+
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
+
+
+
+
+
+
+// Type for the confirmation modal state
+
+
+
+interface ConfirmationState {
+
+
+
+  isOpen: boolean;
+
+
+
+  title: string;
+
+
+
+  message: string;
+
+
+
+  onConfirm: () => void;
+
+
+
+}
+
+
+
+
+
+
+
+/**
+
+
+
+ * @component AppProvider
+
+
+
+ * @description Componente proveedor del contexto de la aplicación. Envuelve a los componentes hijos
+
+
+
+ * y les proporciona acceso al estado global y a las funciones de manipulación de este estado.
+
+
+
+ * Gestiona la autenticación con Supabase, el carrito de compras y las notificaciones.
+
+
+
+ */
+
+
+
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+
+
+
+  // Estados locales para gestionar la información global de la aplicación
+
+
+
+  const [user, setUser] = useState<User | null>(null);
+
+
+
+  const [userRole, setUserRole] = useState<UserRole>('guest');
+
+
+
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+
+
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(() => {
+    try {
+      const savedRestaurant = window.localStorage.getItem('app-selected-restaurant');
+      return savedRestaurant ? JSON.parse(savedRestaurant) : null;
+    } catch (error) {
+      console.error("Error reading selected restaurant from localStorage", error);
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (selectedRestaurant) {
+        window.localStorage.setItem('app-selected-restaurant', JSON.stringify(selectedRestaurant));
+      } else {
+        window.localStorage.removeItem('app-selected-restaurant');
+      }
+    } catch (error) {
+      console.error("Error saving selected restaurant to localStorage", error);
+    }
+  }, [selectedRestaurant]);
+
+
+
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+
+
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = window.localStorage.getItem('app-cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Error reading cart from localStorage", error);
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('app-cart', JSON.stringify(cart));
+    } catch (error) {
+      console.error("Error saving cart to localStorage", error);
+    }
+  }, [cart]);
+
+
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+
+
+  const [toastType, setToastType] = useState<ToastType>('success');
+
+
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+
+
+  const [isCartAnimating, setIsCartAnimating] = useState(false);
+
+
+
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+
+
+
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+
+
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>(() => {
+
+
+
+    try {
+
+
+
+      const savedMethod = window.localStorage.getItem('app-payment-method');
+
+
+
+      return savedMethod ? JSON.parse(savedMethod) : 'cash';
+
+
+
+    } catch (error) {
+
+
+
+      console.error("Error reading payment method from localStorage", error);
+
+
+
+      return 'cash';
+
+
 
     }
 
 
 
-  
+  });
 
 
 
-  /**
 
 
 
-   * @constant AppContext
 
+  useEffect(() => {
 
 
-   * @description Crea el objeto Contexto de React. Su valor por defecto es `undefined`,
 
+    try {
 
 
-   * lo que fuerza a los consumidores a estar dentro de un `AppProvider`.
 
+      window.localStorage.setItem('app-payment-method', JSON.stringify(selectedPaymentMethod));
 
 
-   */
 
+    } catch (error) {
 
 
-  const AppContext = createContext<AppContextType | undefined>(undefined);
 
+      console.error("Error saving payment method to localStorage", error);
 
 
-  
 
+    }
 
 
-  // Type for the confirmation modal state
 
+  }, [selectedPaymentMethod]);
 
 
-  interface ConfirmationState {
 
 
 
-    isOpen: boolean;
 
 
 
-    title: string;
 
 
 
-    message: string;
 
 
 
-    onConfirm: () => void;
 
 
 
-  }
 
 
 
-  
 
 
 
-  /**
+  const [baseFee, setBaseFee] = useState(45);
 
 
 
-   * @component AppProvider
 
 
 
-   * @description Componente proveedor del contexto de la aplicación. Envuelve a los componentes hijos
 
+  const [profile, setProfile] = useState<Profile | null>(null);
 
 
-   * y les proporciona acceso al estado global y a las funciones de manipulación de este estado.
 
 
 
-   * Gestiona la autenticación con Supabase, el carrito de compras y las notificaciones.
 
 
+  const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
 
-   */
 
 
 
-  export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
 
 
-    // Estados locales para gestionar la información global de la aplicación
+  const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
 
 
-    const [user, setUser] = useState<User | null>(null);
 
 
 
-    const [userRole, setUserRole] = useState<UserRole>('guest');
 
+  const [bottomNavCustomContent, setBottomNavCustomContent] = useState<ReactNode | null>(null);
 
 
-    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
 
 
-    const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(() => {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // FIX: Se reemplaza el hook de google maps por una constante para no romper la lógica existente.
+  const isMapsLoaded = true;
+  const loadError = undefined;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const handleSetPaymentMethod = (method: PaymentMethodType) => {
+
+
+
+
+
+
+
+    setSelectedPaymentMethod(method);
+
+
+
+
+
+
+
+    showToast(`Método de pago cambiado a ${method}`, 'info');
+
+
+
+
+
+
+
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  useEffect(() => {
+
+
+
+
+
+
+
+    const fetchBaseFee = async () => {
+
+
+
+
+
+
+
       try {
-        const savedRestaurant = window.localStorage.getItem('app-selected-restaurant');
-        return savedRestaurant ? JSON.parse(savedRestaurant) : null;
-      } catch (error) {
-        console.error("Error reading selected restaurant from localStorage", error);
-        return null;
-      }
-    });
 
-    useEffect(() => {
-      try {
-        if (selectedRestaurant) {
-          window.localStorage.setItem('app-selected-restaurant', JSON.stringify(selectedRestaurant));
+
+
+
+
+
+
+        const tariffs = await getTariffs();
+
+
+
+
+
+
+
+        const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
+
+
+
+
+
+
+
+        if (baseTariff) {
+
+
+
+
+
+
+
+          setBaseFee(baseTariff.price);
+
+
+
+
+
+
+
         } else {
-          window.localStorage.removeItem('app-selected-restaurant');
+
+
+
+
+
+
+
+          console.warn('"Tarifa Base" not found in database, using default value.');
+
+
+
+
+
+
+
         }
+
+
+
+
+
+
+
       } catch (error) {
-        console.error("Error saving selected restaurant to localStorage", error);
+
+
+
+
+
+
+
+        console.error("Failed to fetch tariffs:", error);
+
+
+
+
+
+
+
       }
-    }, [selectedRestaurant]);
 
 
 
-    const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
 
 
-    const [cart, setCart] = useState<CartItem[]>(() => {
-      try {
-        const savedCart = window.localStorage.getItem('app-cart');
-        return savedCart ? JSON.parse(savedCart) : [];
-      } catch (error) {
-        console.error("Error reading cart from localStorage", error);
-        return [];
+
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    fetchBaseFee();
+
+
+
+
+
+
+
+  }, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  useEffect(() => {
+
+
+
+
+
+
+
+    const fetchUserProfile = async () => {
+
+
+
+
+
+
+
+      if (user) {
+
+
+
+
+
+
+
+        try {
+
+
+
+
+
+
+
+          const userProfile = await getProfile();
+
+
+
+
+
+
+
+          setProfile(userProfile);
+
+
+
+
+
+
+
+        } catch (error) {
+
+
+
+
+
+
+
+          console.error("Error fetching user profile in AppContext:", error);
+
+
+
+
+
+
+
+          setProfile(null);
+
+
+
+
+
+
+
+        }
+
+
+
+
+
+
+
+      } else {
+
+
+
+
+
+
+
+        setProfile(null);
+
+
+
+
+
+
+
       }
+
+
+
+
+
+
+
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    fetchUserProfile();
+
+
+
+
+
+
+
+  }, [user]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  useEffect(() => {
+
+
+
+
+
+
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+
+
+
+
+
+
+
+      if (session?.user) {
+
+
+
+
+
+
+
+        setUser(session.user || null);
+
+
+
+
+
+
+
+        setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+
+
+
+
+
+
+
+      } else {
+
+
+
+
+
+
+
+        setUser(null);
+
+
+
+
+
+
+
+        setUserRole('guest');
+
+
+
+
+
+
+
+      }
+
+
+
+
+
+
+
+      setIsLoadingAuth(false);
+
+
+
+
+
+
+
     });
 
-    useEffect(() => {
-      try {
-        window.localStorage.setItem('app-cart', JSON.stringify(cart));
-      } catch (error) {
-        console.error("Error saving cart to localStorage", error);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+
+
+
+
+
+
+
+      if (session?.user) {
+
+
+
+
+
+
+
+        setUser(session.user || null);
+
+
+
+
+
+
+
+        setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+
+
+
+
+
+
+
       }
-    }, [cart]);
 
 
 
-    const [toastMessage, setToastMessage] = useState<string | null>(null);
 
 
 
-    const [toastType, setToastType] = useState<ToastType>('success');
 
+      setIsLoadingAuth(false);
 
 
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
 
-    const [isCartAnimating, setIsCartAnimating] = useState(false);
 
 
+    });
 
-    const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
 
 
 
-        const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
 
 
-        const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
 
 
-        
 
 
 
-        
 
 
+    return () => {
 
-        
 
 
 
-                const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>(() => {
 
 
 
-                  try {
+      authListener.subscription.unsubscribe();
 
 
 
-                    const savedMethod = window.localStorage.getItem('app-payment-method');
 
 
 
-                    return savedMethod ? JSON.parse(savedMethod) : 'cash';
 
+    };
 
 
-                  } catch (error) {
 
 
 
-                    console.error("Error reading payment method from localStorage", error);
 
 
+  }, []);
 
-                    return 'cash';
 
 
 
-                  }
 
 
 
-                });
 
 
 
-        
 
 
 
-                useEffect(() => {
 
 
+  const toggleSidebar = () => {
 
-                  try {
 
 
 
-                    window.localStorage.setItem('app-payment-method', JSON.stringify(selectedPaymentMethod));
 
 
 
-                  } catch (error) {
+    setIsSidebarOpen(!isSidebarOpen);
 
 
 
-                    console.error("Error saving payment method to localStorage", error);
 
 
 
-                  }
 
+  };
 
 
-                }, [selectedPaymentMethod]);
 
 
 
-        
 
 
 
-        
 
 
 
-        
 
 
 
-            
 
+  const showToast = (message: string, type: ToastType) => {
 
 
-        
 
 
 
-                const [baseFee, setBaseFee] = useState(45);
 
 
+    setToastMessage(message);
 
-    
 
 
 
-            const [profile, setProfile] = useState<Profile | null>(null);
 
 
 
-    
+    setToastType(type);
 
 
 
-                    const [confirmation, setConfirmation] = useState<ConfirmationState | null>(null);
 
 
 
-    
 
+    setTimeout(() => {
 
 
-                    const [isBottomNavVisible, setIsBottomNavVisible] = useState(true);
 
 
 
-    
 
 
+      setToastMessage(null);
 
-                    const [bottomNavCustomContent, setBottomNavCustomContent] = useState<ReactNode | null>(null);
 
 
 
-    
 
 
 
-                        
+    }, 3000);
 
 
 
-    
 
 
 
-                                  
 
+  };
 
 
-    
 
 
 
-    // FIX: Se reemplaza el hook de google maps por una constante para no romper la lógica existente.
-    const isMapsLoaded = true;
-    const loadError = undefined;
 
 
 
-    
 
 
 
-                    
 
 
 
-    
 
+  const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
 
 
-                                    const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
 
 
 
-    
 
 
+    setConfirmation({
 
-                        
 
 
 
-    
 
 
 
-                                    const handleSetPaymentMethod = (method: PaymentMethodType) => {
+      isOpen: true,
 
 
 
-    
 
 
 
-                                        setSelectedPaymentMethod(method);
 
+      title,
 
 
-    
 
 
 
-                                        showToast(`Método de pago cambiado a ${method}`, 'info');
 
 
+      message,
 
-    
 
 
 
-                                    };
 
 
 
-    
+      onConfirm,
 
 
 
-                                  
 
 
 
-    
 
+    });
 
 
-                                  
 
 
 
-    
 
 
+  };
 
-                                    useEffect(() => {
 
 
 
-    
 
 
 
-                                      const fetchBaseFee = async () => {
 
 
 
-    
 
 
 
-                                        try {
 
 
+  const handleLogin = (username: string, role: UserRole) => {
 
-    
 
 
 
-                                          const tariffs = await getTariffs();
 
 
 
-    
+    setUserRole(role);
 
 
 
-                                      const baseTariff = tariffs.find(t => t.name === 'Tarifa Base');
 
 
 
-    
 
+    setIsSidebarOpen(false);
 
 
-                                      if (baseTariff) {
 
 
 
-    
 
 
+    showToast(`¡Bienvenido, ${username}!`, 'success');
 
-                                        setBaseFee(baseTariff.price);
 
 
 
-    
 
 
 
-                                      } else {
+  };
 
 
 
-    
 
 
 
-                                          console.warn('"Tarifa Base" not found in database, using default value.');
 
 
 
-    
 
 
 
-                                      }
 
 
 
-    
+  const handleLogout = async () => {
 
 
 
-                                    } catch (error) {
 
 
 
-    
 
+    await supabase.auth.signOut();
 
 
-                                      console.error("Failed to fetch tariffs:", error);
 
 
 
-    
 
 
+    setUser(null);
 
-                                    }
 
 
 
-    
 
 
 
-                                  };
+    setUserRole('guest');
 
 
 
-    
 
 
 
-                              
 
+    setIsSidebarOpen(false);
 
 
-    
 
 
 
-                                  fetchBaseFee();
 
 
+    showToast('Has cerrado sesión.', 'info');
 
-    
 
 
 
-                                }, []);
 
 
 
-    
+  };
 
 
 
-                              
 
 
 
-    
 
 
 
-                                useEffect(() => {
 
 
 
-    
 
 
 
-                                  const fetchUserProfile = async () => {
+  const handleSelectRestaurant = (restaurant: Restaurant) => {
 
 
 
-    
 
 
 
-                                    if (user) {
 
+    setSelectedRestaurant(restaurant);
 
 
-    
 
 
 
-                                      try {
 
 
+  };
 
-    
 
 
 
-                                        const userProfile = await getProfile();
 
 
 
-    
 
 
 
-                                        setProfile(userProfile);
 
 
 
-    
 
 
+  const handleBackToRestaurants = () => {
 
-                                      } catch (error) {
 
 
 
-    
 
 
 
-                                        console.error("Error fetching user profile in AppContext:", error);
+    setSelectedRestaurant(null);
 
 
 
-    
 
 
 
-                                        setProfile(null);
 
+  };
 
 
-    
 
 
 
-                                      }
 
 
 
-    
 
 
 
-                                    } else {
 
 
 
-    
 
+  const handleSelectMenuItem = (item: MenuItem) => {
 
 
-                                      setProfile(null);
 
 
 
-    
 
 
+    setSelectedMenuItem(item);
 
-                                    }
 
 
 
-    
 
 
 
-                                  };
+  };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                  fetchUserProfile();
 
 
 
-    
+  const handleBackToMenu = () => {
 
 
 
-                                }, [user]);
 
 
 
-    
 
+    setSelectedMenuItem(null);
 
 
-                              
 
 
 
-    
 
 
+  };
 
-                                useEffect(() => {
 
 
 
-    
 
 
 
-                                  const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
 
 
 
-    
 
 
 
-                                    if (session?.user) {
 
 
+  const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
 
-    
 
 
 
-                                      setUser(session.user || null);
 
 
 
-    
 
 
 
-                                      setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
 
 
 
-    
 
 
+    const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
 
-                                    } else {
 
 
 
-    
 
 
 
-                                      setUser(null);
 
 
 
-    
 
 
 
-                                      setUserRole('guest');
 
 
 
-    
 
 
 
-                                    }
 
 
 
-    
 
 
 
-                                    setIsLoadingAuth(false);
 
 
 
-    
 
 
 
-                                  });
+    const addItemToCart = (isNewCart = false) => {
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                  supabase.auth.getSession().then(({ data: { session } }) => {
 
 
 
-    
+      // ID se genera a partir del array de strings, que es correcto
 
 
 
-                                    if (session?.user) {
 
 
 
-    
 
 
 
-                                      setUser(session.user || null);
 
 
 
-    
 
 
 
-                                      setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+      const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
 
 
 
-    
 
 
 
-                                    }
 
 
 
-    
 
 
 
-                                    setIsLoadingAuth(false);
 
 
 
-    
 
 
 
-                                  });
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                  return () => {
 
+      // Convertimos el string[] de vuelta a Ingredient[] para que sea compatible con el estado del carrito
 
 
-    
 
 
 
-                                    authListener.subscription.unsubscribe();
 
 
 
-    
 
 
 
-                                  };
 
 
 
-    
 
+      const ingredientsForCart: Ingredient[] = customizedIngredients.map(name => ({ name, icon: '' }));
 
 
-                                }, []);
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const toggleSidebar = () => {
 
 
 
-    
 
 
 
-                                  setIsSidebarOpen(!isSidebarOpen);
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
+      if (isNewCart) {
 
-                              
 
 
 
-    
 
 
 
-                                const showToast = (message: string, type: ToastType) => {
 
 
 
-    
 
 
 
-                                  setToastMessage(message);
 
 
+        const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
 
-    
 
 
 
-                                  setToastType(type);
 
 
 
-    
 
 
 
-                                  setTimeout(() => {
 
 
 
-    
 
 
+        setCart([newCartItem]);
 
-                                    setToastMessage(null);
 
 
 
-    
 
 
 
-                                  }, 3000);
 
 
 
-    
 
 
 
-                                };
 
 
+      } else {
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const requestConfirmation = (title: string, message: string, onConfirm: () => void) => {
 
 
 
-    
 
 
+        setCart(prevCart => {
 
-                                  setConfirmation({
 
 
 
-    
 
 
 
-                                    isOpen: true,
 
 
 
-    
 
 
 
-                                    title,
 
 
+          const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
 
-    
 
 
 
-                                    message,
 
 
 
-    
 
 
 
-                                    onConfirm,
 
 
 
-    
 
 
+          if (existingItem) {
 
-                                  });
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
+            return prevCart.map(cartItem =>
 
-    
 
 
 
-                                const handleLogin = (username: string, role: UserRole) => {
 
 
 
-    
 
 
 
-                                  setUserRole(role);
 
 
 
-    
 
 
+              cartItem.id === cartItemId
 
-                                  setIsSidebarOpen(false);
 
 
 
-    
 
 
 
-                                  showToast(`¡Bienvenido, ${username}!`, 'success');
 
 
 
-    
 
 
 
-                                };
 
 
+                ? { ...cartItem, quantity: cartItem.quantity + quantity }
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleLogout = async () => {
 
 
 
-    
 
 
+                : cartItem
 
-                                  await supabase.auth.signOut();
 
 
 
-    
 
 
 
-                                  setUser(null);
 
 
 
-    
 
 
 
-                                  setUserRole('guest');
 
 
+            );
 
-    
 
 
 
-                                  setIsSidebarOpen(false);
 
 
 
-    
 
 
 
-                                  showToast('Has cerrado sesión.', 'info');
 
 
 
-    
 
 
+          }
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleSelectRestaurant = (restaurant: Restaurant) => {
 
 
+          return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
 
-    
 
 
 
-                                  setSelectedRestaurant(restaurant);
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
+        });
 
-                                
 
 
 
-    
 
 
 
-                                const handleBackToRestaurants = () => {
 
 
 
-    
 
 
 
-                                  setSelectedRestaurant(null);
 
 
+      }
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleSelectMenuItem = (item: MenuItem) => {
 
 
 
-    
 
 
 
-                                  setSelectedMenuItem(item);
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
+      setIsCartAnimating(true);
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleBackToMenu = () => {
 
 
 
-    
 
 
 
-                                  setSelectedMenuItem(null);
+      setTimeout(() => setIsCartAnimating(false), 500);
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
+      showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
 
 
 
-                                const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                              const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
+    };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                          
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                              const addItemToCart = (isNewCart = false) => {
 
 
 
-    
 
 
 
-                              
 
+    if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
 
 
-    
 
 
 
-                                                // ID se genera a partir del array de strings, que es correcto
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
+      requestConfirmation(
 
 
-                                                const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                
 
+        'Vaciar Carrito',
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                // Convertimos el string[] de vuelta a Ingredient[] para que sea compatible con el estado del carrito
 
 
 
-    
 
+        'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
 
 
-                              
 
 
 
-    
 
 
 
-                                                const ingredientsForCart: Ingredient[] = customizedIngredients.map(name => ({ name, icon: '' }));
 
 
 
-    
 
 
 
-                              
 
+        () => addItemToCart(true) // onConfirm
 
 
-    
 
 
 
-                                
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
+      );
 
 
-                                                if (isNewCart) {
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                  const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
 
+    } else {
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                  setCart([newCartItem]);
 
 
 
-    
 
+      addItemToCart(false);
 
 
-                              
 
 
 
-    
 
 
 
-                                                } else {
 
 
 
-    
 
 
 
-                              
 
+    }
 
 
-    
 
 
 
-                                                  setCart(prevCart => {
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
+  };
 
 
-                                                    const existingItem = prevCart.find(cartItem => cartItem.id === cartItemId);
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                    if (existingItem) {
 
+  const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
 
 
-    
 
 
 
-                              
 
 
+    if (newQuantity <= 0) {
 
-    
 
 
 
-                                                      return prevCart.map(cartItem =>
 
 
 
-    
+      handleRemoveFromCart(cartItemId);
 
 
 
-                              
 
 
 
-    
 
+    } else {
 
 
-                                                        cartItem.id === cartItemId
 
 
 
-    
 
 
+      setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
 
-                              
 
 
 
-    
 
 
 
-                                                          ? { ...cartItem, quantity: cartItem.quantity + quantity }
+    }
 
 
 
-    
 
 
 
-                              
 
+  };
 
 
-    
 
 
 
-                                                          : cartItem
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
+  const handleRemoveFromCart = (cartItemId: string) => {
 
 
-                                                      );
 
 
 
-    
 
 
+    setCart(cart => cart.filter(item => item.id !== cartItemId));
 
-                              
 
 
 
-    
 
 
 
-                                                    }
+  };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                    return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
 
 
 
-    
+  const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
 
 
 
-                              
 
 
 
-    
 
+    try {
 
 
-                                                  });
 
 
 
-    
 
 
+      await confirmarPedido(cart, userDetails, deliveryFee, destinationCoords);
 
-                              
 
 
 
-    
 
 
 
-                                                }
+      showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
 
 
 
-    
 
 
 
-                              
 
+      setCart([]);
 
 
-    
 
 
 
-                                                
 
 
+    } catch (error) {
 
-    
 
 
 
-                              
 
 
 
-    
+      console.error("Order confirmation failed:", error);
 
 
 
-                                                setIsCartAnimating(true);
 
 
 
-    
 
+      showToast("Hubo un problema al confirmar el pedido.", 'error');
 
 
-                              
 
 
 
-    
 
 
+    }
 
-                                                setTimeout(() => setIsCartAnimating(false), 500);
 
 
 
-    
 
 
 
-                              
+  };
 
 
 
-    
 
 
 
-                                                showToast(isNewCart ? "Carrito anterior eliminado. ¡Nuevo producto añadido!" : "¡Añadido al carrito!", 'success');
 
 
 
-    
 
 
 
-                              
 
 
 
-    
+  const handleModalConfirm = () => {
 
 
 
-                                              };
 
 
 
-    
 
+    if (confirmation?.onConfirm) {
 
 
-                              
 
 
 
-    
 
 
+      confirmation.onConfirm();
 
-                                          
 
 
 
-    
 
 
 
-                              
+    }
 
 
 
-    
 
 
 
-                                              if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
 
+    setConfirmation(null);
 
 
-    
 
 
 
-                              
 
 
+  };
 
-    
 
 
 
-                                                requestConfirmation(
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
+  const handleModalCancel = () => {
 
-                                                  'Vaciar Carrito',
 
 
 
-    
 
 
 
-                              
+    setConfirmation(null);
 
 
 
-    
 
 
 
-                                                  'Ya tienes productos de otro restaurante en tu carrito. ¿Quieres vaciarlo y agregar este nuevo producto?',
 
+  };
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                                  () => addItemToCart(true) // onConfirm
 
 
 
-    
 
+  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
 
-                              
 
 
 
-    
 
 
 
-                                                );
 
 
 
-    
 
 
 
-                              
 
+  const value = {
 
 
-    
 
 
 
-                                              } else {
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
+    user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
 
 
-                                                addItemToCart(false);
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                              }
 
+    isProductModalOpen,
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                            };
 
 
 
-    
 
+    isAddressModalOpen,
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleUpdateCart = (cartItemId: string, newQuantity: number) => {
 
 
 
-    
 
 
 
-                                  if (newQuantity <= 0) {
 
+    isBottomNavVisible,
 
 
-    
 
 
 
-                                     handleRemoveFromCart(cartItemId);
 
 
 
-    
 
 
 
-                                  } else {
 
 
 
-    
 
+    bottomNavCustomContent,
 
 
-                                    setCart(cart => cart.map(item => item.id === cartItemId ? { ...item, quantity: newQuantity } : item));
 
 
 
-    
 
 
 
-                                  }
 
 
 
-    
 
 
 
-                                };
 
+    selectedPaymentMethod,
 
 
-    
 
 
 
-                              
 
 
+    destinationCoords,
 
-    
 
 
 
-                                const handleRemoveFromCart = (cartItemId: string) => {
 
 
 
-    
 
 
 
-                                  setCart(cart => cart.filter(item => item.id !== cartItemId));
 
 
 
-    
 
 
+    toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
 
-    
 
 
 
-                                const handleConfirmOrder = async (userDetails: OrderUserDetails, deliveryFee: number) => {
 
 
+    setIsProductModalOpen,
 
-    
 
 
 
-                                  try {
 
 
 
-    
 
 
 
-                                    await confirmarPedido(cart, userDetails, deliveryFee, destinationCoords);
 
 
 
-    
 
 
+    setIsAddressModalOpen,
 
-                                    showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
 
 
 
-    
 
 
 
-                                    setCart([]);
 
 
 
-    
 
 
 
-                                  } catch (error) {
 
 
+    setBottomNavVisible: setIsBottomNavVisible,
 
-    
 
 
 
-                                    console.error("Order confirmation failed:", error);
 
 
 
-    
 
 
 
-                                    showToast("Hubo un problema al confirmar el pedido.", 'error');
 
 
 
-    
 
 
+    setBottomNavCustomContent,
 
-                                  }
 
 
 
-    
 
 
 
-                                };
 
 
 
-    
 
 
 
-                              
 
 
+    handleSetPaymentMethod,
 
-    
 
 
 
-                                const handleModalConfirm = () => {
 
 
 
-    
+    setDestinationCoords
 
 
 
-                                  if (confirmation?.onConfirm) {
 
 
 
-    
 
-
-
-                                    confirmation.onConfirm();
-
-
-
-    
-
-
-
-                                  }
-
-
-
-    
-
-
-
-                                  setConfirmation(null);
-
-
-
-    
-
-
-
-                                };
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                const handleModalCancel = () => {
-
-
-
-    
-
-
-
-                                  setConfirmation(null);
-
-
-
-    
-
-
-
-                                };
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                    const value = {
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      user, userRole, isLoadingAuth, selectedRestaurant, selectedMenuItem, cart, toastMessage, toastType, isSidebarOpen, cartItemCount, isCartAnimating, profile, isCustomizationModalOpen, baseFee, isMapsLoaded, loadError,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      isProductModalOpen,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      isAddressModalOpen,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      isBottomNavVisible,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      bottomNavCustomContent,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      selectedPaymentMethod,
-
-
-
-    
-
-
-
-                                                      destinationCoords,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      toggleSidebar, showToast, requestConfirmation, handleLogin, handleLogout, handleSelectRestaurant, handleBackToRestaurants, handleSelectMenuItem, handleBackToMenu, handleAddToCart, handleUpdateCart, handleRemoveFromCart, handleConfirmOrder, setIsCustomizationModalOpen,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      setIsProductModalOpen,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      setIsAddressModalOpen,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      setBottomNavVisible: setIsBottomNavVisible,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      setBottomNavCustomContent,
-
-
-
-    
-
-
-
-                              
-
-
-
-    
-
-
-
-                                                      handleSetPaymentMethod,
-
-
-
-    
-
-
-
-                                                      setDestinationCoords
-
-
-
-    
-
-
-
-                                                    };
+  };
 
 
 

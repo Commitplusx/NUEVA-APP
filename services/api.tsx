@@ -146,14 +146,14 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
 
   if (restaurantId) {
     const { data: restaurantData } = await supabase
-        .from('restaurants')
-        .select('lat, lng')
-        .eq('id', restaurantId)
-        .single();
-    
+      .from('restaurants')
+      .select('lat, lng')
+      .eq('id', restaurantId)
+      .single();
+
     if (restaurantData) {
-        originLat = restaurantData.lat;
-        originLng = restaurantData.lng;
+      originLat = restaurantData.lat;
+      originLng = restaurantData.lng;
     }
   }
 
@@ -167,7 +167,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
       total_amount: totalAmount,
       delivery_fee: deliveryFee,
       restaurant_id: restaurantId,
-      status: 'pending', 
+      status: 'pending',
       origin_lat: originLat,
       origin_lng: originLng,
       destination_lat: destinationCoords?.lat,
@@ -267,105 +267,105 @@ export const uploadImage = async (file: File): Promise<string> => {
 };
 
 export const getCategories = async (): Promise<Category[]> => {
-    const { data, error } = await supabase.from('categories').select('*');
-    if (error) throw error;
-    return data;
+  const { data, error } = await supabase.from('categories').select('*');
+  if (error) throw error;
+  return data;
 };
 
 export const addCategory = async (category: Omit<Category, 'id'>): Promise<Category> => {
-    const { data, error } = await supabase.from('categories').insert([category]).select();
-    if (error) throw error;
-    return data[0];
+  const { data, error } = await supabase.from('categories').insert([category]).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const updateCategory = async (id: number, updates: Partial<Category>): Promise<Category> => {
-    const { data, error } = await supabase.from('categories').update(updates).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
+  const { data, error } = await supabase.from('categories').update(updates).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const deleteCategory = async (id: number): Promise<void> => {
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) throw error;
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) throw error;
 };
 
 export const getTariffs = async (): Promise<Tariff[]> => {
-    const { data, error } = await supabase.from('tariffs').select('*');
-    if (error) throw error;
-    return data;
+  const { data, error } = await supabase.from('tariffs').select('*');
+  if (error) throw error;
+  return data;
 };
 
 export const addTariff = async (tariff: Omit<Tariff, 'id'>): Promise<Tariff> => {
-    const { data, error } = await supabase.from('tariffs').insert([tariff]).select();
-    if (error) throw error;
-    return data[0];
+  const { data, error } = await supabase.from('tariffs').insert([tariff]).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const updateTariff = async (id: number, updates: Partial<Tariff>): Promise<Tariff> => {
-    const { data, error } = await supabase.from('tariffs').update(updates).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
+  const { data, error } = await supabase.from('tariffs').update(updates).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const deleteTariff = async (id: number): Promise<void> => {
-    const { error } = await supabase.from('tariffs').delete().eq('id', id);
-    if (error) throw error;
+  const { error } = await supabase.from('tariffs').delete().eq('id', id);
+  if (error) throw error;
 };
 
 export const getMenuItems = async (restaurantId?: number): Promise<MenuItem[]> => {
-    let query = supabase.from('menu_items').select('*');
-    if (restaurantId) {
-        query = query.eq('restaurant_id', restaurantId);
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
+  let query = supabase.from('menu_items').select('*');
+  if (restaurantId) {
+    query = query.eq('restaurant_id', restaurantId);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
 };
 
 export const addMenuItem = async (item: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
-    const itemToInsert = { ...item };
-    if (itemToInsert.image_url) {
-        itemToInsert.image_url = getPublicImageUrl(itemToInsert.image_url);
-    }
-    const { data, error } = await supabase.from('menu_items').insert([itemToInsert]).select();
-    if (error) throw error;
-    return data[0];
+  const itemToInsert = { ...item };
+  if (itemToInsert.image_url) {
+    itemToInsert.image_url = getPublicImageUrl(itemToInsert.image_url);
+  }
+  const { data, error } = await supabase.from('menu_items').insert([itemToInsert]).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const updateMenuItem = async (id: number, updates: Partial<MenuItem>): Promise<MenuItem> => {
-    const updatesToApply = { ...updates };
-    if (updatesToApply.image_url) {
-        updatesToApply.image_url = getPublicImageUrl(updatesToApply.image_url);
-    }
-    const { data, error } = await supabase.from('menu_items').update(updatesToApply).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
+  const updatesToApply = { ...updates };
+  if (updatesToApply.image_url) {
+    updatesToApply.image_url = getPublicImageUrl(updatesToApply.image_url);
+  }
+  const { data, error } = await supabase.from('menu_items').update(updatesToApply).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const deleteMenuItem = async (id: number): Promise<void> => {
-    const { error } = await supabase.from('menu_items').delete().eq('id', id);
-    if (error) throw error;
+  const { error } = await supabase.from('menu_items').delete().eq('id', id);
+  if (error) throw error;
 };
 
 export const getServiceRequests = async (): Promise<ServiceRequest[]> => {
-    const { data, error } = await supabase.from('service_requests').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
+  const { data, error } = await supabase.from('service_requests').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
 };
 
 export const createServiceRequest = async (request: ServiceRequest): Promise<ServiceRequest> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not authenticated");
-    const requestWithUser = { ...request, user_id: user.id };
-    const { data, error } = await supabase.from('service_requests').insert([requestWithUser]).select();
-    if (error) throw error;
-    return data[0];
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+  const requestWithUser = { ...request, user_id: user.id };
+  const { data, error } = await supabase.from('service_requests').insert([requestWithUser]).select();
+  if (error) throw error;
+  return data[0];
 };
 
 export const updateServiceRequestStatus = async (id: string, status: string): Promise<ServiceRequest> => {
-    const { data, error } = await supabase.from('service_requests').update({ status }).eq('id', id).select();
-    if (error) throw error;
-    return data[0];
+  const { data, error } = await supabase.from('service_requests').update({ status }).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
 };
 
 interface MapPoint {
@@ -378,8 +378,7 @@ export const calculateAndShowNativeRoute = async (
   destination: MapPoint
 ): Promise<number | null> => {
   if (Capacitor.getPlatform() === 'web') {
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}`;
-    window.open(url, '_blank');
+    console.warn("Navegación web no disponible sin Google Maps");
     return null;
   }
 

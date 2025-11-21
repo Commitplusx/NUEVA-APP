@@ -1,6 +1,7 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import React, { useState, useEffect, useRef } from 'react';
+import Map, { MapRef } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Spinner } from './Spinner';
 import { FaMapMarkerAlt } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
@@ -23,7 +24,6 @@ interface LocationPickerModalProps {
   initialCenter?: { lat: number; lng: number };
 }
 
-const libraries: ('places' | 'maps')[] = ['places', 'maps'];
 
 export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   isOpen,
@@ -32,18 +32,23 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
   initialCenter
 }) => {
   const { setBottomNavVisible } = useAppContext();
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'script-loader', // ID unificado para evitar conflicto
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries: libraries // Usar la constante
+  const mapRef = useRef<MapRef>(null);
+  
+  const [viewState, setViewState] = useState({
+    latitude: initialCenter?.lat || defaultCenter.lat,
+    longitude: initialCenter?.lng || defaultCenter.lng,
+    zoom: 15
   });
 
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [center, setCenter] = useState(initialCenter || defaultCenter);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
     if (initialCenter) {
-      setCenter(initialCenter);
+      setViewState(prev => ({
+        ...prev,
+        latitude: initialCenter.lat,
+        longitude: initialCenter.lng
+      }));
     }
   }, [initialCenter]);
 
@@ -57,21 +62,11 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
     };
   }, [isOpen, setBottomNavVisible]);
 
-  const onLoad = useCallback(function callback(mapInstance: google.maps.Map) {
-    setMap(mapInstance);
-  }, []);
-
-  const onUnmount = useCallback(function callback() {
-    setMap(null);
-  }, []);
-
   const handleConfirm = () => {
-    if (map) {
-      const newCenter = map.getCenter();
-      if (newCenter) {
-        onLocationSelect({ lat: newCenter.lat(), lng: newCenter.lng() });
-        onClose();
-      }
+    if (mapRef.current) {
+      const { longitude, latitude } = mapRef.current.getCenter();
+      onLocationSelect({ lat: latitude, lng: longitude });
+      onClose();
     }
   };
 
@@ -102,154 +97,26 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
         borderRadius: '8px',
         overflow: 'hidden'
       }}>
-        {loadError && <div>Error al cargar el mapa. Asegúrate de que la clave de API de Google Maps sea correcta.</div>}
-        {!isLoaded && !loadError && <Spinner />}
-        {isLoaded && (
+        {!import.meta.env.VITE_MAPBOX_TOKEN && <div>Error: Mapbox token not found.</div>}
+        {import.meta.env.VITE_MAPBOX_TOKEN && (
           <>
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={center}
-              zoom={15}
-              onLoad={onLoad}
-              onUnmount={onUnmount}
-              options={{
-                disableDefaultUI: true,
-                zoomControl: true,
-                gestureHandling: 'greedy', // Enable single-finger panning on mobile
-                styles: [
-                  {
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#f5f5f5" }
-                    ]
-                  },
-                  {
-                    "elementType": "labels.icon",
-                    "stylers": [
-                      { "visibility": "off" }
-                    ]
-                  },
-                  {
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#616161" }
-                    ]
-                  },
-                  {
-                    "elementType": "labels.text.stroke",
-                    "stylers": [
-                      { "color": "#f5f5f5" }
-                    ]
-                  },
-                  {
-                    "featureType": "administrative.land_parcel",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#bdbdbd" }
-                    ]
-                  },
-                  {
-                    "featureType": "poi",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#eeeeee" }
-                    ]
-                  },
-                  {
-                    "featureType": "poi",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#757575" }
-                    ]
-                  },
-                  {
-                    "featureType": "poi.park",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#e5e5e5" }
-                    ]
-                  },
-                  {
-                    "featureType": "poi.park",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#9e9e9e" }
-                    ]
-                  },
-                  {
-                    "featureType": "road",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#ffffff" }
-                    ]
-                  },
-                  {
-                    "featureType": "road.arterial",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#757575" }
-                    ]
-                  },
-                  {
-                    "featureType": "road.highway",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#dadada" }
-                    ]
-                  },
-                  {
-                    "featureType": "road.highway",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#616161" }
-                    ]
-                  },
-                  {
-                    "featureType": "road.local",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#9e9e9e" }
-                    ]
-                  },
-                  {
-                    "featureType": "transit.line",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#e5e5e5" }
-                    ]
-                  },
-                  {
-                    "featureType": "transit.station",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#eeeeee" }
-                    ]
-                  },
-                  {
-                    "featureType": "water",
-                    "elementType": "geometry",
-                    "stylers": [
-                      { "color": "#c9c9c9" }
-                    ]
-                  },
-                  {
-                    "featureType": "water",
-                    "elementType": "labels.text.fill",
-                    "stylers": [
-                      { "color": "#9e9e9e" }
-                    ]
-                  }
-                ]
-              }}
-            >
-              {/* Marcador fijo en el centro */}
-            </GoogleMap>
+            {!isMapLoaded && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}><Spinner /></div>}
+            <Map
+              ref={mapRef}
+              {...viewState}
+              onMove={evt => setViewState(evt.viewState)}
+              onLoad={() => setIsMapLoaded(true)}
+              style={{ width: '100%', height: '100%', visibility: isMapLoaded ? 'visible' : 'hidden' }}
+              mapStyle="mapbox://styles/mapbox/streets-v12"
+              mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+            />
             <div style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
-              transform: 'translate(-50%, -100%)', // Ajusta para que la punta del marcador esté en el centro
-              zIndex: 1
+              transform: 'translate(-50%, -100%)', // Adjust to place the marker's tip at the center
+              zIndex: 1,
+              display: isMapLoaded ? 'block' : 'none'
             }}>
               <FaMapMarkerAlt color="#f97316" size={50} />
             </div>
