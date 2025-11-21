@@ -10,6 +10,10 @@ import { Spinner } from './Spinner';
 import Map, { MapRef, ViewState } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+interface NativeMapPlugin {
+  pickLocation(options: { initialPosition?: { latitude: number; longitude: number } }): Promise<{ latitude: number; longitude: number; address: string }>;
+}
+
 // La importación de Mapbox se movió a la lógica nativa para evitar errores en web.
 
 interface LocationPickerPageProps {
@@ -48,10 +52,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
     if (isOpen && isNative) {
       const openNativePicker = async () => {
         try {
-          // FIX: Dynamic import to trick Vite
-          const pluginName = 'capacitor-mapbox';
-          const { Mapbox: NativeMap } = await import(/* @vite-ignore */ pluginName);
-
+          const NativeMap = ((Capacitor as any).Plugins.NativeMap as NativeMapPlugin);
           const result = await NativeMap.pickLocation({
             initialPosition: initialLocation ? { latitude: initialLocation.lat, longitude: initialLocation.lng } : undefined
           });
@@ -114,7 +115,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
       showToast("Por favor, selecciona una ubicación en el mapa.", "error");
     }
   };
-  
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
       const setStatusBarStyle = async () => {
@@ -143,7 +144,7 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="fixed inset-0 bg-white z-50"
       initial={{ y: '100%' }}
       animate={{ y: isOpen ? 0 : '100%' }}
@@ -174,45 +175,45 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
         </div>
 
         <div className="flex-grow relative">
-            <Map
-                ref={mapRef}
-                {...viewState}
-                onMove={handleMapMove}
-                style={{width: '100%', height: '100%'}}
-                mapStyle="mapbox://styles/mapbox/streets-v11"
-                mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-            >
-            </Map>
-              
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                  <Icons.MapPinIcon className="w-10 h-10 text-orange-500 drop-shadow-lg" />
-              </div>
+          <Map
+            ref={mapRef}
+            {...viewState}
+            onMove={handleMapMove}
+            style={{ width: '100%', height: '100%' }}
+            mapStyle="mapbox://styles/mapbox/streets-v11"
+            mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+          >
+          </Map>
 
-              <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 border-t border-gray-200 shadow-top">
-                <div className="max-w-4xl mx-auto">
-                  <div className="mb-3 min-h-[40px] flex flex-col justify-center">
-                    <p className="text-xs font-bold text-gray-500 uppercase">UBICACIÓN SELECCIONADA</p>
-                    {isGeocoding ? (
-                      <div className="flex items-center gap-2">
-                        <Spinner className="animate-spin w-4 h-4 text-gray-500" />
-                        <p className="text-gray-600 text-sm">Obteniendo dirección...</p>
-                      </div>
-                    ) : (
-                      <p className="text-gray-800 font-semibold truncate">
-                        {selectedAddress || 'Mueve el mapa para seleccionar una dirección'}
-                      </p>
-                    )}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            <Icons.MapPinIcon className="w-10 h-10 text-orange-500 drop-shadow-lg" />
+          </div>
+
+          <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm p-4 border-t border-gray-200 shadow-top">
+            <div className="max-w-4xl mx-auto">
+              <div className="mb-3 min-h-[40px] flex flex-col justify-center">
+                <p className="text-xs font-bold text-gray-500 uppercase">UBICACIÓN SELECCIONADA</p>
+                {isGeocoding ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner className="animate-spin w-4 h-4 text-gray-500" />
+                    <p className="text-gray-600 text-sm">Obteniendo dirección...</p>
                   </div>
-                  <button
-                    onClick={handleConfirmClick}
-                    className="w-full py-3 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    disabled={!viewState.latitude || !selectedAddress || isGeocoding}
-                  >
-                    <Icons.CheckCircleIcon className="w-6 h-6" />
-                    Confirmar Ubicación
-                  </button>
-                </div>
+                ) : (
+                  <p className="text-gray-800 font-semibold truncate">
+                    {selectedAddress || 'Mueve el mapa para seleccionar una dirección'}
+                  </p>
+                )}
               </div>
+              <button
+                onClick={handleConfirmClick}
+                className="w-full py-3 bg-green-500 text-white rounded-lg font-bold text-lg hover:bg-green-600 transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={!viewState.latitude || !selectedAddress || isGeocoding}
+              >
+                <Icons.CheckCircleIcon className="w-6 h-6" />
+                Confirmar Ubicación
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>

@@ -23,10 +23,10 @@ public class MainActivity extends BridgeActivity {
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-
-    // Register the custom plugin
+    // Register the custom plugin BEFORE calling super.onCreate
     registerPlugin(NativeMapPlugin.class);
+    
+    super.onCreate(savedInstanceState);
 
     // --- MAPBOX INITIALIZATION ---
     // For Mapbox SDK v10+, initialization is handled automatically

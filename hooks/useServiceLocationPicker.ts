@@ -4,6 +4,10 @@ import { Geolocation } from '@capacitor/geolocation';
 import { reverseGeocode } from '../services/api';
 import { Profile } from '../types';
 
+interface NativeMapPlugin {
+  pickLocation(options: { initialPosition?: { latitude: number; longitude: number } }): Promise<{ latitude: number; longitude: number; address: string }>;
+}
+
 interface UseServiceLocationPickerProps {
   userProfile: Profile | null;
   showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
@@ -61,13 +65,20 @@ export const useServiceLocationPicker = ({
 
     if (isNative) {
       try {
-        const pluginName = 'capacitor-mapbox';
-        const { Mapbox: NativeMap } = await import(/* @vite-ignore */ pluginName);
+        console.log('[DEBUG] Intentando acceder al plugin NativeMap...');
+
+        const NativeMap = ((Capacitor as any).Plugins.NativeMap as NativeMapPlugin);
+        console.log('[DEBUG] NativeMap plugin:', NativeMap);
 
         const currentCoords = type === 'origin' ? originCoords : destinationCoords;
+        console.log('[DEBUG] Llamando a pickLocation con coords:', currentCoords);
+
         const result = await NativeMap.pickLocation({
           initialPosition: currentCoords ? { latitude: currentCoords.lat, longitude: currentCoords.lng } : undefined
         });
+
+        console.log('[DEBUG] Resultado de pickLocation:', result);
+
         if (result && result.latitude && result.longitude) {
           if (type === 'origin') {
             setOrigin(result.address);
@@ -79,6 +90,7 @@ export const useServiceLocationPicker = ({
           showToast('Ubicación seleccionada con éxito', 'success');
         }
       } catch (err: any) {
+        console.error('[DEBUG] Error en handleMapPick:', err);
         if (err.message !== 'Action canceled by user.' && err.message !== 'pickLocation canceled.') {
           showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
         }

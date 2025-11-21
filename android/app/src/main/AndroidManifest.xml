@@ -11,9 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCDHnsZ9hWEq-Q_oNR50jyRi-44s9ZX5yE" />
+
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
@@ -34,7 +32,7 @@
         <activity
             android:name="shop.app.estrella.plugins.nativemap.MapPickerActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-            android:exported="false"
+            android:exported="true"
             tools:replace="android:theme" />
 
         <!-- Declare the new Firebase Messaging Service -->

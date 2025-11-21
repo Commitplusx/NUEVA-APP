@@ -108,7 +108,7 @@ public class NativeMapPlugin extends Plugin {
             // coordinates: {longitude},{latitude};{longitude},{latitude}
             String coordinates = originLng + "," + originLat + ";" + destLng + "," + destLat;
             String url = "https://api.mapbox.com/directions/v5/mapbox/driving/" + coordinates
-                    + "?geometries=polyline&overview=full&access_token=" + mapboxAccessToken;
+                    + "?geometries=geojson&overview=full&access_token=" + mapboxAccessToken;
 
             RequestQueue requestQueue = Volley.newRequestQueue(getContext());
 
@@ -122,12 +122,12 @@ public class NativeMapPlugin extends Plugin {
                                 // Mapbox devuelve la distancia en metros
                                 double distanceInMeters = route.getDouble("distance");
                                 
-                                // Geometría de la ruta (polyline string)
-                                String polyline = route.getString("geometry");
+                                // Geometría de la ruta (GeoJSON)
+                                JSONObject geometry = route.getJSONObject("geometry");
 
                                 JSObject result = new JSObject();
                                 result.put("distance", distanceInMeters / 1000.0); // Convertir a km
-                                result.put("polyline", polyline);
+                                result.put("geometry", geometry);
                                 call.resolve(result);
                             } else {
                                 call.reject("No routes found.");

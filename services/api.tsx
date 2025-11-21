@@ -384,9 +384,15 @@ export const calculateAndShowNativeRoute = async (
   }
 
   try {
-    const pluginName = 'capacitor-mapbox';
-    const { Mapbox } = await import(/* @vite-ignore */ pluginName);
-    const { value: distance } = await Mapbox.show({ origin, destination });
+    // Acceder al plugin NativeMap registrado en MainActivity.java
+    const NativeMap = (Capacitor as any).Plugins.NativeMap;
+
+    if (!NativeMap) {
+      throw new Error('Plugin NativeMap no está disponible');
+    }
+
+    const result = await NativeMap.calculateRoute({ origin, destination });
+    const distance = result?.distance || null;
     return distance;
   } catch (error) {
     console.error('Error al calcular o mostrar la ruta nativa:', error);
