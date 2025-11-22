@@ -265,15 +265,23 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
             <div className="overflow-y-auto flex-grow">
               <div className="-mx-0 h-48 w-auto rounded-none overflow-hidden relative">
                 {Capacitor.getPlatform() === 'web' ? (
-                  <Map
-                    ref={mapRef}
-                    initialViewState={{ latitude: mapCenter.lat, longitude: mapCenter.lng, zoom: 15 }}
-                    style={{ width: '100%', height: '100%' }}
-                    mapStyle="mapbox://styles/mapbox/streets-v11"
-                    mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-                  >
-                    <Marker longitude={mapCenter.lng} latitude={mapCenter.lat} />
-                  </Map>
+                  import.meta.env.VITE_MAPBOX_TOKEN ? (
+                    <Map
+                      ref={mapRef}
+                      initialViewState={{ latitude: mapCenter.lat, longitude: mapCenter.lng, zoom: 15 }}
+                      style={{ width: '100%', height: '100%' }}
+                      mapStyle="mapbox://styles/mapbox/streets-v11"
+                      mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+                    >
+                      <Marker longitude={mapCenter.lng} latitude={mapCenter.lat} />
+                    </Map>
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-4 text-center">
+                      <MapIcon className="w-12 h-12 text-gray-400 mb-2" />
+                      <p className="text-gray-500 font-medium">Mapa no disponible</p>
+                      <p className="text-xs text-gray-400 mt-1">Verifica la configuración de Mapbox</p>
+                    </div>
+                  )
                 ) : (
                   <div
                     className="w-full h-full bg-gray-200 flex items-center justify-center relative cursor-pointer"

@@ -241,29 +241,37 @@ export const RequestService: React.FC = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><p className="text-3xl font-bold">${shippingCost.toFixed(2)}</p><p className="text-sm text-gray-600">Distancia: {distance?.toFixed(2)} km</p></motion.div>
 
             <motion.div className="mt-4 h-64 w-full rounded-lg overflow-hidden shadow-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Map
-                ref={mapRef}
-                initialViewState={{ latitude: 16.25, longitude: -92.13, zoom: 12 }}
-                style={{ width: '100%', height: '100%' }}
-                mapStyle="mapbox://styles/mapbox/streets-v11"
-                mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+              {import.meta.env.VITE_MAPBOX_TOKEN ? (
+                <Map
+                  ref={mapRef}
+                  initialViewState={{ latitude: 16.25, longitude: -92.13, zoom: 12 }}
+                  style={{ width: '100%', height: '100%' }}
+                  mapStyle="mapbox://styles/mapbox/streets-v11"
+                  mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
 
-              >
-                {originCoords && <Marker longitude={originCoords.lng} latitude={originCoords.lat} color="#00B37E" />}
-                {destinationCoords && <Marker longitude={destinationCoords.lng} latitude={destinationCoords.lat} color="#FF5A5F" />}
-                {routeGeoJSON && (
-                  <Source id="route" type="geojson" data={{ type: 'Feature', properties: {}, geometry: routeGeoJSON }}>
-                    <Layer
-                      id="route"
-                      type="line"
-                      paint={{
-                        'line-color': '#000000',
-                        'line-width': 3
-                      }}
-                    />
-                  </Source>
-                )}
-              </Map>
+                >
+                  {originCoords && <Marker longitude={originCoords.lng} latitude={originCoords.lat} color="#00B37E" />}
+                  {destinationCoords && <Marker longitude={destinationCoords.lng} latitude={destinationCoords.lat} color="#FF5A5F" />}
+                  {routeGeoJSON && (
+                    <Source id="route" type="geojson" data={{ type: 'Feature', properties: {}, geometry: routeGeoJSON }}>
+                      <Layer
+                        id="route"
+                        type="line"
+                        paint={{
+                          'line-color': '#000000',
+                          'line-width': 3
+                        }}
+                      />
+                    </Source>
+                  )}
+                </Map>
+              ) : (
+                <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-4 text-center">
+                  <Icons.MapIcon className="w-12 h-12 text-gray-400 mb-2" />
+                  <p className="text-gray-500 font-medium">Mapa no disponible</p>
+                  <p className="text-xs text-gray-400 mt-1">Verifica la configuración de Mapbox</p>
+                </div>
+              )}
             </motion.div>
           </>
         ) : <p className="text-sm text-gray-500">Introduce origen y destino para calcular el costo.</p>}
