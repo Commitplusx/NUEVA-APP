@@ -529,7 +529,7 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
     const s = status?.toLowerCase() || '';
     if (s.includes('entregado') || s.includes('completado')) return 'text-green-600 bg-green-100 border border-green-200';
     if (s.includes('pendiente') || s.includes('preparando') || s.includes('confirmado')) return 'text-orange-600 bg-orange-100 border border-orange-200';
-    if (s.includes('recogido') || s.includes('camino') || s.includes('reparto')) return 'text-blue-600 bg-blue-100 border border-blue-200';
+    if (s.includes('recogido') || s.includes('camino') || s.includes('reparto') || s.includes('delivery')) return 'text-blue-600 bg-blue-100 border border-blue-200';
     if (s.includes('cancelado')) return 'text-red-600 bg-red-100 border border-red-200';
     return 'text-gray-600 bg-gray-100 border border-gray-200';
   };

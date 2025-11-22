@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
       style: 'dark'
     },
     Mapbox: {
-      accessToken: 'pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pODc2ZGcwMDh2bTJscHpucWc1MDIybSJ9'
+      accessToken: 'pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pOGY4emtkMGI4OTJucTEwcGI1NHF1cCJ9.54Lh3CFkG_QP60n5PHdqPQ'
     }
   }
 };
