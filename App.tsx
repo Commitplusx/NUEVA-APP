@@ -61,9 +61,9 @@ const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const shouldShowBottomNav = 
-    location.pathname !== '/' && 
-    !isCustomizationModalOpen && 
+  const shouldShowBottomNav =
+    location.pathname !== '/' &&
+    !isCustomizationModalOpen &&
     !isProductModalOpen &&
     !isAddressModalOpen;
 
@@ -84,7 +84,7 @@ const App: React.FC = () => {
   // PWA install prompt logic
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
-  
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -122,29 +122,29 @@ const App: React.FC = () => {
       <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
-            <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
-                <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
-                <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
-                <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
-                <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
-                <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
-                <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-                <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
-                <Route path="/payment-methods" element={<PageTransitionWrapper><PaymentMethod /></PageTransitionWrapper>} />
-                <Route path="/admin" element={<Admin />}>
-                    <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
-                    <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
-                    <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
-                    <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
-                    <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
-                </Route>
-                <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
+            <Routes location={location}>
+              <Route path="/" element={<PageTransitionWrapper><Home /></PageTransitionWrapper>} />
+              <Route path="/login" element={<PageTransitionWrapper><Login /></PageTransitionWrapper>} />
+              <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
+              <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
+              <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
+              <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
+              <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
+              <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
+              <Route path="/payment-methods" element={<PageTransitionWrapper><PaymentMethod /></PageTransitionWrapper>} />
+              <Route path="/admin" element={<Admin />}>
+                <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
+                <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
+                <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
+                <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
+                <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
+              </Route>
+              <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
             </Routes>
           </Suspense>
         </AnimatePresence>
       </main>
-      
+
       {showInstallButton && (
         <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
           <button
@@ -159,16 +159,20 @@ const App: React.FC = () => {
   );
 };
 
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 /**
  * @component AppWrapper
  * @description Envuelve el componente App con BrowserRouter y AppProvider para habilitar el enrutamiento y el contexto global.
  */
 const AppWrapper: React.FC = () => (
-  <Router>
-    <AppProvider>
-      <App />
-    </AppProvider>
-  </Router>
+  <ErrorBoundary>
+    <Router>
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </Router>
+  </ErrorBoundary>
 );
 
 export default AppWrapper;

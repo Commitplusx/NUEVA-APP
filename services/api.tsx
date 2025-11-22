@@ -9,6 +9,7 @@ import { Capacitor } from '@capacitor/core';
 const MAPBOX_API_KEY = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+  console.log('Checking MAPBOX_API_KEY:', MAPBOX_API_KEY ? 'Defined' : 'Undefined'); // DEBUG LOG
   if (!address || !MAPBOX_API_KEY) return null;
 
   const biasedAddress = `${address}, Comitán de Domínguez, Chiapas, Mexico`;
@@ -30,17 +31,57 @@ export const geocodeAddress = async (address: string): Promise<{ lat: number; ln
   }
 };
 
-export const reverseGeocode = async (lat: number, lng: number): Promise<string | null> => {
+export const reverseGeocode = async (lat: number, lng: number): Promise<{
+  address: string;
+  neighborhood: string;
+  postalCode: string;
+  city: string;
+  state: string;
+} | null> => {
+  console.log('reverseGeocode called with:', { lat, lng }); // DEBUG LOG
   if (!MAPBOX_API_KEY) return null;
 
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_API_KEY}&types=address&limit=1`;
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_API_KEY}`;
 
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Mapbox Reverse Geocoding API returned status ${response.status}`);
     const data = await response.json();
+    console.log('Mapbox Reverse Geocode Response:', data); // DEBUG LOG
+
     if (data.features && data.features.length > 0) {
-      return data.features[0].place_name;
+      const feature = data.features[0];
+      const context = feature.context || [];
+
+      let neighborhood = '';
+      let postalCode = '';
+      let city = '';
+      let state = '';
+
+      // Mapbox context types: neighborhood, postcode, place, region, country
+      context.forEach((c: any) => {
+        if (c.id.startsWith('neighborhood')) neighborhood = c.text;
+        if (c.id.startsWith('postcode')) postalCode = c.text;
+        if (c.id.startsWith('place')) city = c.text;
+        if (c.id.startsWith('region')) state = c.text;
+        if (c.id.startsWith('locality') && !neighborhood) neighborhood = c.text; // Fallback to locality if neighborhood is missing
+      });
+
+      // If neighborhood is still empty, try to use the city or a part of the address
+      if (!neighborhood && city) {
+        // Sometimes small towns don't have defined neighborhoods in Mapbox, so we might leave it empty or use the city name as a fallback if desired.
+        // For now, we'll leave it empty to allow user input, or we could try to parse it from the place_name.
+      }
+
+      const result = {
+        address: feature.place_name.split(',')[0], // Just the street address
+        neighborhood,
+        postalCode,
+        city,
+        state
+      };
+      console.log('Parsed Address Data:', result); // DEBUG LOG
+      return result;
     }
   } catch (error) {
     console.error("Mapbox Reverse Geocoding error:", error);

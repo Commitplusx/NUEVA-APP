@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { reverseGeocode } from '../services/api';
@@ -28,7 +28,10 @@ export const useServiceLocationPicker = ({
   const [initialOriginLocation, setInitialOriginLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [initialDestinationLocation, setInitialDestinationLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
 
+  const isPickingLocation = useRef(false);
+
   const handleUseProfileAddress = useCallback(() => {
+    if (isPickingLocation.current) return;
     if (userProfile) {
       const formattedAddress = [userProfile.street_address, userProfile.neighborhood, userProfile.city, userProfile.postal_code].filter(Boolean).join(', ');
       if (formattedAddress && userProfile.lat && userProfile.lng) {
@@ -43,6 +46,7 @@ export const useServiceLocationPicker = ({
   }, [userProfile, showToast]);
 
   const handleGetCurrentLocation = useCallback(async () => {
+    if (isPickingLocation.current) return;
     try {
       const position = await Geolocation.getCurrentPosition();
       const { latitude, longitude } = position.coords;
@@ -61,10 +65,13 @@ export const useServiceLocationPicker = ({
   }, [showToast]);
 
   const handleMapPick = useCallback(async (type: 'origin' | 'destination') => {
+    if (isPickingLocation.current) return;
+
     const isNative = Capacitor.getPlatform() !== 'web';
 
     if (isNative) {
       try {
+        isPickingLocation.current = true;
         console.log('[DEBUG] Intentando acceder al plugin NativeMap...');
 
         const NativeMap = ((Capacitor as any).Plugins.NativeMap as NativeMapPlugin);
@@ -94,6 +101,11 @@ export const useServiceLocationPicker = ({
         if (err.message !== 'Action canceled by user.' && err.message !== 'pickLocation canceled.') {
           showToast(err.message || 'No se pudo abrir el mapa nativo.', 'error');
         }
+      } finally {
+        // Cool-down para evitar ghost clicks
+        setTimeout(() => {
+          isPickingLocation.current = false;
+        }, 800);
       }
     } else {
       if (type === 'origin') {

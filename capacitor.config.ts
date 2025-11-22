@@ -2,12 +2,13 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'estrella.app.shop',
-  appName: 'NUEVA-APP',
+  appName: 'App Estrella',
   webDir: 'dist',
-  // server: {
-  //   url: 'http://192.168.1.X:5173', // Solo para desarrollo con live reload
-  //   cleartext: true
-  // },
+  server: {
+    url: 'https://app-estrella.shop',
+    cleartext: true,
+    androidScheme: 'https'
+  },
   plugins: {
     StatusBar: {
       overlaysWebView: false,

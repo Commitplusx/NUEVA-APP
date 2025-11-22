@@ -11,6 +11,8 @@ import newCheckoutAnimation from './animations/cart checkout - fast.json';
 import { LocationPickerMapModal } from './LocationPickerMapModal'; // Importado
 import Map, { Marker } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Capacitor } from '@capacitor/core';
+import { reverseGeocode } from '../services/api';
 
 type CartStep = 'cart' | 'details' | 'confirmation' | 'success';
 
@@ -31,24 +33,21 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
         <React.Fragment key={step}>
           <div className="flex flex-col items-center text-center">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${
-                index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
-              }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+                }`}
             >
               {index < currentStepIndex ? <ChevronLeftIcon className="w-6 h-6 rotate-180" /> : index + 1}
             </div>
             <p
-              className={`mt-2 text-xs font-bold transition-colors duration-300 ${
-                index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
-              }`}
+              className={`mt-2 text-xs font-bold transition-colors duration-300 ${index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
+                }`}
             >
               {getStepName(step)}
             </p>
           </div>
           {index < steps.length - 1 && (
-            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${
-              index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
-            }`}></div>
+            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
+              }`}></div>
           )}
         </React.Fragment>
       ))}
@@ -88,7 +87,7 @@ export const Cart: React.FC = () => {
   const [userAddressCoords, setUserAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number>(0);
-  
+
   // Estado para el mapa
   const [showMapPicker, setShowMapPicker] = useState(false);
 
@@ -101,22 +100,37 @@ export const Cart: React.FC = () => {
     phone: ''
   });
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     if (user && profile) {
-      setUserDetails(prev => ({
-        ...prev,
-        name: profile.full_name || prev.name,
-        address: profile.street_address || prev.address,
-        neighborhood: profile.neighborhood || prev.neighborhood,
-        postalCode: profile.postal_code || prev.postalCode,
-        phone: profile.phone || prev.phone,
-      }));
-      // Inicializar coords desde perfil si existen
+      setUserDetails(prev => {
+        // Si la dirección actual es diferente a la del perfil (y no está vacía), 
+        // asumimos que el usuario ya eligió otra ubicación y NO sobrescribimos con el perfil.
+        const isAddressDifferent = prev.address && prev.address !== profile.street_address;
+
+        if (isAddressDifferent) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          name: prev.name || profile.full_name || '',
+          address: prev.address || profile.street_address || '',
+          neighborhood: prev.neighborhood || profile.neighborhood || '',
+          postalCode: prev.postalCode || profile.postal_code || '',
+          phone: prev.phone || profile.phone || '',
+        };
+      });
+
+      // Inicializar coords desde perfil SOLO si no existen ya
       if (profile.lat && profile.lng) {
-         const coords = { lat: profile.lat, lng: profile.lng };
-         setUserAddressCoords(coords);
-         setDestinationCoords(coords);
+        setUserAddressCoords(prev => {
+          if (prev) return prev; // Si ya hay coordenadas, no sobrescribir
+          const coords = { lat: profile.lat, lng: profile.lng };
+          setDestinationCoords(coords); // Sincronizar contexto
+          return coords;
+        });
       }
     }
   }, [user, profile, setDestinationCoords]);
@@ -140,18 +154,90 @@ export const Cart: React.FC = () => {
     setUserDetails(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleOpenMap = () => {
-    setBottomNavVisible(false);
-    setShowMapPicker(true);
+  const isPickingLocation = React.useRef(false);
+
+  const handleOpenMap = async () => {
+    if (isPickingLocation.current) return;
+
+    if (Capacitor.getPlatform() !== 'web') {
+      isPickingLocation.current = true;
+      try {
+        const NativeMap = (Capacitor as any).Plugins.NativeMap;
+        const result = await NativeMap.pickLocation({
+          initialPosition: userAddressCoords ? { latitude: userAddressCoords.lat, longitude: userAddressCoords.lng } : undefined
+        });
+        if (result && result.latitude) {
+          handleConfirmLocation(result.address, result.latitude, result.longitude);
+        }
+      } catch (e) {
+        console.log('Native map canceled or failed', e);
+      } finally {
+        setTimeout(() => { isPickingLocation.current = false; }, 800);
+      }
+    } else {
+      isPickingLocation.current = true;
+      setBottomNavVisible(false);
+      setShowMapPicker(true);
+    }
   };
 
-  const handleConfirmLocation = (address: string, lat: number, lng: number) => {
+  const handleConfirmLocation = async (address: string, lat: number, lng: number) => {
+    console.log('handleConfirmLocation called with:', { address, lat, lng }); // DEBUG LOG
     const coords = { lat, lng };
-    setUserDetails(prev => ({ ...prev, address: address }));
+
+    // Intentar obtener datos estructurados (CP, Colonia, etc.)
+    try {
+      const structuredData = await reverseGeocode(lat, lng);
+      console.log('Structured Data received in Cart:', structuredData); // DEBUG LOG
+      if (structuredData) {
+        setUserDetails(prev => {
+          const newState = {
+            ...prev,
+            address: structuredData.address || address,
+            neighborhood: structuredData.neighborhood || prev.neighborhood || '', // Keep previous if new is empty? Or clear it? User said it "doesn't change", implying it keeps the OLD one (profile). 
+            // Actually, if we move to a new location, we probably WANT to clear the old neighborhood if the new one isn't found, so the user knows to type it.
+            // But the user said "sigue marcando la direccion del perfil".
+            // Let's try to force update it.
+            postalCode: structuredData.postalCode || prev.postalCode || '',
+          };
+
+          // If structuredData.neighborhood is empty, we should probably clear it so the user sees they need to enter it, 
+          // RATHER than keeping the old profile one which is definitely wrong for a new location.
+          if (structuredData.neighborhood) {
+            newState.neighborhood = structuredData.neighborhood;
+          } else {
+            // If map didn't find a neighborhood, clear it so user can enter it manually, 
+            // UNLESS it's the exact same location as profile? No, safer to clear or leave empty.
+            // The user complaint is "sigue marcando la direccion del perfil". 
+            // So we must ensure we are NOT using `prev.neighborhood` if we have a new location.
+            newState.neighborhood = '';
+          }
+
+          if (structuredData.postalCode) {
+            newState.postalCode = structuredData.postalCode;
+          } else {
+            newState.postalCode = '';
+          }
+
+          console.log('Updating userDetails with structured data:', newState); // DEBUG LOG
+          return newState;
+        });
+      } else {
+        // Fallback si falla el geocoding estructurado
+        console.log('No structured data, using fallback address'); // DEBUG LOG
+        setUserDetails(prev => ({ ...prev, address: address }));
+      }
+    } catch (error) {
+      console.error("Error getting structured address:", error);
+      setUserDetails(prev => ({ ...prev, address: address }));
+    }
+
+    console.log('Setting userAddressCoords to:', coords); // DEBUG LOG
     setUserAddressCoords(coords);
     setDestinationCoords(coords);
     setShowMapPicker(false);
     setBottomNavVisible(true);
+    setTimeout(() => { isPickingLocation.current = false; }, 800);
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -159,10 +245,11 @@ export const Cart: React.FC = () => {
   const total = subtotal + deliveryFee;
 
   const canProceedToDetails = cartItems.length > 0;
-  const canProceedToConfirmation = 
+  const canProceedToConfirmation =
     user !== null &&
     userDetails.name.trim() !== '' &&
     userDetails.address.trim() !== '' &&
+    userDetails.neighborhood.trim() !== '' &&
     userDetails.phone.trim().length >= 10;
 
   const handleFinalOrderConfirmation = async () => {
@@ -171,13 +258,19 @@ export const Cart: React.FC = () => {
       setTimeout(() => setToastInfo(null), 3000);
       return;
     }
+
+    setIsConfirming(true);
     try {
+      // Artificial delay of 4 seconds to show animation
+      await new Promise(resolve => setTimeout(resolve, 4000));
       await handleConfirmOrder(userDetails, deliveryFee);
       setStep('success');
     } catch (error) {
       console.error('Order confirmation failed:', error);
       setToastInfo({ message: 'Error al confirmar el pedido. Inténtalo de nuevo.', type: 'error' });
       setTimeout(() => setToastInfo(null), 3000);
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -193,7 +286,7 @@ export const Cart: React.FC = () => {
                 No Image
               </div>
             )}
-            <div className="flex-grow min-w-0"> 
+            <div className="flex-grow min-w-0">
               <h3 className="font-semibold text-gray-800 break-words">{item.product.name}</h3>
               <p className="text-sm text-gray-500">${item.product.price.toFixed(2)}</p>
               {(() => {
@@ -255,20 +348,20 @@ export const Cart: React.FC = () => {
 
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
         <div className="flex justify-between items-center">
-            <div>
-                <p className="text-sm text-gray-600">Método de pago</p>
-                <p className="font-bold text-gray-800 capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</p>
-            </div>
-            <button 
-                onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
-                className="font-semibold text-orange-500 text-sm hover:text-orange-600"
-            >
-                Cambiar
-            </button>
+          <div>
+            <p className="text-sm text-gray-600">Método de pago</p>
+            <p className="font-bold text-gray-800 capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</p>
+          </div>
+          <button
+            onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
+            className="font-semibold text-orange-500 text-sm hover:text-orange-600"
+          >
+            Cambiar
+          </button>
         </div>
       </div>
 
-      <button 
+      <button
         onClick={() => setStep('details')}
         disabled={!canProceedToDetails}
         className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -282,45 +375,45 @@ export const Cart: React.FC = () => {
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg space-y-6">
       <h3 className="font-bold text-lg text-gray-800">Datos de Entrega</h3>
       <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
-          <div className="relative flex items-center">
-              <UserCircleIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="text" name="name" id="name" value={userDetails.name} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu nombre" />
-          </div>
-      </div>
-      
-      <div>
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
-          <div className="flex gap-2">
-             <div className="relative flex-grow flex items-center">
-                <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-                <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Calle y número" />
-             </div>
-             <button 
-               onClick={handleOpenMap}
-               className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors flex items-center gap-1"
-             >
-               <LocationIcon className="w-4 h-4 text-white" />
-               Mapa
-             </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Tip: Usa el botón de mapa para que el repartidor llegue exacto.</p>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+        <div className="relative flex items-center">
+          <UserCircleIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+          <input type="text" name="name" id="name" value={userDetails.name} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu nombre" />
+        </div>
       </div>
 
       <div>
-          <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia</label>
-          <input type="text" name="neighborhood" id="neighborhood" value={userDetails.neighborhood} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu barrio o colonia" />
-      </div>
-      <div>
-          <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
-          <input type="text" name="postalCode" id="postalCode" value={userDetails.postalCode} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu código postal" />
-      </div>
-      <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto *</label>
-          <div className="relative flex items-center">
-              <MailIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-              <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
+        <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Dirección *</label>
+        <div className="flex gap-2">
+          <div className="relative flex-grow flex items-center">
+            <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+            <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Calle y número" />
           </div>
+          <button
+            onClick={handleOpenMap}
+            className="bg-black text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors flex items-center gap-1"
+          >
+            <LocationIcon className="w-4 h-4 text-white" />
+            Mapa
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Tip: Usa el botón de mapa para que el repartidor llegue exacto.</p>
+      </div>
+
+      <div>
+        <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia *</label>
+        <input type="text" name="neighborhood" id="neighborhood" value={userDetails.neighborhood} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu barrio o colonia" />
+      </div>
+      <div>
+        <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
+        <input type="text" name="postalCode" id="postalCode" value={userDetails.postalCode} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu código postal" />
+      </div>
+      <div>
+        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto *</label>
+        <div className="relative flex items-center">
+          <MailIcon className="absolute left-3 w-5 h-5 text-gray-400" />
+          <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
+        </div>
       </div>
       {calculatedDistance !== null && (
         <div className="bg-blue-50 p-3 rounded-lg text-blue-800 text-sm font-medium flex items-center gap-2">
@@ -340,93 +433,126 @@ export const Cart: React.FC = () => {
     const restaurantCoords = restaurant?.lat && restaurant?.lng ? { lat: restaurant.lat, lng: restaurant.lng } : null;
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-            <div className="p-6 pb-4">
-              <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
-              {restaurant && (
-                <div className="mt-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border">
-                    <img src={(restaurant as any).image_url || restaurant.imageUrl} alt={restaurant.name} className="w-12 h-12 rounded-full object-cover" />
-                    <div>
-                        <p className="text-sm text-gray-500">Tu pedido de:</p>
-                        <h4 className="font-bold text-md text-gray-800">{restaurant.name}</h4>
-                    </div>
-                </div>
-              )}
-            </div>
-
-            {restaurantCoords && userAddressCoords && (
-              <div className="h-40 w-full">
-                  <Map
-                      initialViewState={{
-                          latitude: (restaurantCoords.lat + userAddressCoords.lat) / 2,
-                          longitude: (restaurantCoords.lng + userAddressCoords.lng) / 2,
-                          zoom: 12
-                      }}
-                      style={{width: '100%', height: '100%'}}
-                      mapStyle="mapbox://styles/mapbox/streets-v11"
-                      mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
-                  >
-                      <Marker longitude={restaurantCoords.lng} latitude={restaurantCoords.lat} color="#00B37E" />
-                      <Marker longitude={userAddressCoords.lng} latitude={userAddressCoords.lat} color="#FF5A5F" />
-                  </Map>
-              </div>
-            )}
-
-            <div className="p-6 space-y-4">
-              <div className="space-y-2 text-sm text-gray-700">
-                  <div className="flex items-center gap-2">
-                      <UserCircleIcon className="w-5 h-5 text-orange-500" />
-                      <p><strong>Nombre:</strong> {userDetails.name}</p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                      <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
-                      <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <MailIcon className="w-5 h-5 text-orange-500" />
-                      <p><strong>Teléfono:</strong> {userDetails.phone}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <CreditCardIcon className="w-5 h-5 text-orange-500" />
-                      <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
-                  </div>
-              </div>
-              <hr/>
-              <div className="space-y-3">
-                  {cartItems.map(item => (
-                      <div key={item.id} className="flex items-center gap-3">
-                          {item.product.imageUrl ? (
-                              <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
-                          ) : (
-                              <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
-                                  No Image
-                              </div>
-                          )}
-                          <div className="flex-grow">
-                              <p className="font-semibold text-gray-800">{item.product.name}</p>
-                              <p className="text-sm text-gray-500">{item.quantity} x ${item.product.price.toFixed(2)}</p>
-                          </div>
-                          <p className="font-bold text-md">${(item.product.price * item.quantity).toFixed(2)}</p>
-                      </div>
-                  ))}
-              </div>
-              <hr/>
+      <div className="bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+        <div className="p-6 pb-4">
+          <h3 className="font-bold text-lg text-gray-800">Resumen del Pedido</h3>
+          {restaurant && (
+            <div className="mt-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border">
+              <img src={(restaurant as any).image_url || restaurant.imageUrl} alt={restaurant.name} className="w-12 h-12 rounded-full object-cover" />
               <div>
-                  <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
-                  <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
-                  {calculatedDistance !== null && (
-                    <p className="text-xs text-gray-500 text-right mt-1">
-                      ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
-                    </p>
-                  )}
-                  <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                  <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-                  <button onClick={handleFinalOrderConfirmation} disabled={!canProceedToConfirmation} className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Confirmar Pedido</button>
+                <p className="text-sm text-gray-500">Tu pedido de:</p>
+                <h4 className="font-bold text-md text-gray-800">{restaurant.name}</h4>
               </div>
             </div>
+          )}
         </div>
+
+        {restaurantCoords && userAddressCoords && (() => {
+          // Calculate distance between points to determine appropriate zoom
+          const distance = haversineDistance(
+            restaurantCoords.lat,
+            restaurantCoords.lng,
+            userAddressCoords.lat,
+            userAddressCoords.lng
+          );
+
+          // Calculate zoom level based on distance
+          // Lower zoom = more area visible, ensures both markers are always shown
+          let zoomLevel = 11;
+          if (distance < 0.5) zoomLevel = 13;      // Very close (< 500m)
+          else if (distance < 1) zoomLevel = 12;   // Close (< 1km)
+          else if (distance < 3) zoomLevel = 11;   // Medium (< 3km)
+          else if (distance < 5) zoomLevel = 10;   // Far (< 5km)
+          else if (distance < 10) zoomLevel = 9;   // Very far (< 10km)
+          else zoomLevel = 8;                      // Extremely far (> 10km)
+
+          return (
+            <div className="h-40 w-full">
+              <Map
+                initialViewState={{
+                  latitude: (restaurantCoords.lat + userAddressCoords.lat) / 2,
+                  longitude: (restaurantCoords.lng + userAddressCoords.lng) / 2,
+                  zoom: zoomLevel
+                }}
+                style={{ width: '100%', height: '100%' }}
+                mapStyle="mapbox://styles/mapbox/streets-v11"
+                mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+              >
+                <Marker longitude={restaurantCoords.lng} latitude={restaurantCoords.lat} color="#00B37E" />
+                <Marker longitude={userAddressCoords.lng} latitude={userAddressCoords.lat} color="#FF5A5F" />
+              </Map>
+            </div>
+          );
+        })()}
+
+        <div className="p-6 space-y-4">
+          <div className="space-y-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <UserCircleIcon className="w-5 h-5 text-orange-500" />
+              <p><strong>Nombre:</strong> {userDetails.name}</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
+              <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <MailIcon className="w-5 h-5 text-orange-500" />
+              <p><strong>Teléfono:</strong> {userDetails.phone}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <CreditCardIcon className="w-5 h-5 text-orange-500" />
+              <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
+            </div>
+          </div>
+          <hr />
+          <div className="space-y-3">
+            {cartItems.map(item => (
+              <div key={item.id} className="flex items-center gap-3">
+                {item.product.imageUrl ? (
+                  <img src={item.product.imageUrl} alt={item.product.name} className="w-16 h-16 rounded-md object-cover" />
+                ) : (
+                  <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center text-gray-500 text-xs text-center p-1">
+                    No Image
+                  </div>
+                )}
+                <div className="flex-grow">
+                  <p className="font-semibold text-gray-800">{item.product.name}</p>
+                  <p className="text-sm text-gray-500">{item.quantity} x ${item.product.price.toFixed(2)}</p>
+                </div>
+                <p className="font-bold text-md">${(item.product.price * item.quantity).toFixed(2)}</p>
+              </div>
+            ))}
+          </div>
+          <hr />
+          <div>
+            <div className="flex justify-between items-center"><p>Subtotal:</p> <p>${subtotal.toFixed(2)}</p></div>
+            <div className="flex justify-between items-center"><p>Envío:</p> <p>${deliveryFee.toFixed(2)}</p></div>
+            {calculatedDistance !== null && (
+              <p className="text-xs text-gray-500 text-right mt-1">
+                ({calculatedDistance.toFixed(2)} km x ${PRICE_PER_KM.toFixed(2)}/km)
+              </p>
+            )}
+            <div className="flex justify-between items-center font-bold text-lg mt-2"><p>Total:</p> <p>${total.toFixed(2)}</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <button onClick={() => setStep('details')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
+            <button
+              onClick={handleFinalOrderConfirmation}
+              disabled={!canProceedToConfirmation || isConfirming}
+              className="bg-green-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400 flex justify-center items-center gap-2 transition-all"
+            >
+              {isConfirming ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Procesando...</span>
+                </>
+              ) : (
+                'Confirmar Pedido'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -435,8 +561,8 @@ export const Cart: React.FC = () => {
       <Lottie animationData={newCheckoutAnimation} loop={true} style={{ width: 200, height: 200 }} />
       <h3 className="font-bold text-2xl text-green-600 mt-4">¡Pedido Recibido!</h3>
       <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
-      <button 
-        onClick={() => navigate('/restaurants')} 
+      <button
+        onClick={() => navigate('/restaurants')}
         className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
       >
         Volver a Restaurantes
@@ -448,9 +574,9 @@ export const Cart: React.FC = () => {
     <div className="p-4 bg-gray-50 min-h-full">
       <div className="flex items-center gap-4 mb-6">
         {step === 'cart' && (
-            <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white shadow-sm">
-                <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
-            </button>
+          <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white shadow-sm">
+            <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+          </button>
         )}
         <h1 className="text-xl font-bold text-gray-800">{step === 'cart' ? 'Mi Carrito' : 'Checkout'}</h1>
       </div>
@@ -458,8 +584,8 @@ export const Cart: React.FC = () => {
       {cartItems.length === 0 && step !== 'success' ? (
         <div className="text-center py-20">
           <p className="mt-4 text-gray-500">Tu carrito está vacío.</p>
-          <button 
-            onClick={() => navigate('/restaurants')} 
+          <button
+            onClick={() => navigate('/restaurants')}
             className="mt-6 px-6 py-2 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
           >
             Ver Restaurantes
@@ -467,53 +593,53 @@ export const Cart: React.FC = () => {
         </div>
       ) : (
         <div>
-            <Stepper currentStep={step} />
-            <AnimatePresence mode="wait">
-              {step === 'cart' && (
-                <motion.div
-                  key="cart"
-                  initial={{ x: 300, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -300, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {renderCartStep()}
-                </motion.div>
-              )}
-              {step === 'details' && (
-                <motion.div
-                  key="details"
-                  initial={{ x: 300, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -300, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {renderDetailsStep()}
-                </motion.div>
-              )}
-              {step === 'confirmation' && (
-                <motion.div
-                  key="confirmation"
-                  initial={{ x: 300, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -300, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {renderConfirmationStep()}
-                </motion.div>
-              )}
-              {step === 'success' && (
-                <motion.div
-                  key="success"
-                  initial={{ x: 300, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -300, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {renderSuccessStep()}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <Stepper currentStep={step} />
+          <AnimatePresence mode="wait">
+            {step === 'cart' && (
+              <motion.div
+                key="cart"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderCartStep()}
+              </motion.div>
+            )}
+            {step === 'details' && (
+              <motion.div
+                key="details"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderDetailsStep()}
+              </motion.div>
+            )}
+            {step === 'confirmation' && (
+              <motion.div
+                key="confirmation"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderConfirmationStep()}
+              </motion.div>
+            )}
+            {step === 'success' && (
+              <motion.div
+                key="success"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderSuccessStep()}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
@@ -524,6 +650,7 @@ export const Cart: React.FC = () => {
             onClose={() => {
               setShowMapPicker(false);
               setBottomNavVisible(true);
+              setTimeout(() => { isPickingLocation.current = false; }, 800);
             }}
             onConfirm={handleConfirmLocation}
             initialLocation={userAddressCoords || undefined}
@@ -531,7 +658,7 @@ export const Cart: React.FC = () => {
           />
         )}
       </AnimatePresence>
-      
+
       {toastInfo && <Toast message={toastInfo.message} type={toastInfo.type} onClose={() => setToastInfo(null)} />}
     </div>
   );
