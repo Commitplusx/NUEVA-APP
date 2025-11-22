@@ -50,9 +50,10 @@ export const useServiceLocationPicker = ({
     try {
       const position = await Geolocation.getCurrentPosition();
       const { latitude, longitude } = position.coords;
-      const address = await reverseGeocode(latitude, longitude);
-      if (address) {
-        setOrigin(address);
+      const addressData = await reverseGeocode(latitude, longitude);
+      if (addressData) {
+        const formattedAddress = [addressData.address, addressData.neighborhood, addressData.city].filter(Boolean).join(', ');
+        setOrigin(formattedAddress);
         setOriginCoords({ lat: latitude, lng: longitude });
         setInitialOriginLocation({ lat: latitude, lng: longitude });
         showToast('Ubicación actual obtenida.', 'success');

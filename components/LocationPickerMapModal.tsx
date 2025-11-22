@@ -80,8 +80,9 @@ export const LocationPickerMapModal: React.FC<LocationPickerPageProps> = ({
       setIsGeocoding(true);
       try {
         const { latitude, longitude } = evt.viewState;
-        const address = await reverseGeocode(latitude, longitude);
-        setSelectedAddress(address || 'Ubicación no encontrada');
+        const addressData = await reverseGeocode(latitude, longitude);
+        const formattedAddress = addressData ? [addressData.address, addressData.neighborhood, addressData.city].filter(Boolean).join(', ') : 'Ubicación no encontrada';
+        setSelectedAddress(formattedAddress);
       } catch (error) {
         setSelectedAddress('Error al obtener dirección');
       } finally {
