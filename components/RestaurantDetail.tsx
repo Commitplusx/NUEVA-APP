@@ -70,37 +70,42 @@ const DesktopMenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void; }> =
     );
 };
 
-// --- Mobile Card (Horizontal & Compact) ---
+// --- Mobile Card (Vertical & Premium) ---
 const MobileMenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void; }> = ({ item, onSelect }) => {
-    const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 200, 200);
+    const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 400, 400);
     return (
         <motion.button
             onClick={onSelect}
-            className="w-full flex items-start bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-left h-28"
+            className="w-full text-left bg-white rounded-3xl p-3 flex flex-col gap-2 group active:scale-95 transition-all relative shadow-sm border border-gray-100 h-full"
             whileTap={{ scale: 0.98 }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            layout
         >
-            {optimizedImageUrl ? (
-                <img
-                    src={optimizedImageUrl}
-                    alt={item.name}
-                    className="w-24 h-full object-cover rounded-lg mr-3 flex-shrink-0"
-                />
-            ) : (
-                <div className="w-24 h-full bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-400 text-xs text-center flex-shrink-0">
-                    Sin imagen
-                </div>
-            )}
-            <div className="flex-1 flex flex-col justify-between h-full py-1">
-                <div>
-                    <h3 className="font-bold text-gray-800 line-clamp-2 text-sm leading-tight mb-1">{item.name}</h3>
-                    {item.description && <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>}
-                </div>
+            {/* Image Section */}
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-100">
+                {optimizedImageUrl ? (
+                    <motion.img
+                        src={optimizedImageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <span className="text-xs">Sin imagen</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Content Section */}
+            <div className="flex flex-col w-full px-1 flex-grow">
+                <h3 className="font-bold text-gray-900 line-clamp-2 text-sm mb-1 leading-tight">{item.name}</h3>
+                {item.description && <p className="text-[10px] text-gray-500 line-clamp-2 mb-2 leading-relaxed">{item.description}</p>}
+
                 <div className="flex justify-between items-end mt-auto">
-                    <p className="font-bold text-base text-orange-500">${item.price.toFixed(2)}</p>
-                    <div className="bg-orange-50 p-1 rounded-full text-orange-500">
+                    <p className="font-bold text-base text-green-600">${item.price.toFixed(2)}</p>
+                    <div className="bg-yellow-400 text-white p-1.5 rounded-lg shadow-sm">
                         <PlusIcon className="w-4 h-4" />
                     </div>
                 </div>
@@ -123,43 +128,49 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
     }, {});
 
     return (
-        <div className="bg-gray-50 min-h-screen">
+        <div className="bg-white min-h-screen">
             <div className="relative">
                 <motion.img
                     src={headerImageUrl}
                     alt={restaurant.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-56 object-cover"
                     initial={{ scale: 1.1 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.7 }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-5">
                     <motion.h1
-                        className="text-white text-3xl font-bold drop-shadow-lg"
+                        className="text-white text-3xl font-extrabold drop-shadow-lg mb-1"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                     >
                         {restaurant.name}
                     </motion.h1>
-                    <motion.p
-                        className="text-white font-semibold drop-shadow-md"
+                    <motion.div
+                        className="flex items-center gap-2 text-white/90 font-medium text-sm"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                     >
-                        {restaurant.category}
-                    </motion.p>
+                        <span className="bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-md">{restaurant.category}</span>
+                        <span>•</span>
+                        <div className="flex items-center gap-1">
+                            <ClockIcon className="w-3 h-3" />
+                            <span>{restaurant.delivery_time} min</span>
+                        </div>
+                    </motion.div>
                 </div>
                 <motion.button
                     onClick={() => navigate(-1)}
-                    className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md"
+                    className="absolute top-4 left-4 bg-white/20 backdrop-blur-md rounded-full p-2 text-white hover:bg-white/30 transition-colors"
                     whileTap={{ scale: 0.9 }}
                 >
-                    <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+                    <ChevronLeftIcon className="w-6 h-6" />
                 </motion.button>
             </div>
-            <div className="p-4 pb-24">
+
+            <div className="p-4 pb-24 rounded-t-3xl bg-white -mt-6 relative z-10">
                 {Object.entries(menuByCategory).map(([category, items], categoryIndex) => (
                     <motion.section
                         key={category}
@@ -169,8 +180,11 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                         viewport={{ once: true, margin: "-50px" }}
                         transition={{ delay: categoryIndex * 0.1 }}
                     >
-                        <h2 className="text-2xl font-bold text-gray-800 mb-4 capitalize">{category.toLowerCase()}</h2>
-                        <div className="grid grid-cols-1 gap-3">
+                        <h2 className="text-xl font-bold text-gray-900 mb-4 capitalize flex items-center gap-2">
+                            {category.toLowerCase()}
+                            <span className="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{(items as MenuItem[]).length}</span>
+                        </h2>
+                        <div className="grid grid-cols-2 gap-3">
                             {(items as MenuItem[]).map((item) => (
                                 <MobileMenuItemCard key={item.id} item={item} onSelect={() => handleMenuItemSelect(item)} />
                             ))}

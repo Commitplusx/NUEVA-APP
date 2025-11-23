@@ -52,11 +52,13 @@ const FeaturedSection: React.FC<{ restaurants: Restaurant[]; onSelect: (r: Resta
         {topRated.map(restaurant => {
           const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
           return (
-            <motion.button
+            <motion.div
               key={restaurant.id}
               onClick={() => onSelect(restaurant)}
-              className="relative flex-shrink-0 w-64 h-40 rounded-2xl overflow-hidden snap-center shadow-md group"
+              className="relative flex-shrink-0 w-64 h-40 rounded-2xl overflow-hidden snap-center shadow-md group cursor-pointer"
               whileTap={{ scale: 0.95 }}
+              role="button"
+              tabIndex={0}
             >
               <img src={optimizedImageUrl} alt={restaurant.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
@@ -71,7 +73,7 @@ const FeaturedSection: React.FC<{ restaurants: Restaurant[]; onSelect: (r: Resta
                   <span>{restaurant.delivery_time} min</span>
                 </div>
               </div>
-            </motion.button>
+            </motion.div>
           )
         })}
       </div>
@@ -79,19 +81,21 @@ const FeaturedSection: React.FC<{ restaurants: Restaurant[]; onSelect: (r: Resta
   );
 };
 
-// --- Mobile View Component ---
+// --- Mobile Restaurant Card (New Design) ---
 const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 400);
 
   return (
-    <motion.button
+    <motion.div
       onClick={onSelect}
-      className="w-full text-left bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col gap-3 group active:scale-95 transition-all"
+      className="w-full text-left bg-gray-50 rounded-3xl p-3 flex flex-col gap-2 group active:scale-95 transition-all relative cursor-pointer"
       whileTap={{ scale: 0.98 }}
       layout
+      role="button"
+      tabIndex={0}
     >
       {/* Image Section */}
-      <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100">
+      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-sm">
         {optimizedImageUrl ? (
           <motion.img
             src={optimizedImageUrl}
@@ -106,39 +110,27 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
             <StoreIcon className="w-10 h-10 opacity-30" />
           </div>
         )}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
-          <StarIcon className="w-3 h-3 text-yellow-500" />
-          <span className="text-xs font-bold text-gray-800">{restaurant.rating}</span>
-        </div>
       </div>
 
       {/* Content Section */}
-      <div className="flex flex-col w-full">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-bold text-lg text-gray-900 line-clamp-1">{restaurant.name}</h3>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">Starting from <span className="text-green-600 font-bold">${Number(restaurant.delivery_fee || restaurant.deliveryFee || 0).toFixed(2)}</span></p>
+      <div className="flex flex-col w-full px-1">
+        <h3 className="font-bold text-gray-900 line-clamp-1 text-base mb-1">{restaurant.name}</h3>
+
+        <div className="flex justify-between items-end">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-gray-400 font-medium">Starting From</span>
+            <span className="text-green-600 font-bold text-sm">${Number(restaurant.delivery_fee || restaurant.deliveryFee || 0).toFixed(2)}</span>
           </div>
-          <div className="bg-yellow-400 text-white p-1.5 rounded-lg shadow-sm">
+          <div className="bg-yellow-400 text-white p-1.5 rounded-lg shadow-sm mb-1">
             <PlusIcon className="w-4 h-4" />
           </div>
         </div>
-
-        <div className="flex items-center gap-3 mt-3 text-xs text-gray-500 font-medium">
-          <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md">
-            <ClockIcon className="w-3 h-3 text-gray-400" />
-            <span>{restaurant.delivery_time} min</span>
-          </div>
-          <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-md">
-            <MotorcycleIcon className="w-3 h-3 text-gray-400" />
-            <span>Delivery</span>
-          </div>
-        </div>
       </div>
-    </motion.button>
+    </motion.div>
   );
 };
 
+// --- Mobile View Component ---
 const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore, error, loadMore, searchQuery, setSearchQuery, setIsFiltersOpen }) => {
   const navigate = useNavigate();
   const observer = React.useRef<IntersectionObserver>();
@@ -154,21 +146,21 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
   }, [loading, loadingMore, hasMore, loadMore]);
 
   return (
-    <div className="pb-20 pt-4 bg-gray-50 min-h-screen">
-      <div className="px-4 mb-6 flex gap-3 sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm py-2">
+    <div className="pb-20 pt-4 bg-white min-h-screen">
+      <div className="px-4 mb-6 flex gap-3 sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2">
         <div className="relative flex-grow shadow-[0_2px_8px_rgba(0,0,0,0.05)] rounded-full transition-shadow focus-within:shadow-md">
           <input
             type="text"
             placeholder="¿Qué se te antoja hoy?"
-            className="w-full py-3.5 pl-11 pr-4 bg-white border-none rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:bg-white text-gray-700 placeholder-gray-400 text-sm transition-all"
+            className="w-full py-3.5 pl-11 pr-4 bg-gray-50 border-none rounded-full focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-700 placeholder-gray-400 text-sm transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             <SearchIcon className="w-5 h-5" />
           </div>
         </div>
-        <button onClick={() => setIsFiltersOpen(true)} className="p-3.5 bg-white rounded-full shadow-sm text-gray-600 active:scale-95 transition-all hover:bg-gray-100 border border-transparent hover:border-gray-200" aria-label="Filtros y Ordenación">
+        <button onClick={() => setIsFiltersOpen(true)} className="p-3.5 bg-green-500 text-white rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all" aria-label="Filtros">
           <SlidersIcon className="w-5 h-5" />
         </button>
       </div>
@@ -179,26 +171,26 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
 
       <section className="px-4">
         <div className="flex justify-between items-end mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Todos los restaurantes</h2>
-          <span className="text-xs text-gray-500 font-medium mb-1 bg-gray-200 px-2 py-0.5 rounded-full">{restaurants.length} lugares</span>
+          <h2 className="text-xl font-bold text-gray-900">Recommended</h2>
+          <span className="text-xs text-gray-500 font-medium mb-1 bg-gray-100 px-2 py-0.5 rounded-full">{restaurants.length} lugares</span>
         </div>
 
         <motion.div
           layout
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+          className="grid grid-cols-2 gap-4"
         >
           <AnimatePresence mode="popLayout">
             {loading && [...Array(6)].map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
-            {!loading && error && <div className="text-center text-red-500 col-span-1 sm:col-span-2 md:col-span-3 py-10"><p>{error}</p></div>}
+            {!loading && error && <div key="error-msg" className="text-center text-red-500 col-span-2 py-10"><p>{error}</p></div>}
             {!loading && !error && restaurants.map((restaurant: Restaurant, index: number) => {
               const isLastElement = restaurants.length === index + 1;
               return (
                 <motion.div
                   layout
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.2 }}
                   key={restaurant.id}
                   ref={isLastElement ? lastRestaurantElementRef : null}
                 >
@@ -210,9 +202,9 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
               );
             })}
           </AnimatePresence>
-          {loadingMore && <div className="col-span-1 sm:col-span-2 md:col-span-3"><Spinner /></div>}
-          {!hasMore && restaurants.length > 0 && <p className="col-span-1 sm:col-span-2 md:col-span-3 text-center text-gray-400 text-[10px] py-4 font-medium tracking-wide uppercase">Has llegado al final</p>}
-          {!loading && restaurants.length === 0 && <div className="col-span-1 sm:col-span-2 md:col-span-3 text-center text-gray-500 p-6 mt-4 bg-white rounded-xl shadow-sm mx-2"><StoreIcon className="w-10 h-10 mx-auto text-gray-300 mb-2" /><p className="text-sm">No encontramos restaurantes por aquí.</p></div>}
+          {loadingMore && <div className="col-span-2"><Spinner /></div>}
+          {!hasMore && restaurants.length > 0 && <p className="col-span-2 text-center text-gray-400 text-[10px] py-4 font-medium tracking-wide uppercase">Has llegado al final</p>}
+          {!loading && restaurants.length === 0 && <div className="col-span-2 text-center text-gray-500 p-6 mt-4 bg-gray-50 rounded-xl shadow-sm mx-2"><StoreIcon className="w-10 h-10 mx-auto text-gray-300 mb-2" /><p className="text-sm">No encontramos restaurantes por aquí.</p></div>}
         </motion.div>
       </section>
     </div>
@@ -224,12 +216,14 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
 const DesktopRestaurantListItem: React.FC<{ restaurant: Restaurant; onSelect: () => void; isSelected: boolean; }> = ({ restaurant, onSelect, isSelected }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 200, 200);
   return (
-    <motion.button
+    <motion.div
       layout
       onClick={onSelect}
-      className={`w-full text-left p-4 flex items-start gap-4 rounded-2xl border transition-all duration-200 group ${isSelected ? 'bg-white border-orange-200 shadow-md ring-1 ring-orange-100' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
+      className={`w-full text-left p-4 flex items-start gap-4 rounded-2xl border transition-all duration-200 group cursor-pointer ${isSelected ? 'bg-white border-orange-200 shadow-md ring-1 ring-orange-100' : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'}`}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
+      role="button"
+      tabIndex={0}
     >
       <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
         <motion.img
@@ -260,7 +254,7 @@ const DesktopRestaurantListItem: React.FC<{ restaurant: Restaurant; onSelect: ()
           </div>
         </div>
       </div>
-    </motion.button>
+    </motion.div>
   )
 }
 
@@ -386,14 +380,16 @@ const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore
         >
           <AnimatePresence mode="popLayout">
             {loading && [...Array(10)].map((_, i) => <RestaurantCardSkeleton key={`skel-desk-${i}`} isDesktop={true} />)}
-            {!loading && error && <div className="text-center text-red-500 col-span-full py-10"><p>{error}</p></div>}
+            {!loading && error && <div key="error-msg-desktop" className="text-center text-red-500 col-span-full py-10"><p>{error}</p></div>}
             {!loading && !error && restaurants.map((restaurant: Restaurant, index: number) => {
               const isLastElement = restaurants.length === index + 1;
               return (
                 <motion.div
                   layout
-                  variants={itemVariants}
-                  exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
                   key={restaurant.id}
                   ref={isLastElement ? lastRestaurantElementRef : null}
                 >
@@ -406,44 +402,45 @@ const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore
               );
             })}
           </AnimatePresence>
-          {loadingMore && <div className="col-span-full flex justify-center py-4"><Spinner /></div>}
-          {!hasMore && restaurants.length > 0 && <p className="col-span-full text-center text-sm py-4">Fin de la lista.</p>}
-          {!loading && restaurants.length === 0 && <div className="col-span-full text-center p-4 mt-4"><p>No se encontraron restaurantes.</p></div>}
+          {loadingMore && <div className="py-4"><Spinner /></div>}
+          {!hasMore && restaurants.length > 0 && <p className="text-center text-gray-400 text-xs py-4">No hay más restaurantes</p>}
         </motion.div>
-        <main className="flex-grow p-4 bg-gray-100">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={selectedRestaurant?.id || 'placeholder'}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-              transition={{ duration: 0.4, ease: [0.43, 0.13, 0.23, 0.96] }}
-              className="h-full"
-            >
-              <DesktopDetailView restaurant={selectedRestaurant} />
-            </motion.div>
-          </AnimatePresence>
+
+        <main className="flex-grow p-4 overflow-hidden">
+          <DesktopDetailView restaurant={selectedRestaurant} />
         </main>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // --- Main Component ---
 export const Restaurants: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [filters, setFilters] = useState<Partial<Filters>>({});
+
+  const {
+    restaurants,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+  } = useRestaurants({ searchQuery, filters });
+
+  const updateFilter = (newFilters: Partial<Filters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+  };
+
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Filters>({ sortBy: 'rating', categories: [], priceRange: [], openNow: false });
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
-  const { restaurants, loading, loadingMore, hasMore, error, loadMore } = useRestaurants({
-    searchQuery: debouncedSearchQuery,
-    filters,
-  });
-
-  useThemeColor('#f97316');
+  useThemeColor('#ffffff'); // White background for new design
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -451,35 +448,51 @@ export const Restaurants: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Auto-select first restaurant on desktop if none selected
   useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    if (isDesktop && restaurants.length > 0 && !selectedRestaurant) {
+    if (isDesktop && !selectedRestaurant && restaurants.length > 0) {
       setSelectedRestaurant(restaurants[0]);
     }
-    if (!isDesktop) {
-      setSelectedRestaurant(null);
-    }
-  }, [isDesktop, restaurants]);
-
-  const handleApplyFilters = (newFilters: Filters) => {
-    setFilters(newFilters);
-    setSelectedRestaurant(null);
-  };
-
-  const commonProps = { restaurants, loading, loadingMore, hasMore, error, loadMore, searchQuery, setSearchQuery, isFiltersOpen, setIsFiltersOpen };
+  }, [isDesktop, restaurants, selectedRestaurant]);
 
   return (
-    <div>
+    <>
       {isDesktop ? (
-        <DesktopView {...commonProps} selectedRestaurant={selectedRestaurant} setSelectedRestaurant={setSelectedRestaurant} />
+        <DesktopView
+          restaurants={restaurants}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          error={error}
+          loadMore={loadMore}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isFiltersOpen={isFiltersOpen}
+          setIsFiltersOpen={setIsFiltersOpen}
+          selectedRestaurant={selectedRestaurant}
+          setSelectedRestaurant={setSelectedRestaurant}
+        />
       ) : (
-        <MobileView {...commonProps} />
+        <MobileView
+          restaurants={restaurants}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          error={error}
+          loadMore={loadMore}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          setIsFiltersOpen={setIsFiltersOpen}
+        />
       )}
-      <AdvancedFilters isOpen={isFiltersOpen} onClose={() => setIsFiltersOpen(false)} onApply={handleApplyFilters} initialFilters={filters} />
-    </div>
-  )
+
+      <AdvancedFilters
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+        filters={filters}
+        onUpdateFilter={updateFilter}
+        onResetFilters={resetFilters}
+      />
+    </>
+  );
 };
