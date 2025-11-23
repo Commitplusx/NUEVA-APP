@@ -329,11 +329,17 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
 export const RestaurantDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { restaurant, loading, error } = useRestaurantDetail(id || '');
-    const { handleAddToCart, isProductModalOpen, setIsProductModalOpen } = useAppContext();
+    const { handleAddToCart, isProductModalOpen, setIsProductModalOpen, setSelectedRestaurant } = useAppContext();
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
     useThemeColor('#f97316');
+
+    useEffect(() => {
+        if (restaurant) {
+            setSelectedRestaurant(restaurant);
+        }
+    }, [restaurant, setSelectedRestaurant]);
 
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -351,9 +357,9 @@ export const RestaurantDetail: React.FC = () => {
         setSelectedItem(null);
     };
 
-    const handleModalAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[]) => {
+    const handleModalAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], selectedOptions?: Record<string, string[]>) => {
         if (restaurant) {
-            handleAddToCart(item, quantity, customizedIngredients, restaurant);
+            handleAddToCart(item, quantity, customizedIngredients, selectedOptions);
             handleCloseModal();
         }
     };

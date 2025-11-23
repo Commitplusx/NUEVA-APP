@@ -9,12 +9,13 @@ interface ProductDetailModalProps {
   item: MenuItem | null;
   restaurant: Restaurant | null;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[]) => void;
+  onAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], selectedOptions?: Record<string, string[]>) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, item, restaurant, onClose, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
     if (item) {
       setQuantity(1);
       setSelectedIngredients(item.ingredients || []);
+      setSelectedOptions({});
     }
   }, [item]);
 
@@ -48,14 +50,39 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
     });
   };
 
-  const totalPrice = (item.price * quantity).toFixed(2);
+  const handleOptionToggle = (groupId: string, optionName: string, maxSelect: number) => {
+    setSelectedOptions(prev => {
+      const current = prev[groupId] || [];
+      if (current.includes(optionName)) {
+        return { ...prev, [groupId]: current.filter(o => o !== optionName) };
+      } else {
+        if (maxSelect && current.length >= maxSelect) return prev;
+        return { ...prev, [groupId]: [...current, optionName] };
+      }
+    });
+  };
+
+  const calculateExtraPrice = () => {
+    let extra = 0;
+    if (item.customizationOptions) {
+      item.customizationOptions.forEach(group => {
+        const selectedCount = (selectedOptions[group.id] || []).length;
+        const chargeableCount = Math.max(0, selectedCount - group.includedItems);
+        extra += chargeableCount * group.pricePerExtra;
+      });
+    }
+    return extra;
+  };
+
+  const unitPrice = item.price + calculateExtraPrice();
+  const totalPrice = (unitPrice * quantity).toFixed(2);
 
   const handleBack = () => {
     onClose();
   };
 
   const handleAddToCartClick = () => {
-    onAddToCart(item, quantity, selectedIngredients);
+    onAddToCart(item, quantity, selectedIngredients, selectedOptions);
   };
 
   const modalVariants = {
@@ -85,8 +112,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
             className={`bg-white w-full relative flex flex-col overflow-hidden shadow-2xl ${isDesktop
-                ? 'max-w-4xl h-[80vh] rounded-2xl'
-                : 'max-w-lg max-h-[90vh] rounded-t-3xl'
+              ? 'max-w-4xl h-[80vh] rounded-2xl'
+              : 'max-w-lg max-h-[90vh] rounded-t-3xl'
               }`}
           >
             {/* Modified: overflow-y-auto for mobile to allow scrolling the entire product detail */}
@@ -101,6 +128,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
                 hideAddToCartBar={true}
                 quantity={quantity}
                 onQuantityChange={setQuantity}
+                selectedOptions={selectedOptions}
+                onOptionToggle={handleOptionToggle}
+                currentPrice={unitPrice * quantity}
               />
             </div>
 

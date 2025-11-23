@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeftIcon, UserCircleIcon, LocationIcon, InfoIcon, MailIcon, CreditCardIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { OrderUserDetails } from '../types';
+import { OrderUserDetails, CartItem } from '../types';
 import { Toast, ToastType } from './Toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import Lottie from 'lottie-react';
@@ -240,8 +240,21 @@ export const Cart: React.FC = () => {
     setTimeout(() => { isPickingLocation.current = false; }, 800);
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  const deliveryFee = calculatedDeliveryFee;
+  // Calculate total price for an item including extras
+  const calculateItemPrice = (item: CartItem) => {
+    let extraPrice = 0;
+    if (item.selectedOptions && item.product.customizationOptions) {
+      item.product.customizationOptions.forEach(group => {
+        const selected = item.selectedOptions?.[group.id] || [];
+        const extraCount = Math.max(0, selected.length - group.includedItems);
+        extraPrice += extraCount * group.pricePerExtra;
+      });
+    }
+    return (item.product.price + extraPrice) * item.quantity;
+  };
+
+  const subtotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+  const deliveryFee = baseFee + (calculatedDistance ? calculatedDistance * 10 : 0); // $10 per km
   const total = subtotal + deliveryFee;
 
   const canProceedToDetails = cartItems.length > 0;
@@ -314,13 +327,47 @@ export const Cart: React.FC = () => {
                   </div>
                 )
               })()}
+
+              {/* Render Selected Customization Options */}
+              {item.selectedOptions && item.product.customizationOptions && (
+                <div className="text-xs text-gray-600 mt-2 break-words">
+                  {item.product.customizationOptions.map(group => {
+                    const selected = item.selectedOptions?.[group.id];
+                    if (!selected || selected.length === 0) return null;
+
+                    return (
+                      <div key={group.id} className="mb-1">
+                        <span className="font-semibold text-gray-700 mr-1">{group.name}:</span>
+                        <span className="flex flex-wrap gap-1 inline-flex">
+                          {selected.map((opt, idx) => {
+                            const isExtra = idx >= group.includedItems;
+                            return (
+                              <span key={idx} className={`${isExtra ? 'text-blue-600 font-medium' : 'text-gray-500'} mr-1`}>
+                                {isExtra ? `+ ${opt} ($${group.pricePerExtra})` : opt}
+                              </span>
+                            );
+                          })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div className="flex items-center gap-3 mt-2">
                 <button onClick={() => handleUpdateCart(item.id, item.quantity - 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">-</button>
                 <span className="font-bold w-6 text-center">{item.quantity}</span>
                 <button onClick={() => handleUpdateCart(item.id, item.quantity + 1)} className="w-7 h-7 bg-gray-200 rounded-full font-bold">+</button>
               </div>
             </div>
-            <p className="font-bold text-lg ml-2 flex-shrink-0">${(item.product.price * item.quantity).toFixed(2)}</p>
+            <div className="flex flex-col items-end ml-2 flex-shrink-0">
+              <p className="font-bold text-lg">${calculateItemPrice(item).toFixed(2)}</p>
+              {calculateItemPrice(item) > item.product.price * item.quantity && (
+                <div className="text-[10px] text-gray-500 text-right">
+                  <p>Base: ${(item.product.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-blue-600">Extras: +${(calculateItemPrice(item) - item.product.price * item.quantity).toFixed(2)}</p>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

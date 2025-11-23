@@ -23,6 +23,22 @@ export interface MenuItem {
   ingredients?: string[];
   isPopular?: boolean;
   category?: string;
+  customizationOptions?: MenuItemOptionGroup[];
+}
+
+export interface MenuItemOption {
+  name: string;
+  price?: number;
+}
+
+export interface MenuItemOptionGroup {
+  id: string;
+  name: string;
+  minSelect: number;
+  maxSelect?: number;
+  includedItems: number;
+  pricePerExtra: number;
+  options: MenuItemOption[];
 }
 
 export interface Restaurant {
@@ -52,6 +68,7 @@ export interface CartItem {
   product: MenuItem;
   quantity: number;
   customizedIngredients: Ingredient[];
+  selectedOptions?: Record<string, string[]>;
   restaurant: Restaurant;
 }
 

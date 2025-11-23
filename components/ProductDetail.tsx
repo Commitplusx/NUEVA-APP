@@ -4,6 +4,7 @@ import { useThemeColor } from '../hooks/useThemeColor';
 import * as Icons from './icons';
 import { getTransformedImageUrl } from '../services/image';
 import IngredientIcon from './IngredientIcon';
+import { motion } from 'framer-motion';
 
 interface ProductDetailProps {
   item: MenuItem;
@@ -15,6 +16,10 @@ interface ProductDetailProps {
   hideAddToCartBar?: boolean;
   quantity: number;
   onQuantityChange: (qty: number) => void;
+  // New props for customization
+  selectedOptions?: Record<string, string[]>;
+  onOptionToggle?: (groupId: string, optionName: string, maxSelect: number) => void;
+  currentPrice?: number; // Calculated price including extras
 }
 
 export const ProductDetail: React.FC<ProductDetailProps> = ({
@@ -26,15 +31,14 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
   onToggleIngredient,
   hideAddToCartBar = false,
   quantity,
-  onQuantityChange
+  onQuantityChange,
+  selectedOptions = {},
+  onOptionToggle,
+  currentPrice
 }) => {
   useThemeColor('#f0fdf4'); // Light green background for the top part
 
-  const handleAddToCartClick = () => {
-    if (onAddToCart) {
-      onAddToCart(item, quantity, selectedIngredients);
-    }
-  };
+  const displayPrice = currentPrice !== undefined ? currentPrice : item.price * quantity;
 
   return (
     <div className="bg-white md:h-full md:flex md:overflow-hidden h-full flex flex-col">
@@ -87,7 +91,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
           </div>
 
           <h1 className="text-3xl font-extrabold text-gray-900 mb-2">{item.name}</h1>
-          <p className="text-3xl font-bold text-green-600">${item.price.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-green-600">${displayPrice.toFixed(2)}</p>
 
           <div className="flex items-center gap-2 mt-2 text-gray-500 text-sm font-medium">
             <Icons.ClockIcon className="w-4 h-4" />
@@ -95,10 +99,51 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
           </div>
         </div>
 
+        {/* Customization Groups */}
+        {(() => {
+          console.log('🔍 ProductDetail - item:', item);
+          console.log('🔍 ProductDetail - customizationOptions:', item.customizationOptions);
+          console.log('🔍 ProductDetail - Cantidad de grupos:', item.customizationOptions?.length);
+          if (item.customizationOptions && item.customizationOptions.length > 0) {
+            console.log('🔍 ProductDetail - Primer grupo:', item.customizationOptions[0]);
+            console.log('🔍 ProductDetail - Opciones del primer grupo:', item.customizationOptions[0]?.options);
+          }
+          return null;
+        })()}
+        {item.customizationOptions?.map(group => (
+          <div key={group.id} className="mb-6 w-full border-b border-gray-100 pb-4">
+            <h3 className="font-bold text-gray-800 mb-1 text-left">{group.name}</h3>
+            <div className="flex justify-between text-xs text-gray-500 mb-3">
+              <span>Elige hasta {group.maxSelect} opciones</span>
+              <span>{group.includedItems} incluidos, extra +${group.pricePerExtra}</span>
+            </div>
+
+            <div className="space-y-2">
+              {group.options.map(opt => {
+                const isSelected = (selectedOptions[group.id] || []).includes(opt.name);
+                return (
+                  <div
+                    key={opt.name}
+                    onClick={() => onOptionToggle && onOptionToggle(group.id, opt.name, group.maxSelect || 100)}
+                    className={`flex justify-between items-center p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <span className={`text-sm font-medium ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>{opt.name}</span>
+                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                      }`}>
+                      {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
         {/* Ingredients */}
-        {item.ingredients && item.ingredients.length > 0 && (
+        {(!item.customizationOptions || item.customizationOptions.length === 0) && item.ingredients && item.ingredients.length > 0 && (
           <div className="mb-8 w-full">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Ingredients</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4 text-left">Ingredients</h3>
             <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x">
               {item.ingredients.map(ingredientName => {
                 const isSelected = selectedIngredients.includes(ingredientName);
@@ -107,8 +152,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                     key={ingredientName}
                     onClick={() => onToggleIngredient(ingredientName)}
                     className={`flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 p-2 transition-all snap-center ${isSelected
-                        ? 'bg-green-50 border-2 border-green-500 shadow-md'
-                        : 'bg-gray-50 border border-gray-100 opacity-60 grayscale'
+                      ? 'bg-green-50 border-2 border-green-500 shadow-md'
+                      : 'bg-gray-50 border border-gray-100 opacity-60 grayscale'
                       }`}
                   >
                     <div className={`text-2xl ${isSelected ? 'text-green-600' : 'text-gray-400'}`}>
@@ -132,6 +177,3 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
     </div>
   );
 };
-
-// Import motion for animations
-import { motion } from 'framer-motion';

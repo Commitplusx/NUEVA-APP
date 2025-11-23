@@ -1,7 +1,6 @@
 import { supabase } from './supabase';
-
 import { SaltIcon } from '../components/icons';
-import { supabase } from './supabase';
+import { Restaurant, Category, MenuItem } from '../types';
 
 export const getPublicImageUrl = (imagePath: string): string => {
   console.log('getPublicImageUrl: received imagePath:', imagePath);
@@ -18,14 +17,14 @@ export const getPublicImageUrl = (imagePath: string): string => {
 
 // Combines data from different tables into a complete Restaurant object
 export const denormalizeRestaurants = (
-  restaurants: Restaurant[], 
-  categories: Category[], 
+  restaurants: any[],
+  categories: any[],
   restaurantCategories: { restaurant_id: number; category_id: number }[],
-  menuItems: MenuItem[]
+  menuItems: any[]
 ): Restaurant[] => {
-  
-  const categoryMap = new Map(categories.map(c => [c.id, c]));
-  const restaurantMap = new Map(restaurants.map(r => [r.id, { ...r, imageUrl: r.image_url, categories: [], menu: [] }]));
+
+  const categoryMap = new Map(categories.map((c: any) => [c.id, c]));
+  const restaurantMap = new Map(restaurants.map((r: any) => [r.id, { ...r, imageUrl: r.image_url, categories: [], menu: [] }]));
 
   // Link categories to restaurants
   for (const rc of restaurantCategories) {
@@ -46,17 +45,18 @@ export const denormalizeRestaurants = (
           item.ingredients = JSON.parse(item.ingredients);
         } catch (error) {
           // If parsing fails, assume it's a comma-separated string
-          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
+          item.ingredients = item.ingredients.split(',').map((name: string) => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
       restaurant.menu.push({
         ...item,
         imageUrl: getPublicImageUrl(item.image_url || item.imageUrl || ''),
+        customizationOptions: item.customization_options || [],
       });
     }
   }
 
-  return Array.from(restaurantMap.values()).map(r => ({
+  return Array.from(restaurantMap.values()).map((r: any) => ({
     ...r,
     imageUrl: getPublicImageUrl(r.imageUrl),
   }));
@@ -65,13 +65,13 @@ export const denormalizeRestaurants = (
 // Helper function to denormalize restaurant data (similar to useRestaurants)
 export const denormalizeRestaurant = (
   restaurant: any,
-  categories: Category[],
+  categories: any[],
   restaurantCategories: { restaurant_id: number; category_id: number }[],
-  menuItems: MenuItem[]
+  menuItems: any[]
 ): Restaurant | null => {
   if (!restaurant) return null;
 
-  const categoryMap = new Map(categories.map(c => [c.id, c]));
+  const categoryMap = new Map(categories.map((c: any) => [c.id, c]));
   const restaurantWithDetails: Restaurant = { ...restaurant, imageUrl: restaurant.image_url, categories: [], menu: [] };
 
   // Link categories to restaurant
@@ -93,12 +93,13 @@ export const denormalizeRestaurant = (
           item.ingredients = JSON.parse(item.ingredients);
         } catch (error) {
           // If parsing fails, assume it's a comma-separated string
-          item.ingredients = item.ingredients.split(',').map(name => ({ name: name.trim(), icon: SaltIcon }));
+          item.ingredients = item.ingredients.split(',').map((name: string) => ({ name: name.trim(), icon: SaltIcon }));
         }
       }
       restaurantWithDetails.menu.push({
         ...item,
         imageUrl: getPublicImageUrl(item.image_url || item.imageUrl || ''),
+        customizationOptions: item.customization_options || [],
       });
     }
   }

@@ -126,7 +126,7 @@ interface AppContextType {
 
 
 
-  handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => void;
+  handleAddToCart: (item: MenuItem, quantity: number, customizedIngredients: string[], selectedOptions?: Record<string, string[]>) => void;
 
 
 
@@ -1480,21 +1480,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-  const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], restaurant: Restaurant) => {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  const handleAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[], selectedOptions?: Record<string, string[]>) => {
+    // Obtener el restaurante del contexto
+    const restaurant = selectedRestaurant;
+    if (!restaurant) {
+      showToast('Error: No hay restaurante seleccionado', 'error');
+      return;
+    }
 
     const cartRestaurantId = cart.length > 0 ? cart[0].restaurant.id : null;
 
@@ -1528,39 +1520,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-    const addItemToCart = (isNewCart = false) => {
+
+    const addItemToCart = (isNewCart: boolean) => {
+      // Generate ID including selected options to differentiate customizations
+      const optionsString = selectedOptions
+        ? Object.entries(selectedOptions)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([key, values]) => `${key}:${values.sort().join(',')}`)
+          .join('|')
+        : '';
+
+      const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}-${optionsString}`;
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-      // ID se genera a partir del array de strings, que es correcto
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      const cartItemId = `${item.id}-${customizedIngredients.sort().join('-')}`;
 
 
 
@@ -1656,7 +1631,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-        const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant };
+        const newCartItem = { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, selectedOptions, restaurant };
 
 
 
@@ -1848,7 +1823,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-          return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, restaurant }];
+          return [...prevCart, { id: cartItemId, product: item, quantity, customizedIngredients: ingredientsForCart, selectedOptions, restaurant }];
 
 
 
@@ -2642,13 +2617,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     handleSetPaymentMethod,
 
+    setDestinationCoords,
 
-
-
-
-
-
-    setDestinationCoords
+    setSelectedRestaurant
 
 
 

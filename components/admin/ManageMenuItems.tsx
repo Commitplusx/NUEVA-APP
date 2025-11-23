@@ -11,11 +11,11 @@ interface ManageMenuItemsProps {
   onClose: () => void;
 }
 
-const MenuItemForm: React.FC<{ 
-  menuItem: MenuItem | null; 
-  restaurantId: number; 
-  onSave: () => void; 
-  onCancel: () => void; 
+const MenuItemForm: React.FC<{
+  menuItem: MenuItem | null;
+  restaurantId: number;
+  onSave: () => void;
+  onCancel: () => void;
 }> = ({ menuItem, restaurantId, onSave, onCancel }) => {
   const { showToast } = useAppContext();
   const [name, setName] = useState('');
@@ -27,6 +27,7 @@ const MenuItemForm: React.FC<{
   const [isPopular, setIsPopular] = useState(false);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [ingredientName, setIngredientName] = useState('');
+  const [customizationGroups, setCustomizationGroups] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -40,10 +41,11 @@ const MenuItemForm: React.FC<{
       // Normalizar ingredientes: ahora esperamos string[]
       const rawIngredients = menuItem.ingredients || [];
       // Asegurarnos de que sea un array de strings, manejando datos antiguos
-      const normalized = Array.isArray(rawIngredients) 
+      const normalized = Array.isArray(rawIngredients)
         ? rawIngredients.map(ing => typeof ing === 'object' ? ing.name : ing).filter(Boolean)
         : [];
       setIngredients(normalized as string[]);
+      setCustomizationGroups(menuItem.customizationOptions || []);
     } else {
       setName('');
       setDescription('');
@@ -53,6 +55,7 @@ const MenuItemForm: React.FC<{
       setImagePreview(null);
       setIsPopular(false);
       setIngredients([]);
+      setCustomizationGroups([]);
     }
   }, [menuItem]);
 
@@ -75,6 +78,34 @@ const MenuItemForm: React.FC<{
 
   const handleRemoveIngredient = (name: string) => {
     setIngredients(ingredients.filter(ing => ing !== name));
+  };
+
+  const addCustomizationGroup = () => {
+    setCustomizationGroups([
+      ...customizationGroups,
+      {
+        id: Date.now().toString(),
+        name: '',
+        minSelect: 0,
+        maxSelect: 10,
+        includedItems: 0,
+        pricePerExtra: 0,
+        options: []
+      }
+    ]);
+  };
+
+  const removeCustomizationGroup = (id: string) => {
+    setCustomizationGroups(customizationGroups.filter(g => g.id !== id));
+  };
+
+  const updateCustomizationGroup = (id: string, field: string, value: any) => {
+    setCustomizationGroups(customizationGroups.map(g => {
+      if (g.id === id) {
+        return { ...g, [field]: value };
+      }
+      return g;
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +132,18 @@ const MenuItemForm: React.FC<{
         image_url: finalImageUrl,
         is_popular: isPopular,
         ingredients: ingredients, // Ahora es un string[]
+        customizationOptions: customizationGroups,
       };
+
+      // DEBUG: Ver qué se está guardando
+      console.log('📦 Guardando producto:', itemData);
+      console.log('🎨 Grupos de personalización:', customizationGroups);
+      console.log('📊 Cantidad de grupos:', customizationGroups.length);
+      if (customizationGroups.length > 0) {
+        console.log('🔍 Primer grupo completo:', JSON.stringify(customizationGroups[0], null, 2));
+        console.log('🔍 Opciones del primer grupo:', customizationGroups[0].options);
+        console.log('🔍 Cantidad de opciones:', customizationGroups[0].options?.length);
+      }
 
       if (menuItem) {
         await updateMenuItem(menuItem.id, itemData);
@@ -129,7 +171,7 @@ const MenuItemForm: React.FC<{
           <input type="number" placeholder="Precio" value={price} onChange={e => setPrice(e.target.value)} required className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Producto</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
+            <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
             {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg" />}
           </div>
           <div className="flex items-center gap-2">
@@ -137,14 +179,14 @@ const MenuItemForm: React.FC<{
             <label htmlFor="isPopular" className="text-sm font-medium text-gray-700">¿Es Popular?</label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes (Etiquetas simples)</label>
             <div className="flex items-center gap-2 mb-2">
-              <input 
-                type="text" 
-                placeholder="Añadir ingrediente" 
-                value={ingredientName} 
+              <input
+                type="text"
+                placeholder="Añadir ingrediente"
+                value={ingredientName}
                 onChange={e => setIngredientName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddIngredient(); }}}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddIngredient(); } }}
                 className="w-full px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button type="button" onClick={handleAddIngredient} className="px-4 py-2 text-white font-semibold bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">Añadir</button>
@@ -160,6 +202,126 @@ const MenuItemForm: React.FC<{
               ))}
             </div>
           </div>
+
+          {/* Customization Groups Section */}
+          <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">Grupos de Personalización (Toppings, Extras)</h3>
+            <p className="text-sm text-gray-500 mb-4">Define grupos de opciones como "Elige tus toppings" o "Salsas".</p>
+
+            {customizationGroups.map((group, index) => (
+              <div key={group.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4 relative">
+                <button
+                  type="button"
+                  onClick={() => removeCustomizationGroup(group.id)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del Grupo</label>
+                    <input
+                      type="text"
+                      value={group.name}
+                      onChange={(e) => updateCustomizationGroup(group.id, 'name', e.target.value)}
+                      placeholder="Ej: Toppings Incluidos"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Incluidos (Gratis)</label>
+                      <input
+                        type="number"
+                        value={group.includedItems}
+                        onChange={(e) => updateCustomizationGroup(group.id, 'includedItems', parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Precio Extra</label>
+                      <input
+                        type="number"
+                        value={group.pricePerExtra}
+                        onChange={(e) => updateCustomizationGroup(group.id, 'pricePerExtra', parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Opciones (Separadas por coma)</label>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      placeholder="Ej: Mango, Pepino, Aguacate"
+                      id={`options-input-${group.id}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = e.currentTarget.value;
+                          console.log('⌨️ Enter presionado, valor:', val);
+                          if (val) {
+                            const newOptions = val.split(',').map(s => ({ name: s.trim() })).filter(o => o.name);
+                            console.log('✅ Nuevas opciones creadas:', newOptions);
+                            const updatedOptions = [...group.options, ...newOptions];
+                            updateCustomizationGroup(group.id, 'options', updatedOptions);
+                            e.currentTarget.value = '';
+                          }
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById(`options-input-${group.id}`) as HTMLInputElement;
+                        if (input && input.value) {
+                          const val = input.value;
+                          const newOptions = val.split(',').map(s => ({ name: s.trim() })).filter(o => o.name);
+                          const updatedOptions = [...group.options, ...newOptions];
+                          updateCustomizationGroup(group.id, 'options', updatedOptions);
+                          input.value = '';
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {group.options.map((opt, idx) => (
+                      <div key={idx} className="flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded text-xs">
+                        <span>{opt.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOpts = [...group.options];
+                            newOpts.splice(idx, 1);
+                            updateCustomizationGroup(group.id, 'options', newOpts);
+                          }}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addCustomizationGroup}
+              className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-orange-500 hover:text-orange-500 transition-colors flex items-center justify-center gap-2"
+            >
+              <PlusIcon className="w-5 h-5" />
+              <span>Agregar Grupo de Opciones</span>
+            </button>
+          </div>
           <div className="flex justify-end space-x-4 pt-4">
             <button type="button" onClick={onCancel} className="px-6 py-2 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
             <button type="submit" disabled={isSaving} className="px-6 py-2 text-white font-semibold bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-400">
@@ -172,10 +334,10 @@ const MenuItemForm: React.FC<{
   );
 };
 
-const MenuItemList: React.FC<{ 
-  menuItems: MenuItem[]; 
-  onEdit: (item: MenuItem) => void; 
-  onDelete: (id: number) => void; 
+const MenuItemList: React.FC<{
+  menuItems: MenuItem[];
+  onEdit: (item: MenuItem) => void;
+  onDelete: (id: number) => void;
 }> = ({ menuItems, onEdit, onDelete }) => {
   if (menuItems.length === 0) {
     return <p className="text-center text-gray-500 py-10">No hay productos para mostrar.</p>;
@@ -263,7 +425,7 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
         </div>
 
         <div className="flex justify-end mb-4">
-          <button 
+          <button
             onClick={handleAddNew}
             className="flex items-center gap-2 bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
           >
@@ -273,7 +435,7 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
         </div>
 
         {isFormOpen && (
-          <MenuItemForm 
+          <MenuItemForm
             menuItem={editingMenuItem}
             restaurantId={restaurantId}
             onSave={() => { setIsFormOpen(false); fetchMenuItems(); }}
@@ -291,10 +453,10 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
               <p className="text-sm">{error}</p>
             </div>
           ) : (
-            <MenuItemList 
-              menuItems={menuItems} 
-              onEdit={handleEdit} 
-              onDelete={handleDelete} 
+            <MenuItemList
+              menuItems={menuItems}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           )}
         </div>

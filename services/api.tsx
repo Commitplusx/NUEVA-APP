@@ -386,24 +386,43 @@ export const getMenuItems = async (restaurantId?: number): Promise<MenuItem[]> =
   }
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+
+  // Map snake_case to camelCase for frontend
+  return data.map((item: any) => ({
+    ...item,
+    customizationOptions: item.customization_options || [],
+  }));
 };
 
 export const addMenuItem = async (item: Omit<MenuItem, 'id'>): Promise<MenuItem> => {
-  const itemToInsert = { ...item };
+  const itemToInsert: any = { ...item };
+
+  // Map camelCase to snake_case for DB
   if (itemToInsert.imageUrl) {
     itemToInsert.imageUrl = getPublicImageUrl(itemToInsert.imageUrl);
   }
+  if (itemToInsert.customizationOptions !== undefined) {
+    itemToInsert.customization_options = itemToInsert.customizationOptions;
+    delete itemToInsert.customizationOptions;
+  }
+
   const { data, error } = await supabase.from('menu_items').insert([itemToInsert]).select();
   if (error) throw error;
   return data[0];
 };
 
 export const updateMenuItem = async (id: number, updates: Partial<MenuItem>): Promise<MenuItem> => {
-  const updatesToApply = { ...updates };
+  const updatesToApply: any = { ...updates };
+
+  // Map camelCase to snake_case for DB
   if (updatesToApply.imageUrl) {
     updatesToApply.imageUrl = getPublicImageUrl(updatesToApply.imageUrl);
   }
+  if (updatesToApply.customizationOptions !== undefined) {
+    updatesToApply.customization_options = updatesToApply.customizationOptions;
+    delete updatesToApply.customizationOptions;
+  }
+
   const { data, error } = await supabase.from('menu_items').update(updatesToApply).eq('id', id).select();
   if (error) throw error;
   return data[0];
