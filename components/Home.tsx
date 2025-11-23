@@ -58,7 +58,7 @@ const sectionVariants = {
 export const Home: React.FC = () => {
   const { user: userObject, userRole, profile } = useAppContext();
   const navigate = useNavigate();
-  
+
   // Use localStorage instead of sessionStorage for persistence across app restarts
   const [currentSection, setCurrentSection] = useState(() => {
     return localStorage.getItem('hasSeenIntro') === 'true' ? 2 : 0;
@@ -67,7 +67,7 @@ export const Home: React.FC = () => {
   useEffect(() => {
     // If already seen (in localStorage), skip animations
     if (localStorage.getItem('hasSeenIntro') === 'true') {
-        return;
+      return;
     }
 
     document.body.style.overflow = 'hidden';
@@ -82,25 +82,25 @@ export const Home: React.FC = () => {
         localStorage.setItem('hasSeenIntro', 'true');
         return prevSection;
       });
-    }, 3000); 
+    }, 3000);
 
     return () => {
       document.body.style.overflow = 'auto';
-      clearInterval(interval); 
+      clearInterval(interval);
     };
   }, []);
 
   useEffect(() => {
-      return () => {
-          if (currentSection === 2) {
-             localStorage.setItem('hasSeenIntro', 'true');
-          }
+    return () => {
+      if (currentSection === 2) {
+        localStorage.setItem('hasSeenIntro', 'true');
       }
+    }
   }, [currentSection]);
 
 
   return (
-    <motion.div 
+    <motion.div
       className="fixed top-0 left-0 w-full h-full bg-white pt-16"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -126,21 +126,21 @@ export const Home: React.FC = () => {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={firstPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-                            <motion.h2
-                              className="text-5xl font-extrabold leading-tight mb-4 mt-8 text-gray-800"
-                              initial={{ y: -20, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              transition={{ delay: 0.4, duration: 0.5 }}
-                            >
-                              Servicios a tu medida, entregados con excelencia.
-                            </motion.h2>
-                                          <motion.p
+              <motion.h2
+                className="text-5xl font-extrabold leading-tight mb-4 mt-8 text-gray-800"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                ¡Lo que se te antoje, nosotros te lo llevamos!
+              </motion.h2>
+              <motion.p
                 className="text-gray-600 text-lg mb-8 max-w-md"
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                Todo lo que necesitas, a la puerta de tu casa con rapidez y eficiencia.
+                Olvídate de salir, relájate y disfruta. Nosotros corremos por ti.
               </motion.p>
             </motion.div>
           )}
@@ -159,9 +159,9 @@ export const Home: React.FC = () => {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={secondPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-              <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">Descubre Nuestros Servicios Integrales</h2>
+              <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">¿Qué se te antoja hoy?</h2>
               <p className="text-gray-600 text-lg mb-8 max-w-md text-center">
-                Diseñados para simplificar tu día a día, nuestra plataforma te conecta con soluciones rápidas y confiables.
+                Desde unos tacos hasta el súper de la semana. Tú pide, nosotros resolvemos.
               </p>
             </motion.div>
           )}
@@ -180,14 +180,14 @@ export const Home: React.FC = () => {
               <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
                 <Lottie animationData={thirdPageAnimation} loop={true} style={{ width: 150, height: 150 }} />
               </motion.div>
-                            <motion.h2
-                              className="text-5xl font-extrabold leading-tight mb-8 mt-8 text-gray-800"
-                              initial={{ y: -20, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              transition={{ delay: 0.4, duration: 0.5 }}
-                            >
-                              Tu próxima experiencia te espera.
-                            </motion.h2>              {userRole !== 'admin' ? (
+              <motion.h2
+                className="text-5xl font-extrabold leading-tight mb-8 mt-8 text-gray-800"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                ¿Listo para pedir?
+              </motion.h2>              {userRole !== 'admin' ? (
                 <motion.button
                   onClick={() => navigate('/restaurants')}
                   className="bg-orange-500 text-white font-bold py-4 px-8 rounded-full flex items-center justify-center gap-2 group hover:bg-orange-600 transition-colors shadow-lg"
@@ -196,7 +196,7 @@ export const Home: React.FC = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  <span>Explorar Opciones Culinarias</span>
+                  <span>¡Ver qué hay de rico!</span>
                   <ArrowRightIcon className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </motion.button>
               ) : (

@@ -12,100 +12,100 @@ import { useAppContext } from '../context/AppContext';
 
 // --- Animation Variants ---
 const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05
+        }
     }
-  }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
 };
 
 // --- Desktop Card (Vertical & Premium) ---
 const DesktopMenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void; }> = ({ item, onSelect }) => {
-  const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 400, 400);
-  return (
-    <motion.button 
-      onClick={onSelect}
-      className="w-full h-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 flex flex-col overflow-hidden group hover:shadow-md"
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      layout
-    >
-      {optimizedImageUrl && (
-          <div className="w-full h-64 overflow-hidden relative">
-            <motion.img 
-                src={optimizedImageUrl} 
-                alt={item.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
-          </div>
-      )}
-      <div className="flex-1 flex flex-col p-5">
-        <div className="flex justify-between items-start gap-2 mb-2">
-            <h3 className="font-bold text-gray-900 line-clamp-2 text-xl">{item.name}</h3>
-            <div className="bg-orange-100 p-1.5 rounded-full text-orange-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <PlusIcon className="w-5 h-5" />
+    const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 400, 400);
+    return (
+        <motion.button
+            onClick={onSelect}
+            className="w-full h-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm transition-all duration-300 flex flex-col overflow-hidden group hover:shadow-md"
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.98 }}
+            layout
+        >
+            {optimizedImageUrl && (
+                <div className="w-full h-64 overflow-hidden relative">
+                    <motion.img
+                        src={optimizedImageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300" />
+                </div>
+            )}
+            <div className="flex-1 flex flex-col p-5">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                    <h3 className="font-bold text-gray-900 line-clamp-2 text-xl">{item.name}</h3>
+                    <div className="bg-orange-100 p-1.5 rounded-full text-orange-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <PlusIcon className="w-5 h-5" />
+                    </div>
+                </div>
+
+                {item.description && <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">{item.description}</p>}
+
+                <div className="flex-grow" />
+
+                <div className="flex justify-between items-center pt-2 border-t border-gray-50 mt-2">
+                    <p className="font-extrabold text-2xl text-gray-900">${item.price.toFixed(2)}</p>
+                </div>
             </div>
-        </div>
-        
-        {item.description && <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">{item.description}</p>}
-        
-        <div className="flex-grow" />
-        
-        <div className="flex justify-between items-center pt-2 border-t border-gray-50 mt-2">
-            <p className="font-extrabold text-2xl text-gray-900">${item.price.toFixed(2)}</p>
-        </div>
-      </div>
-    </motion.button>
-  );
+        </motion.button>
+    );
 };
 
 // --- Mobile Card (Horizontal & Compact) ---
 const MobileMenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void; }> = ({ item, onSelect }) => {
     const optimizedImageUrl = getTransformedImageUrl(item.imageUrl || '', 200, 200);
     return (
-      <motion.button 
-        onClick={onSelect}
-        className="w-full flex items-start bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-left h-28"
-        whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        {optimizedImageUrl ? (
-            <img 
-                src={optimizedImageUrl} 
-                alt={item.name} 
-                className="w-24 h-full object-cover rounded-lg mr-3 flex-shrink-0"
-            />
-        ) : (
-            <div className="w-24 h-full bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-400 text-xs text-center flex-shrink-0">
-                Sin imagen
+        <motion.button
+            onClick={onSelect}
+            className="w-full flex items-start bg-white p-3 rounded-xl border border-gray-100 shadow-sm text-left h-28"
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+        >
+            {optimizedImageUrl ? (
+                <img
+                    src={optimizedImageUrl}
+                    alt={item.name}
+                    className="w-24 h-full object-cover rounded-lg mr-3 flex-shrink-0"
+                />
+            ) : (
+                <div className="w-24 h-full bg-gray-100 rounded-lg mr-3 flex items-center justify-center text-gray-400 text-xs text-center flex-shrink-0">
+                    Sin imagen
+                </div>
+            )}
+            <div className="flex-1 flex flex-col justify-between h-full py-1">
+                <div>
+                    <h3 className="font-bold text-gray-800 line-clamp-2 text-sm leading-tight mb-1">{item.name}</h3>
+                    {item.description && <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>}
+                </div>
+                <div className="flex justify-between items-end mt-auto">
+                    <p className="font-bold text-base text-orange-500">${item.price.toFixed(2)}</p>
+                    <div className="bg-orange-50 p-1 rounded-full text-orange-500">
+                        <PlusIcon className="w-4 h-4" />
+                    </div>
+                </div>
             </div>
-        )}
-        <div className="flex-1 flex flex-col justify-between h-full py-1">
-          <div>
-            <h3 className="font-bold text-gray-800 line-clamp-2 text-sm leading-tight mb-1">{item.name}</h3>
-            {item.description && <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{item.description}</p>}
-          </div>
-          <div className="flex justify-between items-end mt-auto">
-            <p className="font-bold text-base text-orange-500">${item.price.toFixed(2)}</p>
-            <div className="bg-orange-50 p-1 rounded-full text-orange-500">
-                <PlusIcon className="w-4 h-4" />
-            </div>
-          </div>
-        </div>
-      </motion.button>
+        </motion.button>
     );
 };
 
@@ -113,7 +113,7 @@ const MobileMenuItemCard: React.FC<{ item: MenuItem; onSelect: () => void; }> = 
 const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
     const navigate = useNavigate();
     const headerImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 800, 480);
-    
+
     // Group menu items by category
     const menuByCategory = restaurant.menu.reduce((acc: { [key: string]: MenuItem[] }, item: MenuItem) => {
         const category = item.category || 'Varios';
@@ -125,16 +125,16 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
     return (
         <div className="bg-gray-50 min-h-screen">
             <div className="relative">
-                <motion.img 
-                    src={headerImageUrl} 
-                    alt={restaurant.name} 
-                    className="w-full h-48 object-cover" 
+                <motion.img
+                    src={headerImageUrl}
+                    alt={restaurant.name}
+                    className="w-full h-48 object-cover"
                     initial={{ scale: 1.1 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.7 }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
-                    <motion.h1 
+                    <motion.h1
                         className="text-white text-3xl font-bold drop-shadow-lg"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                     >
                         {restaurant.name}
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         className="text-white font-semibold drop-shadow-md"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -151,18 +151,18 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                         {restaurant.category}
                     </motion.p>
                 </div>
-                <motion.button 
-                    onClick={() => navigate(-1)} 
+                <motion.button
+                    onClick={() => navigate(-1)}
                     className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-md"
                     whileTap={{ scale: 0.9 }}
                 >
-                    <ChevronLeftIcon className="w-6 h-6 text-gray-800"/>
+                    <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
                 </motion.button>
             </div>
             <div className="p-4 pb-24">
                 {Object.entries(menuByCategory).map(([category, items], categoryIndex) => (
-                    <motion.section 
-                        key={category} 
+                    <motion.section
+                        key={category}
                         className="mb-8"
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -171,7 +171,7 @@ const MobileView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                     >
                         <h2 className="text-2xl font-bold text-gray-800 mb-4 capitalize">{category.toLowerCase()}</h2>
                         <div className="grid grid-cols-1 gap-3">
-                            {items.map((item: any) => (
+                            {(items as MenuItem[]).map((item) => (
                                 <MobileMenuItemCard key={item.id} item={item} onSelect={() => handleMenuItemSelect(item)} />
                             ))}
                         </div>
@@ -221,16 +221,16 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
     return (
         <div className="h-screen max-h-screen flex flex-col bg-white">
             <header className="relative h-48 flex-shrink-0 bg-gray-200 overflow-hidden">
-                <motion.img 
-                    src={headerImageUrl} 
-                    alt={restaurant.name} 
-                    className="w-full h-full object-cover" 
+                <motion.img
+                    src={headerImageUrl}
+                    alt={restaurant.name}
+                    className="w-full h-full object-cover"
                     initial={{ scale: 1.05 }}
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.8 }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
-                    <motion.h1 
+                    <motion.h1
                         className="text-white text-4xl font-bold tracking-tight"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -238,7 +238,7 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                     >
                         {restaurant.name}
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         className="text-white/90 text-lg"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -247,13 +247,13 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                         {restaurant.category}
                     </motion.p>
                 </div>
-                <motion.button 
-                    onClick={() => navigate(-1)} 
+                <motion.button
+                    onClick={() => navigate(-1)}
                     className="absolute top-6 left-6 bg-white/80 backdrop-blur-sm rounded-full p-2 shadow-lg group"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                 >
-                    <ChevronLeftIcon className="w-7 h-7 text-gray-900"/>
+                    <ChevronLeftIcon className="w-7 h-7 text-gray-900" />
                 </motion.button>
             </header>
             <div className="flex flex-grow overflow-hidden">
@@ -262,13 +262,13 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                         <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">Menú</h3>
                         <ul>
                             {categories.map((category, i) => (
-                                <motion.li 
+                                <motion.li
                                     key={category}
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: i * 0.05 }}
                                 >
-                                    <button 
+                                    <button
                                         onClick={() => scrollToCategory(category)}
                                         className={`w-full text-left font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${activeCategory === category ? 'bg-orange-100 text-orange-600 translate-x-1' : 'text-gray-600 hover:bg-gray-100'}`}
                                     >
@@ -282,7 +282,7 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                 <main ref={mainContentRef} onScroll={handleScroll} className="flex-grow overflow-y-auto p-6 scroll-smooth">
                     {categories.map(category => (
                         <section key={category} id={`category-${category}`} className="mb-12 scroll-mt-4">
-                            <motion.h2 
+                            <motion.h2
                                 className="text-3xl font-bold text-gray-900 mb-6 capitalize"
                                 initial={{ opacity: 0 }}
                                 whileInView={{ opacity: 1 }}
@@ -290,14 +290,14 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
                             >
                                 {category.toLowerCase()}
                             </motion.h2>
-                            <motion.div 
+                            <motion.div
                                 className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
                                 variants={containerVariants}
                                 initial="hidden"
                                 whileInView="show"
                                 viewport={{ once: true, margin: "100px" }}
                             >
-                                {menuByCategory[category].map((item: any) => (
+                                {menuByCategory[category].map((item) => (
                                     <motion.div key={item.id} variants={itemVariants}>
                                         <DesktopMenuItemCard item={item} onSelect={() => handleMenuItemSelect(item)} />
                                     </motion.div>
@@ -313,61 +313,61 @@ const DesktopView: React.FC<any> = ({ restaurant, handleMenuItemSelect }) => {
 
 // --- Main Component ---
 export const RestaurantDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { restaurant, loading, error } = useRestaurantDetail(id || '');
-  const { handleAddToCart, isProductModalOpen, setIsProductModalOpen } = useAppContext();
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+    const { id } = useParams<{ id: string }>();
+    const { restaurant, loading, error } = useRestaurantDetail(id || '');
+    const { handleAddToCart, isProductModalOpen, setIsProductModalOpen } = useAppContext();
+    const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
-  useThemeColor('#f97316');
+    useThemeColor('#f97316');
 
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-  const handleMenuItemSelect = (item: MenuItem) => {
-    setSelectedItem(item);
-    setIsProductModalOpen(true);
-  };
+    const handleMenuItemSelect = (item: MenuItem) => {
+        setSelectedItem(item);
+        setIsProductModalOpen(true);
+    };
 
-  const handleCloseModal = () => {
-    setIsProductModalOpen(false);
-    setSelectedItem(null);
-  };
+    const handleCloseModal = () => {
+        setIsProductModalOpen(false);
+        setSelectedItem(null);
+    };
 
-  const handleModalAddToCart = (item: MenuItem, quantity: number, customizedIngredients: Ingredient[]) => {
-    if (restaurant) {
-      handleAddToCart(item, quantity, customizedIngredients.map(i => i.name), restaurant);
-      handleCloseModal();
+    const handleModalAddToCart = (item: MenuItem, quantity: number, customizedIngredients: string[]) => {
+        if (restaurant) {
+            handleAddToCart(item, quantity, customizedIngredients, restaurant);
+            handleCloseModal();
+        }
+    };
+
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
     }
-  };
 
-  if (loading) {
-    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
-  }
+    if (error) {
+        return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
+    }
 
-  if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">Error: {error}</div>;
-  }
+    if (!restaurant) {
+        return <div className="flex justify-center items-center h-screen text-gray-500">Restaurant not found.</div>;
+    }
 
-  if (!restaurant) {
-    return <div className="flex justify-center items-center h-screen text-gray-500">Restaurant not found.</div>;
-  }
+    const commonProps = { restaurant, handleMenuItemSelect };
 
-  const commonProps = { restaurant, handleMenuItemSelect };
-
-  return (
-    <div>
-        {isDesktop ? <DesktopView {...commonProps} /> : <MobileView {...commonProps} />}
-        <ProductDetailModal 
-            isOpen={isProductModalOpen}
-            item={selectedItem}
-            restaurant={restaurant}
-            onClose={handleCloseModal}
-            onAddToCart={handleModalAddToCart}
-        />
-    </div>
-  );
+    return (
+        <div>
+            {isDesktop ? <DesktopView {...commonProps} /> : <MobileView {...commonProps} />}
+            <ProductDetailModal
+                isOpen={isProductModalOpen}
+                item={selectedItem}
+                restaurant={restaurant}
+                onClose={handleCloseModal}
+                onAddToCart={handleModalAddToCart}
+            />
+        </div>
+    );
 };

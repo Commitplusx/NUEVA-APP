@@ -22,6 +22,7 @@ export interface MenuItem {
   reviews?: number;
   ingredients?: string[];
   isPopular?: boolean;
+  category?: string;
 }
 
 export interface Restaurant {
@@ -31,6 +32,9 @@ export interface Restaurant {
   rating: number;
   deliveryFee: number;
   deliveryTime: number;
+  // Snake case versions for compatibility
+  delivery_fee?: number;
+  delivery_time?: number;
   street_address?: string;
   neighborhood?: string;
   city?: string;
