@@ -33,7 +33,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 }) => {
   const { setBottomNavVisible } = useAppContext();
   const mapRef = useRef<MapRef>(null);
-  
+
   const [viewState, setViewState] = useState({
     latitude: initialCenter?.lat || defaultCenter.lat,
     longitude: initialCenter?.lng || defaultCenter.lng,
@@ -64,8 +64,8 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
 
   const handleConfirm = () => {
     if (mapRef.current) {
-      const { longitude, latitude } = mapRef.current.getCenter();
-      onLocationSelect({ lat: latitude, lng: longitude });
+      const { lng, lat } = mapRef.current.getCenter();
+      onLocationSelect({ lat, lng });
       onClose();
     }
   };

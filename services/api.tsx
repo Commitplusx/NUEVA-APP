@@ -251,9 +251,22 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
 };
 
 export const addRestaurant = async (restaurant: Omit<Restaurant, 'id' | 'rating' | 'menu' | 'categories'>): Promise<Restaurant> => {
-  const restaurantToInsert = { ...restaurant };
-  if (restaurantToInsert.imageUrl) {
-    restaurantToInsert.imageUrl = getPublicImageUrl(restaurantToInsert.imageUrl);
+  const restaurantToInsert: any = {
+    name: restaurant.name,
+    image_url: restaurant.imageUrl,
+    delivery_fee: restaurant.deliveryFee,
+    delivery_time: restaurant.deliveryTime,
+    street_address: restaurant.street_address,
+    neighborhood: restaurant.neighborhood,
+    city: restaurant.city,
+    postal_code: restaurant.postal_code,
+    lat: restaurant.lat,
+    lng: restaurant.lng,
+    rating: 0
+  };
+
+  if (restaurantToInsert.image_url) {
+    restaurantToInsert.image_url = getPublicImageUrl(restaurantToInsert.image_url);
   }
   const { data, error } = await supabase
     .from('restaurants')
@@ -265,10 +278,22 @@ export const addRestaurant = async (restaurant: Omit<Restaurant, 'id' | 'rating'
 };
 
 export const updateRestaurant = async (id: number, updates: Partial<Omit<Restaurant, 'categories'>>): Promise<Restaurant> => {
-  const updatesToApply = { ...updates };
-  if (updatesToApply.imageUrl) {
-    updatesToApply.imageUrl = getPublicImageUrl(updatesToApply.imageUrl);
+  const updatesToApply: any = { ...updates };
+
+  // Map camelCase to snake_case for DB
+  if (updates.imageUrl !== undefined) {
+    updatesToApply.image_url = getPublicImageUrl(updates.imageUrl);
+    delete updatesToApply.imageUrl;
   }
+  if (updates.deliveryFee !== undefined) {
+    updatesToApply.delivery_fee = updates.deliveryFee;
+    delete updatesToApply.deliveryFee;
+  }
+  if (updates.deliveryTime !== undefined) {
+    updatesToApply.delivery_time = updates.deliveryTime;
+    delete updatesToApply.deliveryTime;
+  }
+
   const { data, error } = await supabase
     .from('restaurants')
     .update(updatesToApply)

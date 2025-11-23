@@ -21,7 +21,7 @@ const RestaurantForm: React.FC<{
   const [category, setCategory] = useState('');
   const [deliveryFee, setDeliveryFee] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
-  
+
   // Image State
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -85,15 +85,10 @@ const RestaurantForm: React.FC<{
     showToast('Obteniendo dirección...', 'info');
     const addressDetails = await reverseGeocode(location.lat, location.lng);
     if (addressDetails) {
-      // The reverseGeocode function now returns a string, not an object with street_address etc.
-      // We need to parse this string or adjust the expectation.
-      // For now, I will set the streetAddress to the full address string.
-      // A more robust solution might involve updating the reverseGeocode function
-      // to return structured data or parsing the string here.
-      setStreetAddress(addressDetails);
-      setNeighborhood(''); // Clear these as the string might not contain them
-      setCity('');
-      setPostalCode('');
+      setStreetAddress(addressDetails.address || '');
+      setNeighborhood(addressDetails.neighborhood || '');
+      setCity(addressDetails.city || '');
+      setPostalCode(addressDetails.postalCode || '');
       showToast('Dirección actualizada.', 'success');
     } else {
       showToast('No se pudo obtener la dirección para esta ubicación.', 'error');
@@ -112,7 +107,7 @@ const RestaurantForm: React.FC<{
         setIsSaving(false);
         return;
       }
-      
+
       if (!lat || !lng) {
         showToast('Por favor, selecciona una ubicación en el mapa.', 'error');
         setIsSaving(false);
@@ -126,9 +121,9 @@ const RestaurantForm: React.FC<{
 
       const restaurantData = {
         name,
-        image_url: finalImageUrl,
-        delivery_fee: fee,
-        delivery_time: time,
+        imageUrl: finalImageUrl,
+        deliveryFee: fee,
+        deliveryTime: time,
         street_address: streetAddress,
         neighborhood,
         city,
@@ -178,7 +173,7 @@ const RestaurantForm: React.FC<{
           <h2 className="text-2xl font-bold text-gray-800 mb-6">{restaurant ? 'Editar' : 'Agregar'} Restaurante</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              
+
               <div className="md:col-span-2">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Restaurante</label>
                 <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
@@ -220,7 +215,7 @@ const RestaurantForm: React.FC<{
 
               <div className="md:col-span-2 mt-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
-                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"/>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
                 {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
               </div>
             </div>
@@ -333,7 +328,7 @@ export const ManageRestaurants: React.FC = () => {
     <div className={`${isAnyModalOpen ? 'modal-open' : ''}`}>
       <div className="flex justify-between items-center mb-4">
         <div className="w-1/2">
-          <input 
+          <input
             type="text"
             placeholder="Buscar restaurante..."
             value={searchQuery}
@@ -341,7 +336,7 @@ export const ManageRestaurants: React.FC = () => {
             className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
           />
         </div>
-        <button 
+        <button
           onClick={handleAddNew}
           className="flex items-center gap-2 bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
         >
@@ -351,7 +346,7 @@ export const ManageRestaurants: React.FC = () => {
       </div>
 
       {isFormOpen && (
-        <RestaurantForm 
+        <RestaurantForm
           restaurant={editingRestaurant}
           allCategories={categories}
           onSave={() => setIsFormOpen(false)}
@@ -369,10 +364,10 @@ export const ManageRestaurants: React.FC = () => {
             <p className="text-sm">{error || categoriesError}</p>
           </div>
         ) : (
-          <RestaurantList 
-            restaurants={filteredRestaurants} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
+          <RestaurantList
+            restaurants={filteredRestaurants}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
             onManageMenu={handleManageMenu}
           />
         )}

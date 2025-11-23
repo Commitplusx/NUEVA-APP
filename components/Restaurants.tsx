@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { useThemeColor } from '../hooks/useThemeColor';
-import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, SlidersIcon, StoreIcon, MotorcycleIcon, SparklesIcon, PlusIcon } from './icons';
+import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, SlidersIcon, StoreIcon, MotorcycleIcon, SparklesIcon, PlusIcon, ChevronRightIcon, GridIcon } from './icons';
 import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
 import { getTransformedImageUrl } from '../services/image';
@@ -32,50 +32,54 @@ const itemVariants = {
   exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
 };
 
-// --- Featured Section Component ---
-const FeaturedSection: React.FC<{ restaurants: Restaurant[]; onSelect: (r: Restaurant) => void }> = ({ restaurants, onSelect }) => {
-  const topRated = React.useMemo(() => {
-    return [...restaurants].sort((a, b) => b.rating - a.rating).slice(0, 5);
-  }, [restaurants]);
-
-  if (topRated.length === 0) return null;
+// --- Categories Component ---
+const Categories: React.FC = () => {
+  const categories = [
+    { id: 1, name: 'Sandwich', image: '/images/sandwitch.jpg', active: true },
+    { id: 2, name: 'Pizza', image: '/images/pizza.jpg', active: false },
+    { id: 3, name: 'Burger', image: '/images/burger.jpg', active: false },
+    { id: 4, name: 'Drinks', image: '', icon: <StoreIcon className="w-8 h-8 text-gray-400" />, active: false },
+  ];
 
   return (
-    <div className="mb-8 pl-4">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="bg-yellow-100 p-1.5 rounded-full">
-          <SparklesIcon className="w-4 h-4 text-yellow-600" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-900">Favoritos de la semana</h2>
-      </div>
-      <div className="flex overflow-x-auto gap-4 pb-4 pr-4 snap-x snap-mandatory hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {topRated.map(restaurant => {
-          const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 300);
-          return (
-            <motion.div
-              key={restaurant.id}
-              onClick={() => onSelect(restaurant)}
-              className="relative flex-shrink-0 w-64 h-40 rounded-2xl overflow-hidden snap-center shadow-md group cursor-pointer"
-              whileTap={{ scale: 0.95 }}
-              role="button"
-              tabIndex={0}
-            >
-              <img src={optimizedImageUrl} alt={restaurant.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 p-4 text-left w-full">
-                <h3 className="text-white font-bold text-lg leading-tight mb-1 truncate">{restaurant.name}</h3>
-                <div className="flex items-center gap-2 text-xs text-gray-200">
-                  <span className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                    <StarIcon className="w-3 h-3 text-yellow-400" />
-                    {restaurant.rating}
-                  </span>
-                  <span>•</span>
-                  <span>{restaurant.delivery_time} min</span>
+    <div className="mb-8 px-4">
+      <h2 className="text-xl font-bold text-gray-900 mb-5">Categories</h2>
+      <div className="flex gap-5 overflow-x-auto pb-8 pt-2 px-1 snap-x snap-mandatory hide-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {categories.map((category) => (
+          <motion.div
+            key={category.id}
+            className={`relative flex-shrink-0 w-28 h-40 rounded-[2rem] flex flex-col items-center justify-between py-4 snap-center cursor-pointer overflow-visible transition-all duration-300 ${category.active
+                ? 'bg-green-500 shadow-[0_10px_20px_rgba(34,197,94,0.3)]'
+                : 'bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]'
+              }`}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-20 h-20 -mt-2 relative z-10 flex items-center justify-center">
+              {category.image ? (
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="w-full h-full object-contain drop-shadow-xl filter"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-full">
+                  {category.icon}
                 </div>
+              )}
+            </div>
+
+            <div className="flex flex-col items-center gap-3 w-full">
+              <span className={`font-bold text-sm ${category.active ? 'text-white' : 'text-gray-800'}`}>
+                {category.name}
+              </span>
+
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${category.active ? 'bg-yellow-400 text-white' : 'bg-gray-800 text-white'
+                }`}>
+                <ChevronRightIcon className="w-4 h-4" />
               </div>
-            </motion.div>
-          )
-        })}
+            </div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );
@@ -88,14 +92,14 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
   return (
     <motion.div
       onClick={onSelect}
-      className="w-full text-left bg-gray-50 rounded-3xl p-3 flex flex-col gap-2 group active:scale-95 transition-all relative cursor-pointer"
+      className="w-full text-left bg-white rounded-[2rem] p-3 flex flex-col gap-3 group active:scale-95 transition-all relative cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
       whileTap={{ scale: 0.98 }}
       layout
       role="button"
       tabIndex={0}
     >
       {/* Image Section */}
-      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-white shadow-sm">
+      <div className="relative w-full aspect-[1.1/1] rounded-2xl overflow-hidden bg-gray-50">
         {optimizedImageUrl ? (
           <motion.img
             src={optimizedImageUrl}
@@ -113,22 +117,24 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
       </div>
 
       {/* Content Section */}
-      <div className="flex flex-col w-full px-1">
-        <h3 className="font-bold text-gray-900 line-clamp-1 text-base mb-1">{restaurant.name}</h3>
+      <div className="flex flex-col w-full px-1 pb-1">
+        <h3 className="font-bold text-gray-900 line-clamp-1 text-lg mb-0.5">{restaurant.name}</h3>
 
-        <div className="flex justify-between items-end">
+        <div className="flex justify-between items-end mt-1">
           <div className="flex flex-col">
-            <span className="text-[10px] text-gray-400 font-medium">Starting From</span>
-            <span className="text-green-600 font-bold text-sm">${Number(restaurant.delivery_fee || restaurant.deliveryFee || 0).toFixed(2)}</span>
+            <span className="text-[11px] text-gray-400 font-medium mb-0.5">Starting From</span>
+            <span className="text-green-600 font-bold text-lg">${Number(restaurant.delivery_fee || restaurant.deliveryFee || 0).toFixed(2)}</span>
           </div>
-          <div className="bg-yellow-400 text-white p-1.5 rounded-lg shadow-sm mb-1">
-            <PlusIcon className="w-4 h-4" />
+          <div className="bg-yellow-400 text-white w-8 h-8 rounded-xl flex items-center justify-center shadow-sm mb-1">
+            <PlusIcon className="w-5 h-5" />
           </div>
         </div>
       </div>
     </motion.div>
   );
 };
+
+
 
 // --- Mobile View Component ---
 const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore, error, loadMore, searchQuery, setSearchQuery, setIsFiltersOpen }) => {
@@ -146,28 +152,43 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
   }, [loading, loadingMore, hasMore, loadMore]);
 
   return (
-    <div className="pb-20 pt-4 bg-white min-h-screen">
-      <div className="px-4 mb-6 flex gap-3 sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2">
-        <div className="relative flex-grow shadow-[0_2px_8px_rgba(0,0,0,0.05)] rounded-full transition-shadow focus-within:shadow-md">
+    <div className="pb-20 pt-4 bg-white min-h-screen font-sans">
+      <div className="px-4 pt-2 mb-6 flex justify-between items-center">
+        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+          {/* Placeholder for user avatar - using a generic image or the user's profile image if available */}
+          <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop" alt="User" className="w-full h-full object-cover" />
+        </div>
+        <button className="p-2 text-gray-600">
+          <GridIcon className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="px-4 mb-6">
+        <h1 className="text-3xl text-gray-800">Food</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900">Delivery!</h1>
+      </div>
+
+      <div className="px-4 mb-8 flex gap-3">
+        <div className="relative flex-grow">
           <input
             type="text"
-            placeholder="¿Qué se te antoja hoy?"
-            className="w-full py-3.5 pl-11 pr-4 bg-gray-50 border-none rounded-full focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:bg-white text-gray-700 placeholder-gray-400 text-sm transition-all"
+            placeholder="Search"
+            className="w-full py-4 pl-12 pr-4 bg-gray-100 border-none rounded-2xl focus:outline-none focus:ring-0 text-gray-600 placeholder-gray-400 text-base"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <SearchIcon className="w-5 h-5" />
+            <SearchIcon className="w-6 h-6" />
           </div>
         </div>
-        <button onClick={() => setIsFiltersOpen(true)} className="p-3.5 bg-green-500 text-white rounded-full shadow-lg shadow-green-500/20 active:scale-95 transition-all" aria-label="Filtros">
-          <SlidersIcon className="w-5 h-5" />
+        <button onClick={() => setIsFiltersOpen(true)} className="p-4 bg-green-500 text-white rounded-2xl shadow-none active:scale-95 transition-all flex-shrink-0" aria-label="Filtros">
+          <SlidersIcon className="w-6 h-6" />
         </button>
       </div>
 
-      {!searchQuery && !loading && (
-        <FeaturedSection restaurants={restaurants} onSelect={(r) => navigate(`/restaurants/${r.id}`)} />
-      )}
+      {/* Featured Section Removed as per design */}
+
+      <Categories />
 
       <section className="px-4">
         <div className="flex justify-between items-end mb-4">
