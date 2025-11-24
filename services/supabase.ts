@@ -10,4 +10,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase URL and anon key are required.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { CapacitorStorage } from './capacitorStorage';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: CapacitorStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});

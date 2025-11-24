@@ -19,6 +19,7 @@ import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Pro
 import { Toast, ToastType } from '../components/Toast';
 
 import { ConfirmModal } from '../components/ConfirmModal'; // <-- Import new modal
+import { useAppState } from '../hooks/useAppState'; // Import useAppState
 
 import { User } from '@supabase/supabase-js';
 
@@ -737,13 +738,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
     const fetchUserProfile = async () => {
-
-
-
-
-
-
-
       if (user) {
 
 
@@ -834,43 +828,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     fetchUserProfile();
-
-
-
-
-
-
-
   }, [user]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+  useAppState(() => {
+    if (user) {
+      console.log('App came to foreground, refreshing profile...');
+      const refreshProfile = async () => {
+        try {
+          const userProfile = await getProfile();
+          setProfile(userProfile);
+        } catch (error) {
+          console.error("Error refreshing user profile on foreground:", error);
+        }
+      };
+      refreshProfile();
+    }
+  });
 
   useEffect(() => {
 

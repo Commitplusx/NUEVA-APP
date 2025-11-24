@@ -3,6 +3,35 @@ import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUs
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 import { Capacitor } from '@capacitor/core';
+import { z } from 'zod';
+
+// --- Zod Schemas ---
+
+const ServiceRequestSchema = z.object({
+  origin: z.string().min(1, "El origen es obligatorio"),
+  destination: z.string().min(1, "El destino es obligatorio"),
+  description: z.string().min(1, "La descripción es obligatoria"),
+  price: z.number().positive("El precio debe ser positivo"),
+  distance: z.number().nonnegative("La distancia no puede ser negativa"),
+  user_id: z.string().uuid("ID de usuario inválido"),
+  // Optional fields
+  status: z.string().optional(),
+  phone: z.string().optional(),
+  origin_lat: z.number().optional(),
+  origin_lng: z.number().optional(),
+  destination_lat: z.number().optional(),
+  destination_lng: z.number().optional(),
+  scheduled_at: z.string().nullable().optional(),
+});
+
+const OrderSchema = z.object({
+  customer_name: z.string().min(1, "El nombre es obligatorio"),
+  customer_phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
+  delivery_address: z.string().min(5, "La dirección es muy corta"),
+  total_amount: z.number().positive("El monto total debe ser positivo"),
+  delivery_fee: z.number().nonnegative("El costo de envío no puede ser negativo"),
+  restaurant_id: z.number().int().positive("ID de restaurante inválido"),
+});
 
 // --- Geocoding Services (Reescrito para Mapbox) ---
 
@@ -199,16 +228,31 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     }
   }
 
+  const orderDataToValidate = {
+    customer_name: userDetails.name,
+    customer_phone: userDetails.phone,
+    delivery_address: `${userDetails.address}, ${userDetails.neighborhood}, ${userDetails.postalCode}`,
+    total_amount: totalAmount,
+    delivery_fee: deliveryFee,
+    restaurant_id: restaurantId,
+  };
+
+  // Zod Validation
+  try {
+    OrderSchema.parse(orderDataToValidate);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorMessage = error.errors.map(e => e.message).join(', ');
+      throw new Error(`Error de validación: ${errorMessage}`);
+    }
+    throw error;
+  }
+
   const { data: orderData, error: orderError } = await supabase
     .from('orders')
     .insert({
       user_id: user.id,
-      customer_name: userDetails.name,
-      customer_phone: userDetails.phone,
-      delivery_address: `${userDetails.address}, ${userDetails.neighborhood}, ${userDetails.postalCode}`,
-      total_amount: totalAmount,
-      delivery_fee: deliveryFee,
-      restaurant_id: restaurantId,
+      ...orderDataToValidate,
       status: 'pending',
       origin_lat: originLat,
       origin_lng: originLng,
@@ -442,7 +486,20 @@ export const getServiceRequests = async (): Promise<ServiceRequest[]> => {
 export const createServiceRequest = async (request: ServiceRequest): Promise<ServiceRequest> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
+
   const requestWithUser = { ...request, user_id: user.id };
+
+  // Zod Validation
+  try {
+    ServiceRequestSchema.parse(requestWithUser);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errorMessage = error.errors.map(e => e.message).join(', ');
+      throw new Error(`Error de validación: ${errorMessage}`);
+    }
+    throw error;
+  }
+
   const { data, error } = await supabase.from('service_requests').insert([requestWithUser]).select();
   if (error) throw error;
   return data[0];

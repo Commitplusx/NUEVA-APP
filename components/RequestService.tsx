@@ -46,20 +46,20 @@ interface NativeMapPlugin {
 
 export const RequestService: React.FC = () => {
   useThemeColor('var(--color-rappi-primary)');
-  const { showToast, baseFee, userRole, setBottomNavVisible } = useAppContext();
+  const { showToast, baseFee, userRole, setBottomNavVisible, profile } = useAppContext(); // Get profile from context
   const [isCalculating, setIsCalculating] = useState(false);
   const [step, setStep] = useState<'details' | 'confirmation' | 'submitted'>('details');
   const [description, setDescription] = useState<string>('');
   const [distance, setDistance] = useState<number | null>(null);
   const [shippingCost, setShippingCost] = useState<number | null>(null);
-  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  // const [userProfile, setUserProfile] = useState<Profile | null>(null); // Remove local state
   const [confirmedSchedule, setConfirmedSchedule] = useState<{ date: Date, time: string } | null>(null);
   const [newRequestId, setNewRequestId] = useState<string | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null);
   const mapRef = useRef<MapRef | null>(null);
 
-  const { origin, destination, originCoords, destinationCoords, showOriginMapPicker, setShowOriginMapPicker, showDestinationMapPicker, setShowDestinationMapPicker, initialOriginLocation, initialDestinationLocation, handleUseProfileAddress, handleGetCurrentLocation, handleMapPick, handleConfirmOrigin, handleConfirmDestination, } = useServiceLocationPicker({ userProfile, showToast, setBottomNavVisible });
+  const { origin, destination, originCoords, destinationCoords, showOriginMapPicker, setShowOriginMapPicker, showDestinationMapPicker, setShowDestinationMapPicker, initialOriginLocation, initialDestinationLocation, handleUseProfileAddress, handleGetCurrentLocation, handleMapPick, handleConfirmOrigin, handleConfirmDestination, } = useServiceLocationPicker({ userProfile: profile, showToast, setBottomNavVisible }); // Use profile from context
 
   const weekDays = useMemo(() => getNext7Days(), []);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
@@ -69,15 +69,7 @@ export const RequestService: React.FC = () => {
       showToast('Por favor, inicie sesión para usar este servicio.', 'info');
       return;
     }
-    const fetchProfile = async () => {
-      try {
-        const profile = await getProfile();
-        if (profile) setUserProfile(profile);
-      } catch (error) {
-        showToast('No se pudo cargar tu perfil.', 'error');
-      }
-    };
-    if (userRole === 'user' || userRole === 'admin') fetchProfile();
+    // Remove local fetch
   }, [userRole, showToast]);
 
   useEffect(() => {
@@ -180,14 +172,14 @@ export const RequestService: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!origin || !destination || !description || !shippingCost || !userProfile?.user_id) {
+    if (!origin || !destination || !description || !shippingCost || !profile?.user_id) { // Use profile
       showToast('Faltan datos para crear la solicitud.', 'error');
       return;
     }
     setIsCalculating(true);
     try {
       const newServiceRequest = {
-        origin, destination, description, price: shippingCost, distance: distance || 0, user_id: userProfile.user_id, status: 'pending', phone: userProfile.phone || undefined, origin_lat: originCoords?.lat, origin_lng: originCoords?.lng, destination_lat: destinationCoords?.lat, destination_lng: destinationCoords?.lng,
+        origin, destination, description, price: shippingCost, distance: distance || 0, user_id: profile.user_id, status: 'pending', phone: profile.phone || undefined, origin_lat: originCoords?.lat, origin_lng: originCoords?.lng, destination_lat: destinationCoords?.lat, destination_lng: destinationCoords?.lng, // Use profile
         scheduled_at: confirmedSchedule ? `${confirmedSchedule.date.toISOString().split('T')[0]}T${confirmedSchedule.time}:00` : null,
       };
       const createdRequest = await createServiceRequest(newServiceRequest as ServiceRequest);
@@ -222,7 +214,7 @@ export const RequestService: React.FC = () => {
             <p className="flex-grow py-2 px-3 pl-10 text-gray-800 truncate">{origin || 'Selecciona tu dirección de origen'}</p>
             <button onClick={() => handleMapPick('origin')} className="flex-shrink-0 bg-black text-white text-sm font-bold py-2.5 px-4 rounded-r-lg"><Icons.MapIcon className="w-4 h-4" />Mapa</button>
           </div>
-          {userProfile?.street_address && <button onClick={handleUseProfileAddress} className="text-xs font-medium underline text-green-600">Usar mi dirección guardada</button>}
+          {profile?.street_address && <button onClick={handleUseProfileAddress} className="text-xs font-medium underline text-green-600">Usar mi dirección guardada</button>}
           <button onClick={handleGetCurrentLocation} className="text-xs font-medium underline text-green-600 ml-2">Usar mi ubicación actual</button>
         </div>
         <div className="flex items-center justify-center py-1"><div className="flex-grow border-t border-dashed border-gray-300"></div><Icons.ChevronDownIcon className="w-5 h-5 text-gray-400 mx-2" /><div className="flex-grow border-t border-dashed border-gray-300"></div></div>

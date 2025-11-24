@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAppState } from './useAppState';
 import { supabase } from '../services/supabase';
 import { Restaurant } from '../types';
 import { denormalizeRestaurants } from '../services/denormalize';
@@ -46,12 +47,12 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
           .select('restaurant_id')
           .in('category_id', categoryIds);
         if (restCatError) throw restCatError;
-        
+
         restaurantIdsForCategories = [...new Set(restCatData.map(rc => rc.restaurant_id))];
         if (restaurantIdsForCategories.length === 0) {
-            setRestaurants([]);
-            setHasMore(false);
-            return;
+          setRestaurants([]);
+          setHasMore(false);
+          return;
         }
       }
 
@@ -109,6 +110,11 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
     setHasMore(true);
     fetchPage(0, true);
   }, [searchQuery, filters, fetchPage]);
+
+  useAppState(() => {
+    console.log('App came to foreground, refreshing restaurants...');
+    fetchPage(0, true);
+  });
 
   const loadMore = () => {
     if (loading || loadingMore || !hasMore) return;

@@ -240,8 +240,8 @@ export const Cart: React.FC = () => {
     setTimeout(() => { isPickingLocation.current = false; }, 800);
   };
 
-  // Calculate total price for an item including extras
-  const calculateItemPrice = (item: CartItem) => {
+  // Helper to calculate extras cost per unit
+  const calculateExtrasPerUnit = (item: CartItem) => {
     let extraPrice = 0;
     if (item.selectedOptions && item.product.customizationOptions) {
       item.product.customizationOptions.forEach(group => {
@@ -250,10 +250,17 @@ export const Cart: React.FC = () => {
         extraPrice += extraCount * group.pricePerExtra;
       });
     }
-    return (item.product.price + extraPrice) * item.quantity;
+    return extraPrice;
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + calculateItemPrice(item), 0);
+  // Calculate total price for an item (Base + Extras) * Quantity
+  const calculateItemTotal = (item: CartItem) => {
+    return (item.product.price + calculateExtrasPerUnit(item)) * item.quantity;
+  };
+
+  const productsSubtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const extrasSubtotal = cartItems.reduce((sum, item) => sum + calculateExtrasPerUnit(item) * item.quantity, 0);
+  const subtotal = productsSubtotal + extrasSubtotal;
   const deliveryFee = baseFee + (calculatedDistance ? calculatedDistance * 10 : 0); // $10 per km
   const total = subtotal + deliveryFee;
 
@@ -360,11 +367,11 @@ export const Cart: React.FC = () => {
               </div>
             </div>
             <div className="flex flex-col items-end ml-2 flex-shrink-0">
-              <p className="font-bold text-lg">${calculateItemPrice(item).toFixed(2)}</p>
-              {calculateItemPrice(item) > item.product.price * item.quantity && (
-                <div className="text-[10px] text-gray-500 text-right">
-                  <p>Base: ${(item.product.price * item.quantity).toFixed(2)}</p>
-                  <p className="text-blue-600">Extras: +${(calculateItemPrice(item) - item.product.price * item.quantity).toFixed(2)}</p>
+              <p className="font-bold text-lg">${calculateItemTotal(item).toFixed(2)}</p>
+              {calculateExtrasPerUnit(item) > 0 && (
+                <div className="text-[10px] text-gray-500 text-right mt-1 bg-gray-50 p-1 rounded">
+                  <p>Unitario: ${item.product.price.toFixed(2)} + ${calculateExtrasPerUnit(item).toFixed(2)}</p>
+                  <p className="text-blue-600 font-medium">Extras Total: +${(calculateExtrasPerUnit(item) * item.quantity).toFixed(2)}</p>
                 </div>
               )}
             </div>
@@ -373,8 +380,20 @@ export const Cart: React.FC = () => {
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+        <div className="space-y-2 mb-3 border-b border-gray-100 pb-3">
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>Productos</span>
+            <span>${productsSubtotal.toFixed(2)}</span>
+          </div>
+          {extrasSubtotal > 0 && (
+            <div className="flex justify-between items-center text-sm text-blue-600">
+              <span>Extras</span>
+              <span>+${extrasSubtotal.toFixed(2)}</span>
+            </div>
+          )}
+        </div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600">Subtotal</span>
+          <span className="text-gray-800 font-medium">Subtotal</span>
           <span className="font-semibold">${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-center">
