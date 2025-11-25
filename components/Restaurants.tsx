@@ -22,14 +22,13 @@ const listVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  hidden: { opacity: 0, y: 10 },
   show: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    transition: { type: 'spring', stiffness: 300, damping: 24 }
+    transition: { duration: 0.3 }
   },
-  exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
+  exit: { opacity: 0, transition: { duration: 0.2 } }
 };
 
 // --- Categories Component ---
@@ -49,8 +48,8 @@ const Categories: React.FC = () => {
           <motion.div
             key={category.id}
             className={`relative flex-shrink-0 w-28 h-40 rounded-[2rem] flex flex-col items-center justify-between py-4 snap-center cursor-pointer overflow-visible transition-all duration-300 ${category.active
-                ? 'bg-green-500 shadow-[0_10px_20px_rgba(34,197,94,0.3)]'
-                : 'bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]'
+              ? 'bg-green-500 shadow-[0_10px_20px_rgba(34,197,94,0.3)]'
+              : 'bg-white shadow-[0_10px_30px_rgba(0,0,0,0.05)]'
               }`}
             whileTap={{ scale: 0.95 }}
           >
@@ -90,24 +89,20 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 400);
 
   return (
-    <motion.div
+    <div
       onClick={onSelect}
-      className="w-full text-left bg-white rounded-[2rem] p-3 flex flex-col gap-3 group active:scale-95 transition-all relative cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
-      whileTap={{ scale: 0.98 }}
-      layout
+      className="w-full text-left bg-white rounded-[2rem] p-3 flex flex-col gap-3 group active:scale-95 transition-transform relative cursor-pointer shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]"
       role="button"
       tabIndex={0}
     >
       {/* Image Section */}
       <div className="relative w-full aspect-[1.1/1] rounded-2xl overflow-hidden bg-gray-50">
         {optimizedImageUrl ? (
-          <motion.img
+          <img
             src={optimizedImageUrl}
             alt={restaurant.name}
-            className="w-full h-full object-cover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            className="w-full h-full object-cover transition-opacity duration-500"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -130,7 +125,7 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -196,37 +191,29 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
           <span className="text-xs text-gray-500 font-medium mb-1 bg-gray-100 px-2 py-0.5 rounded-full">{restaurants.length} lugares</span>
         </div>
 
-        <motion.div
-          layout
+        <div
           className="grid grid-cols-2 gap-4"
         >
-          <AnimatePresence mode="popLayout">
-            {loading && [...Array(6)].map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
-            {!loading && error && <div key="error-msg" className="text-center text-red-500 col-span-2 py-10"><p>{error}</p></div>}
-            {!loading && !error && restaurants.map((restaurant: Restaurant, index: number) => {
-              const isLastElement = restaurants.length === index + 1;
-              return (
-                <motion.div
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
-                  key={restaurant.id}
-                  ref={isLastElement ? lastRestaurantElementRef : null}
-                >
-                  <MobileRestaurantCard
-                    restaurant={restaurant}
-                    onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
-                  />
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+          {loading && [...Array(6)].map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
+          {!loading && error && <div key="error-msg" className="text-center text-red-500 col-span-2 py-10"><p>{error}</p></div>}
+          {!loading && !error && restaurants.map((restaurant: Restaurant, index: number) => {
+            const isLastElement = restaurants.length === index + 1;
+            return (
+              <div
+                key={restaurant.id}
+                ref={isLastElement ? lastRestaurantElementRef : null}
+              >
+                <MobileRestaurantCard
+                  restaurant={restaurant}
+                  onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
+                />
+              </div>
+            );
+          })}
           {loadingMore && <div className="col-span-2"><Spinner /></div>}
           {!hasMore && restaurants.length > 0 && <p className="col-span-2 text-center text-gray-400 text-[10px] py-4 font-medium tracking-wide uppercase">Has llegado al final</p>}
           {!loading && restaurants.length === 0 && <div className="col-span-2 text-center text-gray-500 p-6 mt-4 bg-gray-50 rounded-xl shadow-sm mx-2"><StoreIcon className="w-10 h-10 mx-auto text-gray-300 mb-2" /><p className="text-sm">No encontramos restaurantes por aquí.</p></div>}
-        </motion.div>
+        </div>
       </section>
     </div>
   );
