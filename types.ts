@@ -157,5 +157,6 @@ export interface Order {
   origin_lng?: number | null;
   destination_lat?: number | null;
   destination_lng?: number | null;
+  driver_id?: string | null;
   created_at?: string;
 }

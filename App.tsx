@@ -145,16 +145,7 @@ const App: React.FC = () => {
         </AnimatePresence>
       </main>
 
-      {showInstallButton && (
-        <div className="fixed bottom-24 left-0 right-0 flex justify-center p-4 z-50">
-          <button
-            onClick={handleInstallClick}
-            className="bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-orange-600 transition-colors"
-          >
-            Instalar Aplicación
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };

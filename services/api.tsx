@@ -242,7 +242,7 @@ export const confirmarPedido = async (cart: CartItem[], userDetails: OrderUserDe
     OrderSchema.parse(orderDataToValidate);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessage = error.errors.map(e => e.message).join(', ');
+      const errorMessage = error.issues.map(e => e.message).join(', ');
       throw new Error(`Error de validación: ${errorMessage}`);
     }
     throw error;
@@ -494,7 +494,7 @@ export const createServiceRequest = async (request: ServiceRequest): Promise<Ser
     ServiceRequestSchema.parse(requestWithUser);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessage = error.errors.map(e => e.message).join(', ');
+      const errorMessage = error.issues.map(e => e.message).join(', ');
       throw new Error(`Error de validación: ${errorMessage}`);
     }
     throw error;

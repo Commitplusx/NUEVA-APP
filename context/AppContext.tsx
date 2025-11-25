@@ -2213,15 +2213,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-      await confirmarPedido(cart, userDetails, deliveryFee, destinationCoords);
-
-
-
-
-
-
-
+      const order = await confirmarPedido(cart, userDetails, deliveryFee, destinationCoords);
       showToast("¡Pedido recibido! Recibirás una confirmación por WhatsApp.", 'success');
+      setCart([]);
+      return order;
 
 
 

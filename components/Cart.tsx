@@ -13,6 +13,8 @@ import Map, { Marker } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Capacitor } from '@capacitor/core';
 import { reverseGeocode } from '../services/api';
+import { supabase } from '../services/supabase';
+import { OrderTracker } from './OrderTracker';
 
 type CartStep = 'cart' | 'details' | 'confirmation' | 'success';
 
@@ -101,6 +103,7 @@ export const Cart: React.FC = () => {
   });
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     if (user && profile) {
@@ -127,13 +130,24 @@ export const Cart: React.FC = () => {
       if (profile.lat && profile.lng) {
         setUserAddressCoords(prev => {
           if (prev) return prev; // Si ya hay coordenadas, no sobrescribir
-          const coords = { lat: profile.lat, lng: profile.lng };
-          setDestinationCoords(coords); // Sincronizar contexto
-          return coords;
+
+          // Side effect moved out: We will sync destinationCoords in a separate effect or just here if we weren't using functional update.
+          // But since we need to check 'prev', we can't easily do it outside without 'userAddressCoords' dependency which might loop.
+          // However, since this is initialization, we can check if userAddressCoords is null.
+          return { lat: profile.lat!, lng: profile.lng! };
         });
       }
     }
-  }, [user, profile, setDestinationCoords]);
+  }, [user, profile]);
+
+  // Sync destinationCoords when userAddressCoords is set initially
+  useEffect(() => {
+    if (userAddressCoords && !calculatedDistance) {
+      // This is a bit hacky. We want to sync ONLY if it was just initialized from profile.
+      // But setDestinationCoords is safe to call in useEffect.
+      setDestinationCoords(userAddressCoords);
+    }
+  }, [userAddressCoords, setDestinationCoords]);
 
   // Calculate distance and price whenever coordinates change
   useEffect(() => {
@@ -283,7 +297,10 @@ export const Cart: React.FC = () => {
     try {
       // Artificial delay of 4 seconds to show animation
       await new Promise(resolve => setTimeout(resolve, 4000));
-      await handleConfirmOrder(userDetails, deliveryFee);
+      const order = await handleConfirmOrder(userDetails, deliveryFee);
+      if (order) {
+        setCurrentOrderId(order.id);
+      }
       setStep('success');
     } catch (error) {
       console.error('Order confirmation failed:', error);
@@ -622,19 +639,7 @@ export const Cart: React.FC = () => {
     );
   };
 
-  const renderSuccessStep = () => (
-    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center">
-      <Lottie animationData={newCheckoutAnimation} loop={true} style={{ width: 200, height: 200 }} />
-      <h3 className="font-bold text-2xl text-green-600 mt-4">¡Pedido Recibido!</h3>
-      <p className="text-gray-600 mt-2">Tu pedido ha sido enviado con éxito y está siendo procesado.</p>
-      <button
-        onClick={() => navigate('/restaurants')}
-        className="mt-6 px-6 py-3 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
-      >
-        Volver a Restaurantes
-      </button>
-    </div>
-  );
+
 
   return (
     <div className="p-4 bg-gray-50 min-h-full">
@@ -694,15 +699,16 @@ export const Cart: React.FC = () => {
                 {renderConfirmationStep()}
               </motion.div>
             )}
-            {step === 'success' && (
+            {step === 'success' && currentOrderId && (
               <motion.div
                 key="success"
                 initial={{ x: 300, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -300, opacity: 0 }}
                 transition={{ duration: 0.3 }}
+                className="h-full"
               >
-                {renderSuccessStep()}
+                <OrderTracker orderId={currentOrderId} />
               </motion.div>
             )}
           </AnimatePresence>
