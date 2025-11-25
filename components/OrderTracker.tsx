@@ -13,13 +13,21 @@ interface OrderTrackerProps {
     onFinish?: () => void;
 }
 
+import { useAppContext } from '../context/AppContext';
+
 export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish }) => {
+    const { setBottomNavVisible } = useAppContext();
     const [order, setOrder] = useState<any>(null);
     const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [driverProfile, setDriverProfile] = useState<Profile | null>(null);
     const [routeGeoJSON, setRouteGeoJSON] = useState<any>(null);
     const [isFinishing, setIsFinishing] = useState(false);
     const mapRef = useRef<MapRef>(null);
+
+    useEffect(() => {
+        setBottomNavVisible(false);
+        return () => setBottomNavVisible(true);
+    }, [setBottomNavVisible]);
 
     // Fetch Order Data
     useEffect(() => {
@@ -213,7 +221,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
     };
 
     return (
-        <div className="flex flex-col h-full w-full bg-gray-50 rounded-xl overflow-hidden shadow-lg border border-gray-200 relative">
+        <div className="flex flex-col h-full w-full bg-white relative">
             {/* Success Overlay Animation */}
             <AnimatePresence>
                 {isFinishing && (
@@ -253,7 +261,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
             </AnimatePresence>
 
             {/* Map Section */}
-            <div className="h-[55vh] w-full relative">
+            <div className="h-[60vh] w-full relative">
                 <Map
                     ref={mapRef}
                     initialViewState={{
@@ -340,83 +348,98 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
             </div>
 
             {/* Timeline Section */}
-            <div className="flex-grow p-6 bg-white overflow-y-auto">
-                {/* Status Header */}
-                <div className="mb-6 text-center">
-                    <h2 className="text-xl font-extrabold text-gray-800 mb-1">
-                        {order?.status === 'pending' && 'Confirmando tu pedido'}
-                        {order?.status === 'accepted' && 'Preparando tu comida'}
-                        {(order?.status === 'picked_up' || order?.status === 'on_way') && 'Tu pedido va en camino'}
-                        {order?.status === 'delivered' && '¡Pedido entregado!'}
-                    </h2>
-                    <p className="text-sm text-gray-500 font-medium">
-                        {getStatusText()}
-                    </p>
-                </div>
-
-                <div className="flex justify-between items-center relative mb-8">
-                    {/* Progress Bar Background */}
-                    <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -z-0 rounded-full"></div>
-                    {/* Progress Bar Active */}
-                    <div
-                        className="absolute top-1/2 left-0 h-1 bg-green-500 -z-0 transition-all duration-1000 rounded-full"
-                        style={{ width: `${(currentStep / 3) * 100}%` }}
-                    ></div>
-                </div>
-
-                {/* Driver Info & ETA */}
-                <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex items-center justify-between mb-6 shadow-sm">
-                    <div className="flex items-center space-x-4">
-                        <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border-2 border-white shadow-md">
-                            {driverProfile?.avatar_url ? (
-                                <img src={driverProfile.avatar_url} alt="Repartidor" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="text-gray-400">
-                                    <FaUser size={20} />
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Tu Repartidor</p>
-                            <p className="font-bold text-gray-800 text-lg leading-tight">
-                                {driverProfile?.full_name || (order?.driver_id ? 'Asignado' : 'Buscando...')}
-                            </p>
-                            {driverProfile?.phone && (
-                                <a href={`tel:${driverProfile.phone}`} className="inline-flex items-center gap-2 text-sm text-blue-600 font-semibold mt-1 hover:text-blue-700 transition-colors bg-blue-50 px-2 py-1 rounded-lg">
-                                    <FaPhone size={12} />
-                                    <span>{driverProfile.phone}</span>
-                                </a>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="text-right">
-                        <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Llegada</p>
-                        <p className="text-xl font-black text-gray-800">
-                            {order?.status === 'delivered' ? 'Listo' : '15-25 min'}
+            <div className="flex-grow bg-white flex flex-col -mt-6 rounded-t-3xl relative z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div className="p-6 flex flex-col h-full">
+                    {/* Status Header */}
+                    <div className="mb-6 text-center">
+                        <h2 className="text-xl font-extrabold text-gray-800 mb-1">
+                            {order?.status === 'pending' && 'Confirmando tu pedido'}
+                            {order?.status === 'accepted' && 'Preparando tu comida'}
+                            {(order?.status === 'picked_up' || order?.status === 'on_way') && 'Tu pedido va en camino'}
+                            {order?.status === 'delivered' && '¡Pedido entregado!'}
+                        </h2>
+                        <p className="text-sm text-gray-500 font-medium">
+                            {getStatusText()}
                         </p>
                     </div>
-                </div>
 
-                {/* Finish Button - Only when delivered */}
-                <AnimatePresence>
-                    {order.status === 'delivered' && (
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            className="flex justify-center mt-4"
-                        >
-                            <button
-                                onClick={handleFinish}
-                                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 px-10 rounded-xl shadow-xl shadow-green-500/30 hover:shadow-green-500/50 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-3 text-lg"
+                    <div className="flex justify-between items-center relative mb-8">
+                        {/* Progress Bar Background */}
+                        <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -z-0 rounded-full"></div>
+                        {/* Progress Bar Active */}
+                        <div
+                            className="absolute top-1/2 left-0 h-1 bg-green-500 -z-0 transition-all duration-1000 rounded-full"
+                            style={{ width: `${(currentStep / 3) * 100}%` }}
+                        ></div>
+
+                        {/* Steps Icons Only */}
+                        {['Confirmado', 'Preparando', 'En Camino', 'Entregado'].map((step, index) => (
+                            <div key={index} className="flex flex-col items-center z-10 bg-white px-1">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${index <= currentStep ? 'bg-green-500 border-green-500 text-white scale-110 shadow-md' : 'bg-white border-gray-200 text-gray-300'
+                                    }`}>
+                                    {index === 0 && <FaCheckCircle size={14} />}
+                                    {index === 1 && <FaStore size={14} />}
+                                    {index === 2 && <FaMotorcycle size={14} />}
+                                    {index === 3 && <MdDeliveryDining size={16} />}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Driver Info & ETA */}
+                    <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex items-center justify-between mb-6 shadow-sm">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border-2 border-white shadow-md">
+                                {driverProfile?.avatar_url ? (
+                                    <img src={driverProfile.avatar_url} alt="Repartidor" className="w-full h-full object-cover" />
+                                ) : (
+                                    <div className="text-gray-400">
+                                        <FaUser size={20} />
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Tu Repartidor</p>
+                                <p className="font-bold text-gray-800 text-lg leading-tight">
+                                    {driverProfile?.full_name || (order?.driver_id ? 'Asignado' : 'Buscando...')}
+                                </p>
+                                {driverProfile?.phone && (
+                                    <a href={`tel:${driverProfile.phone}`} className="inline-flex items-center gap-2 text-sm text-blue-600 font-semibold mt-1 hover:text-blue-700 transition-colors bg-blue-50 px-2 py-1 rounded-lg">
+                                        <FaPhone size={12} />
+                                        <span>{driverProfile.phone}</span>
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Llegada</p>
+                            <p className="text-xl font-black text-gray-800">
+                                {order?.status === 'delivered' ? 'Listo' : '15-25 min'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Finish Button - Only when delivered */}
+                    <AnimatePresence>
+                        {order.status === 'delivered' && (
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                className="flex justify-center mt-4"
                             >
-                                <span className="text-2xl"><FaCheckCircle /></span>
-                                <span>Finalizar y Salir</span>
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                <button
+                                    onClick={handleFinish}
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-4 px-10 rounded-xl shadow-xl shadow-green-500/30 hover:shadow-green-500/50 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-3 text-lg"
+                                >
+                                    <span className="text-2xl"><FaCheckCircle /></span>
+                                    <span>Finalizar y Salir</span>
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
         </div>
     );

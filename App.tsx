@@ -57,7 +57,7 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
  * Gestiona la visibilidad de la cabecera y el sidebar basándose en la ruta actual y el rol del usuario.
  */
 const App: React.FC = () => {
-  const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen, isAddressModalOpen } = useAppContext();
+  const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen, isAddressModalOpen, isBottomNavVisible } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -65,7 +65,8 @@ const App: React.FC = () => {
     location.pathname !== '/' &&
     !isCustomizationModalOpen &&
     !isProductModalOpen &&
-    !isAddressModalOpen;
+    !isAddressModalOpen &&
+    isBottomNavVisible;
 
 
   useEffect(() => {

@@ -2536,7 +2536,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-    isBottomNavVisible,
+
 
 
 
@@ -2640,6 +2640,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
+    isBottomNavVisible,
     setBottomNavVisible: setIsBottomNavVisible,
 
 
