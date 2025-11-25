@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../services/supabase';
 import { updateProfile } from '../services/api';
 import { useAppContext } from '../context/AppContext';
-import { UserIcon, LockIcon, MailIcon, ArrowRightIcon } from './icons';
+import { UserIcon, LockIcon, MailIcon, ArrowRightIcon, PhoneIcon } from './icons';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -83,173 +83,197 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Side - Image & Branding (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gray-900 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-60"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80")' }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+    <div className="min-h-screen flex bg-white font-sans">
+      {/* Left Side - Branding (Desktop) - Minimalist Solid Color */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-black flex-col justify-between p-16 text-white">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <h1 className="text-5xl font-black tracking-tighter mb-2">
+            Estrella<span className="text-orange-500">Express</span>
+          </h1>
+          <p className="text-xl text-gray-400 font-light tracking-wide">Tu antojo, en minutos.</p>
+        </motion.div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full text-white">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">Estrella Express</h1>
-            <p className="mt-2 text-lg text-gray-300">Tu comida favorita, más rápido que nunca.</p>
-          </div>
-
-          <div className="space-y-6">
-            <blockquote className="text-2xl font-medium leading-relaxed">
-              "La mejor manera de pedir comida. Rápido, confiable y siempre delicioso."
-            </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-gray-900 bg-gray-700 overflow-hidden">
-                    <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-gray-400">+2k usuarios felices</p>
-            </div>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="space-y-8"
+        >
+          <blockquote className="text-3xl font-medium leading-snug text-gray-200">
+            "Simplicidad y velocidad en cada entrega."
+          </blockquote>
+        </motion.div>
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative">
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
+          layout
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md space-y-8"
+          className="w-full max-w-md space-y-8 bg-white p-8 lg:p-0"
         >
           <div className="text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-              {isRegistering ? 'Crea tu cuenta' : 'Bienvenido de nuevo'}
-            </h2>
-            <p className="mt-2 text-gray-500">
+            <motion.h2
+              layout
+              key={isRegistering ? 'reg-title' : 'login-title'}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl font-black text-gray-900 tracking-tight mb-2"
+            >
+              {isRegistering ? 'Únete a nosotros' : '¡Hola de nuevo!'}
+            </motion.h2>
+            <motion.p layout className="text-gray-500 text-lg">
               {isRegistering
-                ? 'Ingresa tus datos para comenzar a pedir.'
-                : 'Ingresa tus credenciales para acceder.'}
-            </p>
+                ? 'Crea tu cuenta y empieza a pedir.'
+                : 'Ingresa tus datos para continuar.'}
+            </motion.p>
           </div>
 
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm flex items-center gap-2"
+              layout
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
               {error}
             </motion.div>
           )}
 
           <div className="space-y-5">
-            {isRegistering && (
-              <div className="grid grid-cols-1 gap-5">
-                <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Nombre Completo"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-                <div className="relative group">
-                  <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
-                  <input
-                    type="tel"
-                    placeholder="Teléfono"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
+            <AnimatePresence mode='wait'>
+              {isRegistering && (
+                <motion.div
+                  key="register-fields"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-5 overflow-hidden"
+                >
+                  <div className="relative group">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Nombre Completo"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-2xl outline-none transition-all font-medium text-gray-900 placeholder-gray-400"
+                    />
+                  </div>
+                  <div className="relative group">
+                    <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
+                    <input
+                      type="tel"
+                      placeholder="Teléfono"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-2xl outline-none transition-all font-medium text-gray-900 placeholder-gray-400"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="relative group">
-              <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+            <motion.div layout className="relative group">
+              <MailIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
               <input
                 type="email"
                 placeholder="Correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-2xl outline-none transition-all font-medium text-gray-900 placeholder-gray-400"
               />
-            </div>
+            </motion.div>
 
-            <div className="relative group">
-              <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+            <motion.div layout className="relative group">
+              <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
               <input
                 type="password"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-2xl outline-none transition-all font-medium text-gray-900 placeholder-gray-400"
               />
-            </div>
+            </motion.div>
 
-            {isRegistering && (
-              <div className="relative group">
-                <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
-                <input
-                  type="password"
-                  placeholder="Confirmar Contraseña"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all font-medium text-gray-900 placeholder-gray-400 shadow-sm"
-                />
-              </div>
-            )}
+            <AnimatePresence>
+              {isRegistering && (
+                <motion.div
+                  key="confirm-password"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden pt-1"
+                >
+                  <div className="relative group">
+                    <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-orange-600 transition-colors" />
+                    <input
+                      type="password"
+                      placeholder="Confirmar Contraseña"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:bg-white focus:border-orange-500 rounded-2xl outline-none transition-all font-medium text-gray-900 placeholder-gray-400"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="space-y-4 pt-2">
-            <button
+          <motion.div layout className="space-y-4 pt-4">
+            <motion.button
+              layout
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={isRegistering ? handleRegisterSubmit : handleLoginSubmit}
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center gap-2 active:scale-[0.98]"
+              className="w-full py-4 bg-black text-white font-bold rounded-2xl shadow-lg hover:bg-gray-900 transition-all flex items-center justify-center gap-3 text-lg"
             >
               {loading ? (
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   {isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}
                   <ArrowRightIcon className="w-5 h-5" />
                 </>
               )}
-            </button>
+            </motion.button>
 
-            <div className="relative my-6">
+            <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">O continúa con</span>
+                <span className="px-4 bg-white text-gray-500 font-medium">O continúa con</span>
               </div>
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02, backgroundColor: '#f9fafb' }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => { onLogin('Guest User', 'guest'); navigate('/'); }}
-              className="w-full py-3.5 bg-white border-2 border-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 bg-white border-2 border-gray-100 text-gray-700 font-bold rounded-2xl hover:border-gray-300 transition-all flex items-center justify-center gap-2"
             >
               Acceder como Invitado
-            </button>
+            </motion.button>
 
-            <p className="text-center text-sm text-gray-500 mt-8">
+            <p className="text-center text-gray-500 mt-8 font-medium">
               {isRegistering ? '¿Ya tienes una cuenta?' : '¿Aún no tienes cuenta?'}
               <button
                 onClick={() => setIsRegistering(!isRegistering)}
-                className="ml-2 font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                className="ml-2 font-bold text-orange-600 hover:text-orange-700 transition-colors hover:underline"
               >
                 {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
               </button>
             </p>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </div>

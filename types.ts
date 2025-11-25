@@ -120,6 +120,7 @@ export interface Profile {
   lat?: number;
   lng?: number;
   avatar?: string;
+  avatar_url?: string;
   email?: string;
   phone?: string;
   // New fields for detailed address

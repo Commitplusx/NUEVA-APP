@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Map, { Marker, Source, Layer, MapRef } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '../services/supabase';
@@ -7,6 +7,7 @@ import { MdDeliveryDining } from 'react-icons/md';
 import { Profile } from '../types';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
+import { App } from '@capacitor/app';
 
 interface OrderTrackerProps {
     orderId: number;
@@ -29,22 +30,53 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
         return () => setBottomNavVisible(true);
     }, [setBottomNavVisible]);
 
-    // Fetch Order Data
+    // Load cached data on mount
     useEffect(() => {
-        const fetchOrder = async () => {
+        const cachedOrder = localStorage.getItem(`order_${orderId}`);
+        if (cachedOrder) {
+            try {
+                setOrder(JSON.parse(cachedOrder));
+            } catch (e) {
+                console.error("Error parsing cached order", e);
+            }
+        }
+    }, [orderId]);
+
+    const fetchOrder = useCallback(async () => {
+        try {
             const { data, error } = await supabase
                 .from('orders')
                 .select('*, restaurants(name, image_url)')
                 .eq('id', orderId)
                 .single();
 
-            if (data) setOrder(data);
-        };
+            if (data) {
+                setOrder(data);
+                localStorage.setItem(`order_${orderId}`, JSON.stringify(data));
+            }
+        } catch (e) {
+            console.error("Error fetching order", e);
+        }
+    }, [orderId]);
 
+    // Fetch Order Data & App Resume Listener
+    useEffect(() => {
         fetchOrder();
         const interval = setInterval(fetchOrder, 5000); // Polling every 5s
-        return () => clearInterval(interval);
-    }, [orderId]);
+
+        // Listen for app resume to fetch immediately
+        const listener = App.addListener('appStateChange', ({ isActive }) => {
+            if (isActive) {
+                console.log('App resumed, refreshing order data...');
+                fetchOrder();
+            }
+        });
+
+        return () => {
+            clearInterval(interval);
+            listener.then(handle => handle.remove());
+        };
+    }, [fetchOrder]);
 
     // Fetch Driver Location & Profile
     useEffect(() => {
@@ -352,6 +384,11 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                 <div className="p-6 flex flex-col h-full">
                     {/* Status Header */}
                     <div className="mb-6 text-center">
+                        <div className="inline-block bg-gray-100 rounded-full px-3 py-1 mb-2">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Pedido #{order?.id}
+                            </p>
+                        </div>
                         <h2 className="text-xl font-extrabold text-gray-800 mb-1">
                             {order?.status === 'pending' && 'Confirmando tu pedido'}
                             {order?.status === 'accepted' && 'Preparando tu comida'}
@@ -390,8 +427,16 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                     <div className="bg-gray-50 rounded-xl border border-gray-100 p-4 flex items-center justify-between mb-6 shadow-sm">
                         <div className="flex items-center space-x-4">
                             <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border-2 border-white shadow-md">
-                                {driverProfile?.avatar_url ? (
-                                    <img src={driverProfile.avatar_url} alt="Repartidor" className="w-full h-full object-cover" />
+                                {driverProfile?.avatar_url || driverProfile?.avatar ? (
+                                    <img
+                                        src={driverProfile.avatar_url || (driverProfile.avatar?.startsWith('http') ? driverProfile.avatar : `https://hvjtnqfcdqylwaqjxoa.supabase.co/storage/v1/object/public/avatars/${driverProfile.avatar}`)}
+                                        alt="Repartidor"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                            (e.target as HTMLImageElement).parentElement!.innerHTML = '<div class="text-gray-400"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 448 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"></path></svg></div>';
+                                        }}
+                                    />
                                 ) : (
                                     <div className="text-gray-400">
                                         <FaUser size={20} />
@@ -401,7 +446,7 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Tu Repartidor</p>
                                 <p className="font-bold text-gray-800 text-lg leading-tight">
-                                    {driverProfile?.full_name || (order?.driver_id ? 'Asignado' : 'Buscando...')}
+                                    {driverProfile?.full_name || (order?.driver_id ? 'Repartidor Asignado' : 'Buscando...')}
                                 </p>
                                 {driverProfile?.phone && (
                                     <a href={`tel:${driverProfile.phone}`} className="inline-flex items-center gap-2 text-sm text-blue-600 font-semibold mt-1 hover:text-blue-700 transition-colors bg-blue-50 px-2 py-1 rounded-lg">
