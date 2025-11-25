@@ -362,19 +362,6 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                         className="absolute top-1/2 left-0 h-1 bg-green-500 -z-0 transition-all duration-1000 rounded-full"
                         style={{ width: `${(currentStep / 3) * 100}%` }}
                     ></div>
-
-                    {/* Steps */}
-                    {['Confirmado', 'Preparando', 'En Camino', 'Entregado'].map((step, index) => (
-                        <div key={index} className="flex flex-col items-center z-10 bg-white px-1">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${index <= currentStep ? 'bg-green-500 border-green-500 text-white scale-110 shadow-md' : 'bg-white border-gray-200 text-gray-300'
-                                }`}>
-                                {index < currentStep ? <span className="text-xs"><FaCheckCircle /></span> : index === currentStep ? <MdDeliveryDining /> : <span className="text-xs font-bold">{index + 1}</span>}
-                            </div>
-                            <span className={`text-[10px] mt-2 font-bold uppercase tracking-wide ${index <= currentStep ? 'text-green-600' : 'text-gray-300'}`}>
-                                {step}
-                            </span>
-                        </div>
-                    ))}
                 </div>
 
                 {/* Driver Info & ETA */}

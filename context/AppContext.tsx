@@ -84,6 +84,10 @@ interface AppContextType {
 
   destinationCoords: { lat: number; lng: number } | null;
 
+  activeOrderId: number | null;
+  setActiveOrderId: (id: number | null) => void;
+  isActiveOrderLoaded: boolean;
+
 
 
   // Acciones que pueden ser invocadas desde cualquier componente consumidor del contexto
@@ -398,6 +402,51 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     loadPaymentMethod();
   }, []);
+
+  useEffect(() => {
+    if (!isPaymentMethodLoaded) return;
+    const savePaymentMethod = async () => {
+      try {
+        await Preferences.set({ key: 'app-payment-method', value: JSON.stringify(selectedPaymentMethod) });
+      } catch (error) {
+        console.error("Error saving payment method:", error);
+      }
+    };
+    savePaymentMethod();
+  }, [selectedPaymentMethod, isPaymentMethodLoaded]);
+
+  const [activeOrderId, setActiveOrderId] = useState<number | null>(null);
+  const [isActiveOrderLoaded, setIsActiveOrderLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadActiveOrder = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'app-active-order-id' });
+        if (value) setActiveOrderId(parseInt(value, 10));
+      } catch (error) {
+        console.error("Error loading active order:", error);
+      } finally {
+        setIsActiveOrderLoaded(true);
+      }
+    };
+    loadActiveOrder();
+  }, []);
+
+  useEffect(() => {
+    if (!isActiveOrderLoaded) return;
+    const saveActiveOrder = async () => {
+      try {
+        if (activeOrderId) {
+          await Preferences.set({ key: 'app-active-order-id', value: activeOrderId.toString() });
+        } else {
+          await Preferences.remove({ key: 'app-active-order-id' });
+        }
+      } catch (error) {
+        console.error("Error saving active order:", error);
+      }
+    };
+    saveActiveOrder();
+  }, [activeOrderId, isActiveOrderLoaded]);
 
   useEffect(() => {
     if (!isPaymentMethodLoaded) return;
@@ -2627,7 +2676,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setDestinationCoords,
 
-    setSelectedRestaurant
+    setSelectedRestaurant,
+
+    activeOrderId,
+    setActiveOrderId,
+    isActiveOrderLoaded
 
 
 

@@ -83,6 +83,9 @@ export const Cart: React.FC = () => {
     selectedPaymentMethod,
     setDestinationCoords, // Usar setter del contexto
     setBottomNavVisible,
+    activeOrderId,
+    setActiveOrderId,
+    isActiveOrderLoaded,
   } = useAppContext();
   const navigate = useNavigate();
   const [userAddressCoords, setUserAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -103,16 +106,14 @@ export const Cart: React.FC = () => {
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
 
-  // Initialize currentOrderId from localStorage if available
-  const [currentOrderId, setCurrentOrderId] = useState<number | null>(() => {
-    const savedOrderId = localStorage.getItem('active_order_id');
-    return savedOrderId ? parseInt(savedOrderId, 10) : null;
-  });
-
   // Initialize step based on whether we have an active order
-  const [step, setStep] = useState<CartStep>(() => {
-    return localStorage.getItem('active_order_id') ? 'success' : 'cart';
-  });
+  const [step, setStep] = useState<CartStep>('cart');
+
+  useEffect(() => {
+    if (isActiveOrderLoaded && activeOrderId) {
+      setStep('success');
+    }
+  }, [isActiveOrderLoaded, activeOrderId]);
 
   useEffect(() => {
     if (user && profile) {
@@ -308,8 +309,7 @@ export const Cart: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 4000));
       const order = await handleConfirmOrder(userDetails, deliveryFee);
       if (order) {
-        setCurrentOrderId(order.id);
-        localStorage.setItem('active_order_id', order.id.toString());
+        setActiveOrderId(order.id);
       }
       setStep('success');
     } catch (error) {
@@ -652,8 +652,7 @@ export const Cart: React.FC = () => {
 
 
   const handleFinishOrder = () => {
-    localStorage.removeItem('active_order_id');
-    setCurrentOrderId(null);
+    setActiveOrderId(null);
     setStep('cart');
     // Optionally clear cart here if needed, but user might want to order again
     // handleUpdateCart(itemId, 0) for all items? 
@@ -720,7 +719,7 @@ export const Cart: React.FC = () => {
                 {renderConfirmationStep()}
               </motion.div>
             )}
-            {step === 'success' && currentOrderId && (
+            {step === 'success' && activeOrderId && (
               <motion.div
                 key="success"
                 initial={{ x: 300, opacity: 0 }}
@@ -729,7 +728,7 @@ export const Cart: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <OrderTracker orderId={currentOrderId} onFinish={handleFinishOrder} />
+                <OrderTracker orderId={activeOrderId} onFinish={handleFinishOrder} />
               </motion.div>
             )}
           </AnimatePresence>
