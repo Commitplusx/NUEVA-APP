@@ -85,7 +85,6 @@ export const Cart: React.FC = () => {
     setBottomNavVisible,
   } = useAppContext();
   const navigate = useNavigate();
-  const [step, setStep] = useState<CartStep>('cart');
   const [userAddressCoords, setUserAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null);
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number>(0);
@@ -103,7 +102,17 @@ export const Cart: React.FC = () => {
   });
   const [toastInfo, setToastInfo] = useState<{ message: string; type: ToastType } | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState<number | null>(null);
+
+  // Initialize currentOrderId from localStorage if available
+  const [currentOrderId, setCurrentOrderId] = useState<number | null>(() => {
+    const savedOrderId = localStorage.getItem('active_order_id');
+    return savedOrderId ? parseInt(savedOrderId, 10) : null;
+  });
+
+  // Initialize step based on whether we have an active order
+  const [step, setStep] = useState<CartStep>(() => {
+    return localStorage.getItem('active_order_id') ? 'success' : 'cart';
+  });
 
   useEffect(() => {
     if (user && profile) {
@@ -300,6 +309,7 @@ export const Cart: React.FC = () => {
       const order = await handleConfirmOrder(userDetails, deliveryFee);
       if (order) {
         setCurrentOrderId(order.id);
+        localStorage.setItem('active_order_id', order.id.toString());
       }
       setStep('success');
     } catch (error) {
@@ -641,6 +651,15 @@ export const Cart: React.FC = () => {
 
 
 
+  const handleFinishOrder = () => {
+    localStorage.removeItem('active_order_id');
+    setCurrentOrderId(null);
+    setStep('cart');
+    // Optionally clear cart here if needed, but user might want to order again
+    // handleUpdateCart(itemId, 0) for all items? 
+    // For now, just exiting the tracker is enough.
+  };
+
   return (
     <div className="p-4 bg-gray-50 min-h-full">
       <div className="flex items-center gap-4 mb-6">
@@ -649,7 +668,9 @@ export const Cart: React.FC = () => {
             <ChevronLeftIcon className="w-6 h-6 text-gray-800" />
           </button>
         )}
-        <h1 className="text-xl font-bold text-gray-800">{step === 'cart' ? 'Mi Carrito' : 'Checkout'}</h1>
+        {step !== 'success' && (
+          <h1 className="text-xl font-bold text-gray-800">{step === 'cart' ? 'Mi Carrito' : 'Checkout'}</h1>
+        )}
       </div>
 
       {cartItems.length === 0 && step !== 'success' ? (
@@ -663,8 +684,8 @@ export const Cart: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div>
-          <Stepper currentStep={step} />
+        <div className={`flex flex-col ${step === 'success' ? 'h-[85vh]' : ''}`}>
+          {step !== 'success' && <Stepper currentStep={step} />}
           <AnimatePresence mode="wait">
             {step === 'cart' && (
               <motion.div
@@ -708,7 +729,7 @@ export const Cart: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="h-full"
               >
-                <OrderTracker orderId={currentOrderId} />
+                <OrderTracker orderId={currentOrderId} onFinish={handleFinishOrder} />
               </motion.div>
             )}
           </AnimatePresence>

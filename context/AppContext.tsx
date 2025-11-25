@@ -18,8 +18,9 @@ import { Restaurant, MenuItem, CartItem, UserRole, Tariff, OrderUserDetails, Pro
 
 import { Toast, ToastType } from '../components/Toast';
 
-import { ConfirmModal } from '../components/ConfirmModal'; // <-- Import new modal
-import { useAppState } from '../hooks/useAppState'; // Import useAppState
+import { ConfirmModal } from '../components/ConfirmModal';
+import { Preferences } from '@capacitor/preferences';
+// import { useAppState } from '../hooks/useAppState'; // Removed to fix hook error
 
 import { User } from '@supabase/supabase-js';
 
@@ -271,27 +272,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(() => {
-    try {
-      const savedRestaurant = window.localStorage.getItem('app-selected-restaurant');
-      return savedRestaurant ? JSON.parse(savedRestaurant) : null;
-    } catch (error) {
-      console.error("Error reading selected restaurant from localStorage", error);
-      return null;
-    }
-  });
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [isRestaurantLoaded, setIsRestaurantLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      if (selectedRestaurant) {
-        window.localStorage.setItem('app-selected-restaurant', JSON.stringify(selectedRestaurant));
-      } else {
-        window.localStorage.removeItem('app-selected-restaurant');
+    const loadRestaurant = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'app-selected-restaurant' });
+        if (value) setSelectedRestaurant(JSON.parse(value));
+      } catch (error) {
+        console.error("Error loading restaurant:", error);
+      } finally {
+        setIsRestaurantLoaded(true);
       }
-    } catch (error) {
-      console.error("Error saving selected restaurant to localStorage", error);
-    }
-  }, [selectedRestaurant]);
+    };
+    loadRestaurant();
+  }, []);
+
+  useEffect(() => {
+    if (!isRestaurantLoaded) return;
+    const saveRestaurant = async () => {
+      try {
+        if (selectedRestaurant) {
+          await Preferences.set({ key: 'app-selected-restaurant', value: JSON.stringify(selectedRestaurant) });
+        } else {
+          await Preferences.remove({ key: 'app-selected-restaurant' });
+        }
+      } catch (error) {
+        console.error("Error saving restaurant:", error);
+      }
+    };
+    saveRestaurant();
+  }, [selectedRestaurant, isRestaurantLoaded]);
 
 
 
@@ -299,23 +311,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const savedCart = window.localStorage.getItem('app-cart');
-      return savedCart ? JSON.parse(savedCart) : [];
-    } catch (error) {
-      console.error("Error reading cart from localStorage", error);
-      return [];
-    }
-  });
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartLoaded, setIsCartLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem('app-cart', JSON.stringify(cart));
-    } catch (error) {
-      console.error("Error saving cart to localStorage", error);
-    }
-  }, [cart]);
+    const loadCart = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'app-cart' });
+        if (value) setCart(JSON.parse(value));
+      } catch (error) {
+        console.error("Error loading cart:", error);
+      } finally {
+        setIsCartLoaded(true);
+      }
+    };
+    loadCart();
+  }, []);
+
+  useEffect(() => {
+    if (!isCartLoaded) return;
+    const saveCart = async () => {
+      try {
+        await Preferences.set({ key: 'app-cart', value: JSON.stringify(cart) });
+      } catch (error) {
+        console.error("Error saving cart:", error);
+      }
+    };
+    saveCart();
+  }, [cart, isCartLoaded]);
 
 
 
@@ -359,39 +382,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>(() => {
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethodType>('cash');
+  const [isPaymentMethodLoaded, setIsPaymentMethodLoaded] = useState(false);
 
+  useEffect(() => {
+    const loadPaymentMethod = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'app-payment-method' });
+        if (value) setSelectedPaymentMethod(JSON.parse(value));
+      } catch (error) {
+        console.error("Error loading payment method:", error);
+      } finally {
+        setIsPaymentMethodLoaded(true);
+      }
+    };
+    loadPaymentMethod();
+  }, []);
 
-
-    try {
-
-
-
-      const savedMethod = window.localStorage.getItem('app-payment-method');
-
-
-
-      return savedMethod ? JSON.parse(savedMethod) : 'cash';
-
-
-
-    } catch (error) {
-
-
-
-      console.error("Error reading payment method from localStorage", error);
-
-
-
-      return 'cash';
-
-
-
-    }
-
-
-
-  });
+  useEffect(() => {
+    if (!isPaymentMethodLoaded) return;
+    const savePaymentMethod = async () => {
+      try {
+        await Preferences.set({ key: 'app-payment-method', value: JSON.stringify(selectedPaymentMethod) });
+      } catch (error) {
+        console.error("Error saving payment method:", error);
+      }
+    };
+    savePaymentMethod();
+  }, [selectedPaymentMethod, isPaymentMethodLoaded]);
 
 
 
@@ -831,20 +849,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetchUserProfile();
   }, [user]);
 
-  useAppState(() => {
-    if (user) {
-      console.log('App came to foreground, refreshing profile...');
-      const refreshProfile = async () => {
-        try {
-          const userProfile = await getProfile();
-          setProfile(userProfile);
-        } catch (error) {
-          console.error("Error refreshing user profile on foreground:", error);
+  // --- App State / Foreground Check (Inlined to fix hook error) ---
+  useEffect(() => {
+    let handle: any; // PluginListenerHandle
+
+    const setupListener = async () => {
+      // Import dynamically or assume App is available if imported at top
+      const { App } = await import('@capacitor/app');
+
+      handle = await App.addListener('appStateChange', (state) => {
+        if (state.isActive) {
+          console.log('App state changed to active (foreground)');
+          if (user) {
+            console.log('Refreshing profile...');
+            const refreshProfile = async () => {
+              try {
+                const userProfile = await getProfile();
+                setProfile(userProfile);
+              } catch (error) {
+                console.error("Error refreshing user profile on foreground:", error);
+              }
+            };
+            refreshProfile();
+          }
         }
-      };
-      refreshProfile();
-    }
-  });
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (handle) {
+        handle.remove();
+      }
+    };
+  }, [user]);
 
   useEffect(() => {
 

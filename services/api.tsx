@@ -126,17 +126,22 @@ export const getProfile = async (): Promise<Profile> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
+  // Use select with limit(1) instead of maybeSingle/single to avoid 406 errors
+  // if there are duplicate rows or other cardinality issues.
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('user_id', user.id)
-    .maybeSingle();
+    .limit(1);
 
-  if (error && error.code !== 'PGRST116') {
+  if (error) {
     throw error;
   }
 
-  if (!data) {
+  // data is an array here
+  const profile = data && data.length > 0 ? data[0] : null;
+
+  if (!profile) {
     return {
       user_id: user.id,
       full_name: '',
@@ -151,7 +156,7 @@ export const getProfile = async (): Promise<Profile> => {
     };
   }
 
-  return data;
+  return profile;
 };
 
 export const updateProfile = async (profile: Partial<Profile>): Promise<Profile> => {
