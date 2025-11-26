@@ -23,6 +23,7 @@ export interface MenuItem {
   ingredients?: string[];
   isPopular?: boolean;
   category?: string;
+  category_id?: number;
   customizationOptions?: MenuItemOptionGroup[];
 }
 

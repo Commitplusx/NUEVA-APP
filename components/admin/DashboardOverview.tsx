@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
 import { useAdminTariffs } from '../../hooks/useAdminTariffs';
-import { useMenuItems } from '../../hooks/useMenuItems'; // Import the new hook
+import { useMenuItems } from '../../hooks/useMenuItems';
 import { useServiceRequests } from '../../hooks/useServiceRequests';
-import { Spinner } from '../Spinner';
-import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon, DocumentTextIcon, ArrowRightIcon } from '../icons'; // Import UtensilsIcon
+import { BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, UtensilsIcon, DocumentTextIcon, ArrowRightIcon } from '../icons';
+import { RecentActivity } from './RecentActivity';
+import { QuickActions } from './QuickActions';
+import { AdminHeader } from './AdminHeader';
 
 interface StatCardProps {
   title: string;
@@ -14,23 +16,33 @@ interface StatCardProps {
   icon: React.ReactElement;
   loading: boolean;
   to: string;
-  iconBgClass?: string; // Optional prop for background color
-  iconTextColorClass?: string; // Optional prop for text color
+  gradientFrom: string;
+  gradientTo: string;
+  iconColor: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, loading, to, iconBgClass = 'bg-orange-100', iconTextColorClass = 'text-orange-500' }) => (
-  <Link to={to} className="block">
-    <div className="bg-white p-6 rounded-xl shadow-md flex items-center justify-between hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        {loading ? (
-          <div className="h-8 w-16 bg-gray-200 animate-pulse rounded-md mt-1"></div>
-        ) : (
-          <p className="text-3xl font-bold text-gray-800">{value}</p>
-        )}
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, loading, to, gradientFrom, gradientTo, iconColor }) => (
+  <Link to={to} className="block group">
+    <div className={`relative overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${gradientFrom} ${gradientTo} opacity-10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110`}></div>
+
+      <div className="flex justify-between items-start relative z-10">
+        <div>
+          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-1">{title}</p>
+          {loading ? (
+            <div className="h-10 w-24 bg-gray-200 animate-pulse rounded-md"></div>
+          ) : (
+            <h3 className="text-4xl font-extrabold text-gray-800 tracking-tight">{value}</h3>
+          )}
+        </div>
+        <div className={`p-3 rounded-xl bg-gradient-to-br ${gradientFrom} ${gradientTo} shadow-lg text-white`}>
+          {React.cloneElement(icon, { className: "w-6 h-6" })}
+        </div>
       </div>
-      <div className={`${iconBgClass} p-3 rounded-full`}>
-        {React.cloneElement(icon, { className: `w-6 h-6 ${iconTextColorClass}` })}
+
+      <div className="mt-4 flex items-center text-sm font-medium text-gray-400 group-hover:text-purple-600 transition-colors">
+        <span>Gestionar</span>
+        <ArrowRightIcon className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
       </div>
     </div>
   </Link>
@@ -40,58 +52,79 @@ export const DashboardOverview: React.FC = () => {
   const { restaurants, loading: restaurantsLoading } = useRestaurants();
   const { categories, loading: categoriesLoading } = useAdminCategories();
   const { tariffs, loading: tariffsLoading } = useAdminTariffs();
-  const { menuItems, loading: menuItemsLoading } = useMenuItems(); // Use the new hook
+  const { menuItems, loading: menuItemsLoading } = useMenuItems();
   const { requests, loading: requestsLoading } = useServiceRequests();
 
   const stats = [
     {
-      title: 'Total Restaurantes',
+      title: 'Restaurantes',
       value: restaurants.length,
       icon: <BuildingStorefrontIcon />,
       loading: restaurantsLoading,
-      to: 'restaurants',
+      to: '/admin/restaurants',
+      gradientFrom: 'from-purple-600',
+      gradientTo: 'to-indigo-600',
+      iconColor: 'text-white'
     },
     {
-      title: 'Total Solicitudes',
-      value: requests.length,
-      icon: <DocumentTextIcon />,
-      loading: requestsLoading,
-      to: 'requests',
-      iconBgClass: 'bg-yellow-100',
-      iconTextColorClass: 'text-yellow-500',
-    },
-    {
-      title: 'Total Categorías',
+      title: 'Categorías',
       value: categories.length,
       icon: <TagIcon />,
       loading: categoriesLoading,
-      to: 'categories',
+      to: '/admin/categories',
+      gradientFrom: 'from-fuchsia-500',
+      gradientTo: 'to-purple-600',
+      iconColor: 'text-white'
     },
     {
-      title: 'Total Tarifas',
+      title: 'Tarifas',
       value: tariffs.length,
       icon: <CurrencyDollarIcon />,
       loading: tariffsLoading,
-      to: 'tariffs',
+      to: '/admin/tariffs',
+      gradientFrom: 'from-violet-500',
+      gradientTo: 'to-purple-700',
+      iconColor: 'text-white'
     },
     {
-      title: 'Total Productos',
+      title: 'Productos',
       value: menuItems.length,
       icon: <UtensilsIcon />,
       loading: menuItemsLoading,
-      to: 'menu-items', // Assuming a route for managing menu items
-      iconBgClass: 'bg-blue-100',
-      iconTextColorClass: 'text-blue-500',
+      to: '/admin/restaurants',
+      gradientFrom: 'from-purple-400',
+      gradientTo: 'to-purple-500',
+      iconColor: 'text-white'
     },
+    {
+      title: 'Solicitudes',
+      value: requests.length,
+      icon: <DocumentTextIcon />,
+      loading: requestsLoading,
+      to: '/admin/requests',
+      gradientFrom: 'from-slate-700',
+      gradientTo: 'to-slate-900',
+      iconColor: 'text-white'
+    }
   ];
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Resumen del Panel</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-8 pb-20">
+      <AdminHeader />
+
+      <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {stats.map(stat => (
           <StatCard key={stat.title} {...stat} />
         ))}
+      </div>
+
+      <div className="px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <RecentActivity />
+        </div>
+        <div>
+          <QuickActions />
+        </div>
       </div>
     </div>
   );

@@ -589,6 +589,37 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
   const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isDestinationLoaded, setIsDestinationLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadDestination = async () => {
+      try {
+        const { value } = await Preferences.get({ key: 'app-destination-coords' });
+        if (value) setDestinationCoords(JSON.parse(value));
+      } catch (error) {
+        console.error("Error loading destination coords:", error);
+      } finally {
+        setIsDestinationLoaded(true);
+      }
+    };
+    loadDestination();
+  }, []);
+
+  useEffect(() => {
+    if (!isDestinationLoaded) return;
+    const saveDestination = async () => {
+      try {
+        if (destinationCoords) {
+          await Preferences.set({ key: 'app-destination-coords', value: JSON.stringify(destinationCoords) });
+        } else {
+          await Preferences.remove({ key: 'app-destination-coords' });
+        }
+      } catch (error) {
+        console.error("Error saving destination coords:", error);
+      }
+    };
+    saveDestination();
+  }, [destinationCoords, isDestinationLoaded]);
 
 
 

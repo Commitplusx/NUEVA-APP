@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useRestaurants } from '../../hooks/useRestaurants';
 import { useCategories } from '../../hooks/useCategories';
 import { addRestaurant, updateRestaurant, deleteRestaurant, uploadImage, addCategory, updateRestaurantCategories, getErrorMessage, reverseGeocode } from '../../services/api';
 import { Restaurant, Category } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
-import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon, UtensilsIcon, MapPinIcon } from '../icons';
+import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon, UtensilsIcon, MapPinIcon, BookOpenIcon } from '../icons';
 import { ManageMenuItems } from './ManageMenuItems';
 import { LocationPickerModal } from '../LocationPickerModal';
 
@@ -167,63 +168,96 @@ const RestaurantForm: React.FC<{
   const fullAddress = [streetAddress, neighborhood, city, postalCode].filter(Boolean).join(', ');
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">{restaurant ? 'Editar' : 'Agregar'} Restaurante</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h2 className="text-2xl font-bold text-gray-800">{restaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}</h2>
+          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <span className="text-2xl">&times;</span>
+          </button>
+        </div>
+
+        <div className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <div className="md:col-span-2">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Restaurante</label>
-                <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Restaurante</label>
+                <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Categorías</label>
-                <input type="text" id="category" placeholder="pizzas, italiana, rápido" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
-                <p className="text-xs text-gray-500 mt-1">Separar con comas.</p>
+                <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">Categorías</label>
+                <input type="text" id="category" placeholder="pizzas, italiana, rápido" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                <p className="text-xs text-gray-500 mt-2 ml-1">Separa las categorías con comas.</p>
               </div>
 
               {/* Address Fields */}
-              <fieldset className="md:col-span-2 grid grid-cols-1 gap-y-4 border p-4 rounded-lg">
-                <legend className="text-lg font-semibold text-gray-700 mb-2 px-2">Ubicación</legend>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm font-medium text-gray-800">
-                    {fullAddress || 'Aún no se ha seleccionado una ubicación.'}
-                  </p>
+              <div className="md:col-span-2 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                <div className="flex justify-between items-center mb-4">
+                  <label className="text-sm font-semibold text-gray-700">Ubicación</label>
+                  <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded-md">Requerido</span>
                 </div>
+
+                <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {fullAddress || 'No se ha seleccionado ninguna ubicación.'}
+                    </p>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setIsPickerOpen(true)}
-                  className="flex items-center justify-center gap-2 w-full h-12 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                  className="w-full py-3 bg-white border-2 border-blue-500 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
                 >
                   <MapPinIcon className="w-5 h-5" />
                   <span>{fullAddress ? 'Cambiar Ubicación' : 'Seleccionar en Mapa'}</span>
                 </button>
-              </fieldset>
-
-              <div>
-                <label htmlFor="deliveryFee" className="block text-sm font-medium text-gray-700 mb-1">Costo de Envío (Base)</label>
-                <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="Ej: 10.00" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
               </div>
 
               <div>
-                <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700 mb-1">Tiempo de Entrega (min)</label>
-                <input type="number" id="deliveryTime" min="0" placeholder="Ej: 30" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 h-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <label htmlFor="deliveryFee" className="block text-sm font-semibold text-gray-700 mb-2">Costo de Envío</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-3.5 text-gray-400">$</span>
+                  <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="0.00" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                </div>
               </div>
 
-              <div className="md:col-span-2 mt-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del Restaurante</label>
-                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
-                {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-lg shadow-md" />}
+              <div>
+                <label htmlFor="deliveryTime" className="block text-sm font-semibold text-gray-700 mb-2">Tiempo de Entrega</label>
+                <div className="relative">
+                  <input type="number" id="deliveryTime" min="0" placeholder="30" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                  <span className="absolute right-4 top-3.5 text-gray-400 text-sm">min</span>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen de Portada</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative">
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Vista Previa" className="w-full h-48 object-cover rounded-lg shadow-sm" />
+                  ) : (
+                    <div className="text-center">
+                      <div className="bg-gray-200 p-3 rounded-full inline-block mb-2">
+                        <span className="text-2xl">📷</span>
+                      </div>
+                      <p className="text-sm text-gray-500">Haz clic o arrastra una imagen aquí</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-8">
-              <button type="button" onClick={onCancel} className="px-6 py-2 text-gray-600 font-semibold bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Cancelar</button>
-              <button type="submit" disabled={isSaving} className="px-6 py-2 text-white font-semibold bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                {isSaving ? 'Guardando...' : 'Guardar'}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+              <button type="button" onClick={onCancel} className="px-6 py-2.5 text-gray-700 font-semibold bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button type="submit" disabled={isSaving} className="px-6 py-2.5 text-white font-semibold bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed">
+                {isSaving ? 'Guardando...' : 'Guardar Restaurante'}
               </button>
             </div>
           </form>
@@ -235,7 +269,7 @@ const RestaurantForm: React.FC<{
         onLocationSelect={handleLocationSelect}
         initialCenter={lat && lng ? { lat, lng } : undefined}
       />
-    </>
+    </div>
   );
 };
 
@@ -246,25 +280,91 @@ const RestaurantList: React.FC<{
   onManageMenu: (restaurant: Restaurant) => void;
 }> = ({ restaurants, onEdit, onDelete, onManageMenu }) => {
   if (restaurants.length === 0) {
-    return <p className="text-center text-gray-500 py-10">No hay restaurantes para mostrar.</p>;
+    return (
+      <div className="text-center py-16 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+        <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+          <UtensilsIcon className="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900">No hay restaurantes</h3>
+        <p className="text-gray-500 mt-1">Comienza agregando tu primer restaurante.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {restaurants.map(restaurant => (
-        <div key={restaurant.id} className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              <img src={restaurant.image_url} alt={restaurant.name} className="w-20 h-20 rounded-md object-cover" />
-              <div>
-                <p className="font-bold text-lg text-gray-800">{restaurant.name}</p>
-                <p className="text-sm text-gray-600">{restaurant.categories?.map(c => c.name).join(', ')}</p>
+        <div key={restaurant.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
+          {/* Cover Image */}
+          <div className="relative h-48 w-full overflow-hidden">
+            <img
+              src={restaurant.image_url || 'https://via.placeholder.com/400x200'}
+              alt={restaurant.name}
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+
+            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
+              <span className="text-xs font-bold text-gray-800">⭐ {restaurant.rating || 'New'}</span>
+            </div>
+
+            <div className="absolute bottom-3 left-3 text-white">
+              <h3 className="text-xl font-bold drop-shadow-md truncate max-w-[250px]">{restaurant.name}</h3>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {restaurant.categories?.slice(0, 2).map((c, idx) => (
+                  <span key={idx} className="text-[10px] font-medium bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30">
+                    {c.name}
+                  </span>
+                ))}
+                {(restaurant.categories?.length || 0) > 2 && (
+                  <span className="text-[10px] font-medium bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/30">
+                    +{restaurant.categories!.length - 2}
+                  </span>
+                )}
               </div>
             </div>
-            <div className="flex flex-col space-y-2">
-              <button onClick={() => onManageMenu(restaurant)} className="p-2.5 bg-green-500 text-white rounded-full transition-colors hover:bg-green-600 shadow-sm"><UtensilsIcon className="w-5 h-5" /></button>
-              <button onClick={() => onEdit(restaurant)} className="p-2.5 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5" /></button>
-              <button onClick={() => onDelete(restaurant.id)} className="p-2.5 text-red-600 hover:bg-red-100 rounded-full transition-colors"><TrashIcon className="w-5 h-5" /></button>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 flex-1 flex flex-col">
+            <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
+                <span className="text-gray-400">🚚</span>
+                <span className="font-medium text-gray-700">${restaurant.delivery_fee}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded-md">
+                <span className="text-gray-400">⏱️</span>
+                <span className="font-medium text-gray-700">{restaurant.delivery_time} min</span>
+              </div>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-gray-100 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => onManageMenu(restaurant)}
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-green-600 hover:bg-green-50 transition-colors group/btn"
+                title="Gestionar Menú"
+              >
+                <BookOpenIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold">Menú</span>
+              </button>
+
+              <button
+                onClick={() => onEdit(restaurant)}
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-blue-600 hover:bg-blue-50 transition-colors group/btn"
+                title="Editar Restaurante"
+              >
+                <EditIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold">Editar</span>
+              </button>
+
+              <button
+                onClick={() => onDelete(restaurant.id)}
+                className="flex flex-col items-center justify-center gap-1 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors group/btn"
+                title="Eliminar Restaurante"
+              >
+                <TrashIcon className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                <span className="text-[10px] font-semibold">Eliminar</span>
+              </button>
             </div>
           </div>
         </div>
@@ -280,25 +380,33 @@ export const ManageRestaurants: React.FC = () => {
   const { restaurants, loading, error } = useRestaurants({ searchQuery, filters: EMPTY_FILTERS });
   const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const { showToast, requestConfirmation } = useAppContext();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [isMenuManageOpen, setIsMenuManageOpen] = useState(false);
-  const [selectedRestaurantForMenu, setSelectedRestaurantForMenu] = useState<Restaurant | null>(null);
+  const action = searchParams.get('action');
+  const modal = searchParams.get('modal');
+  const restaurantId = searchParams.get('id');
+  const menuRestaurantId = searchParams.get('restaurantId');
+
+  const isFormOpen = action === 'new' || action === 'edit';
+  const editingRestaurant = restaurantId ? restaurants.find(r => r.id === Number(restaurantId)) || null : null;
+
+  const isMenuManageOpen = modal === 'menu';
+  const selectedRestaurantForMenu = menuRestaurantId ? restaurants.find(r => r.id === Number(menuRestaurantId)) || null : null;
 
   const handleAddNew = () => {
-    setEditingRestaurant(null);
-    setIsFormOpen(true);
+    setSearchParams({ action: 'new' });
   };
 
   const handleEdit = (restaurant: Restaurant) => {
-    setEditingRestaurant(restaurant);
-    setIsFormOpen(true);
+    setSearchParams({ action: 'edit', id: restaurant.id.toString() });
   };
 
   const handleManageMenu = (restaurant: Restaurant) => {
-    setSelectedRestaurantForMenu(restaurant);
-    setIsMenuManageOpen(true);
+    setSearchParams({ modal: 'menu', restaurantId: restaurant.id.toString() });
+  };
+
+  const handleCloseForm = () => {
+    setSearchParams({});
   };
 
   const handleDelete = (id: number) => {
@@ -326,22 +434,23 @@ export const ManageRestaurants: React.FC = () => {
   const isAnyModalOpen = isFormOpen || isMenuManageOpen;
   return (
     <div className={`${isAnyModalOpen ? 'modal-open' : ''}`}>
-      <div className="flex justify-between items-center mb-4">
-        <div className="w-1/2">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <div className="w-full sm:w-1/2 relative">
           <input
             type="text"
             placeholder="Buscar restaurante..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-sm"
           />
+          <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
         </div>
         <button
           onClick={handleAddNew}
-          className="flex items-center gap-2 bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold px-6 py-3 rounded-xl shadow-md hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all transform hover:-translate-y-0.5"
         >
           <PlusIcon className="w-5 h-5" />
-          <span>Agregar</span>
+          <span>Nuevo Restaurante</span>
         </button>
       </div>
 
@@ -349,19 +458,21 @@ export const ManageRestaurants: React.FC = () => {
         <RestaurantForm
           restaurant={editingRestaurant}
           allCategories={categories}
-          onSave={() => setIsFormOpen(false)}
-          onCancel={() => setIsFormOpen(false)}
+          onSave={handleCloseForm}
+          onCancel={handleCloseForm}
         />
       )}
 
-      <div className="bg-white p-6 rounded-xl shadow-md">
+      <div className="bg-transparent">
         {loading || categoriesLoading ? (
-          <Spinner />
+          <div className="flex justify-center py-20">
+            <Spinner />
+          </div>
         ) : error || categoriesError ? (
-          <div className="text-center text-red-500 col-span-1 py-10 bg-red-50 rounded-lg">
+          <div className="bg-red-50 border border-red-100 rounded-xl p-8 text-center">
             <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-            <h3 className="text-lg font-semibold mb-2">Error al Cargar</h3>
-            <p className="text-sm">{error || categoriesError}</p>
+            <h3 className="text-lg font-bold text-red-800 mb-2">Error al Cargar</h3>
+            <p className="text-red-600">{error || categoriesError}</p>
           </div>
         ) : (
           <RestaurantList
@@ -377,7 +488,7 @@ export const ManageRestaurants: React.FC = () => {
         <ManageMenuItems
           restaurantId={selectedRestaurantForMenu.id}
           restaurantName={selectedRestaurantForMenu.name}
-          onClose={() => setIsMenuManageOpen(false)}
+          onClose={handleCloseForm}
         />
       )}
     </div>

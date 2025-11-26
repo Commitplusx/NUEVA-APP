@@ -66,7 +66,10 @@ const App: React.FC = () => {
     !isCustomizationModalOpen &&
     !isProductModalOpen &&
     !isAddressModalOpen &&
-    isBottomNavVisible;
+    isBottomNavVisible &&
+    !new URLSearchParams(location.search).has('action') &&
+    !new URLSearchParams(location.search).has('modal') &&
+    !new URLSearchParams(location.search).has('request_id');
 
 
   useEffect(() => {
