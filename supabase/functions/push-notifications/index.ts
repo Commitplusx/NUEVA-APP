@@ -41,7 +41,87 @@ serve(async (req) => {
     try {
         const { record, old_record, type } = await req.json()
 
-        // Only trigger on status updates
+        // --- HANDLE NEW ORDER (Notify Drivers) ---
+        if (type === 'INSERT') {
+            console.log('New order received:', record.id)
+
+            // 1. Get all drivers with FCM tokens
+            const { data: drivers, error: driversError } = await supabase
+                .from('profiles')
+                .select('fcm_token')
+                .eq('role', 'driver')
+                .not('fcm_token', 'is', null)
+
+            if (driversError || !drivers || drivers.length === 0) {
+                console.log('No drivers found to notify')
+                return new Response(JSON.stringify({ message: 'No drivers found' }), { headers: { 'Content-Type': 'application/json' } })
+            }
+
+            console.log(`Found ${drivers.length} drivers to notify`)
+
+            // 2. Get Service Account for DRIVER Project
+            const serviceAccountStr = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_DRIVER')
+            if (!serviceAccountStr) {
+                throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_DRIVER secret')
+            }
+            const serviceAccount = JSON.parse(serviceAccountStr)
+
+            // 3. Get Access Token
+            const accessToken = await getAccessToken(serviceAccount)
+
+            // 4. Send Notifications (Multicast manually)
+            const projectId = serviceAccount.project_id
+            const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+
+            const notifications = drivers.map(async (driver) => {
+                const message = {
+                    message: {
+                        token: driver.fcm_token,
+                        notification: {
+                            title: '🍕 ¡Nuevo Pedido Disponible!',
+                            body: 'Entra a la app para ver los detalles y aceptarlo.',
+                        },
+                        android: {
+                            priority: "high",
+                            notification: {
+                                channel_id: "custom_sound_channel",
+                                sound: "notification_sound",
+                                default_sound: false,
+                                default_vibrate_timings: false,
+                                vibrate_timings: ["0.0s", "0.2s", "0.1s", "0.2s"],
+                                visibility: "PUBLIC"
+                            }
+                        },
+                        data: {
+                            orderId: record.id.toString(),
+                            type: 'new_order'
+                        }
+                    }
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(message),
+                    })
+                    return await response.json()
+                } catch (e) {
+                    console.error('Error sending to driver:', e)
+                    return { error: e.message }
+                }
+            })
+
+            const results = await Promise.all(notifications)
+            console.log('Notification results:', results)
+
+            return new Response(JSON.stringify({ results }), { headers: { 'Content-Type': 'application/json' } })
+        }
+
+        // --- HANDLE ORDER STATUS UPDATE (Notify Customer) ---
         if (type === 'UPDATE' && record.status !== old_record.status) {
             const userId = record.user_id
             const newStatus = record.status

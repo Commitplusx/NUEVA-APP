@@ -13,14 +13,14 @@ export interface Category {
 
 export interface MenuItem {
   id: number;
-  restaurant_id: number;
+  restaurant_id?: number;
   name: string;
   description: string;
   price: number;
   imageUrl?: string;
   rating?: number;
   reviews?: number;
-  ingredients?: string[];
+  ingredients?: Ingredient[];
   isPopular?: boolean;
   category?: string;
   category_id?: number;
@@ -45,6 +45,7 @@ export interface MenuItemOptionGroup {
 export interface Restaurant {
   id: number;
   name: string;
+  category?: string;
   imageUrl: string;
   rating: number;
   deliveryFee: number;
@@ -143,7 +144,7 @@ export interface OrderUserDetails {
 
 export interface Ingredient {
   name: string;
-  icon: string;
+  icon: any;
 }
 
 export interface Order {

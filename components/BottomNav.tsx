@@ -1,150 +1,84 @@
-import React, { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { HomeIcon, ShoppingIcon, UserIcon, PackageIcon, CogIcon, CartIcon, ChartBarIcon, BuildingStorefrontIcon, TagIcon, CurrencyDollarIcon, LogoutIcon } from './icons';
+import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { HomeIcon, HeartIcon, ShoppingBagIcon, UtensilsIcon, UserIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
-
-const NavItem: React.FC<{ to: string, label: string, icon: React.ReactNode, showCartCount?: boolean }> = ({ to, label, icon, showCartCount = false }) => {
-  const location = useLocation();
-
-  // Logic for active state:
-  // 1. Exact match for root '/'
-  // 2. Exact match for '/admin' to avoid conflict with other admin routes
-  // 3. StartsWith for others (e.g. /restaurants/123 should match /restaurants)
-  const isCurrent =
-    to === '/' ? location.pathname === '/' :
-      to === '/admin' ? location.pathname === '/admin' :
-        location.pathname.startsWith(to);
-
-  const { cartItemCount, isCartAnimating } = useAppContext();
-
-  const cartAnimation = {
-    shake: {
-      rotate: [0, -15, 15, -15, 15, 0],
-      transition: { duration: 0.5 },
-    },
-  };
-
-  return (
-    <Link to={to} className="flex flex-col items-center justify-center w-full h-full relative z-10 group">
-      {isCurrent && (
-        <motion.div
-          layoutId="activeTab"
-          className="absolute inset-0 bg-black rounded-full -z-10 my-2 mx-2 shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-white/10"
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        />
-      )}
-      {!isCurrent && (
-        <div className="absolute inset-0 bg-gray-100 rounded-full -z-10 my-2 mx-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-      )}
-      <motion.div
-        className={`flex flex-col items-center justify-center w-full h-full pt-2 pb-1 transition-colors duration-200 ${isCurrent ? 'text-white' : 'text-gray-500 group-hover:text-gray-900'}`}
-        initial={false}
-        animate={isCartAnimating && showCartCount ? 'shake' : ''}
-        variants={cartAnimation}
-        whileTap={{ scale: 0.9 }}
-      >
-        <motion.div
-          animate={isCurrent ? { scale: 1.25, y: -3 } : { scale: 1, y: 0 }}
-          whileHover={{
-            scale: 1.2,
-            rotate: isCurrent ? 0 : [0, -10, 10, 0],
-            transition: {
-              type: "spring",
-              stiffness: 400,
-              damping: 10,
-              rotate: {
-                type: "keyframes",
-                duration: 0.25
-              }
-            }
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 15 }}
-        >
-          {icon}
-        </motion.div>
-        <span className="text-[10px] font-medium mt-0.5">{label}</span>
-        {showCartCount && cartItemCount > 0 && (
-          <motion.span
-            className="absolute top-2 right-4 w-4 h-4 bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border border-white"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          >
-            {cartItemCount}
-          </motion.span>
-        )}
-      </motion.div>
-    </Link>
-  );
-};
 
 export const BottomNav: React.FC = () => {
-  const { cartItemCount, userRole, handleLogout, isBottomNavVisible, bottomNavCustomContent } = useAppContext();
+  const { cartItemCount, isBottomNavVisible } = useAppContext();
   const navigate = useNavigate();
-  const isLoggedIn = userRole !== 'guest';
+  const location = useLocation();
 
   if (!isBottomNavVisible) {
     return null;
   }
 
-  const basePages = [
-    { to: '/restaurants', label: 'Comercios', icon: <ShoppingIcon className="w-6 h-6" /> },
-    { to: '/request', label: 'Solicitar', icon: <PackageIcon className="w-6 h-6" /> },
+  const navItems = [
+    {
+      icon: HomeIcon,
+      label: 'Inicio',
+      path: '/restaurants',
+      isActive: (path: string) => path === '/' || path === '/restaurants'
+    },
+    {
+      icon: HeartIcon,
+      label: 'Favoritos',
+      path: '/favorites',
+      isActive: (path: string) => path === '/favorites'
+    },
+    {
+      icon: ShoppingBagIcon,
+      label: 'Carrito',
+      path: '/cart',
+      isFab: true,
+      isActive: (path: string) => path === '/cart'
+    },
+    {
+      icon: UtensilsIcon,
+      label: 'Solicitar',
+      path: '/request',
+      isActive: (path: string) => path === '/request'
+    },
+    {
+      icon: UserIcon,
+      label: 'Perfil',
+      path: '/profile',
+      isActive: (path: string) => path === '/profile' || path === '/login'
+    },
   ];
 
-  const adminPages = [
-    { to: '/admin', label: 'Resumen', icon: <ChartBarIcon className="w-6 h-6" /> },
-    { to: '/admin/restaurants', label: 'Restaurantes', icon: <BuildingStorefrontIcon className="w-6 h-6" /> },
-    { to: '/admin/categories', label: 'Categorías', icon: <TagIcon className="w-6 h-6" /> },
-    { to: '/admin/tariffs', label: 'Tarifas', icon: <CurrencyDollarIcon className="w-6 h-6" /> },
-  ];
-
-  const cartPage = { to: '/cart', label: 'Carrito', icon: <CartIcon className="w-6 h-6" />, showCartCount: true };
-  const profilePage = { to: '/profile', label: 'Perfil', icon: <UserIcon className="w-6 h-6" /> };
-  const loginPage = { to: '/login', label: 'Login', icon: <UserIcon className="w-6 h-6" /> };
-
-  const pagesToRender = userRole === 'admin'
-    ? adminPages
-    : [...basePages, cartPage, isLoggedIn ? profilePage : loginPage];
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
 
   return (
-    <motion.div
-      // Fix: Include x: "-50%" in Framer Motion props to handle centering correctly
-      // removing conflict with Tailwind's translate classes
-      initial={{ y: 100, x: "-50%" }}
-      animate={{ y: 0, x: "-50%" }}
-      exit={{ y: 100, x: "-50%" }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      // Removed -translate-x-1/2 from className as it's handled by motion now
-      // Added safe-area handling for bottom
-      className="bottom-nav fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 w-[85%] md:max-w-sm mx-auto bg-white/90 backdrop-blur-lg shadow-2xl rounded-full border border-gray-100 lg:hidden"
-      style={{ zIndex: 9999 }}
-    >
-      <div className="flex justify-between items-center h-16 px-2">
-        {bottomNavCustomContent ? (
-          bottomNavCustomContent
-        ) : (
-          <>
-            {pagesToRender.map((page) => (
-              <NavItem key={page.to} {...page} />
-            ))}
-            {userRole === 'admin' && (
-              <button
-                onClick={() => {
-                  handleLogout();
-                  navigate('/login');
-                }}
-                className="flex flex-col items-center justify-center w-full h-full pt-2 pb-1 text-red-500"
-              >
-                <LogoutIcon className="w-6 h-6 mb-1" />
-                <span className="text-[10px] font-medium">Salir</span>
-              </button>
-            )}
-          </>
-        )}
+    <div className="fixed bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-[90%] md:w-auto max-w-md">
+      <div className="bg-white/90 backdrop-blur-xl px-6 md:px-8 py-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/50 flex items-center justify-between md:justify-center md:gap-10">
+        {navItems.map((item, index) => {
+          const active = item.isActive(location.pathname);
+
+          return (
+            <div key={index} className="relative group cursor-pointer" onClick={() => handleNavigation(item.path)}>
+              {item.isFab ? (
+                <div className="relative -top-10 transform transition-transform duration-300 hover:-translate-y-2">
+                  <div className="w-14 h-14 md:w-16 md:h-16 bg-[#2d0c5e] rounded-full flex items-center justify-center shadow-xl shadow-purple-900/40 border-4 border-gray-50">
+                    <item.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                    {cartItemCount > 0 && (
+                      <div className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-red-500 rounded-full border-2 border-[#2d0c5e] flex items-center justify-center">
+                        <span className="text-[9px] md:text-[10px] font-bold text-white">{cartItemCount}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1 transition-colors duration-300 hover:text-purple-600 text-gray-400">
+                  <item.icon className={`w-6 h-6 md:w-7 md:h-7 ${active ? 'text-purple-600' : 'text-gray-400 group-hover:text-purple-400'}`} />
+                  {active && <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-purple-600 rounded-full absolute -bottom-2 md:-bottom-3" />}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </motion.div>
+    </div>
   );
 };

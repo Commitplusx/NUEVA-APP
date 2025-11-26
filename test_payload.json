@@ -1,0 +1,11 @@
+{
+    "type": "INSERT",
+    "table": "orders",
+    "schema": "public",
+    "record": {
+        "id": 99999,
+        "user_id": "test-user-id",
+        "status": "pending"
+    },
+    "old_record": null
+}
