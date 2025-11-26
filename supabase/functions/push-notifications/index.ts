@@ -97,6 +97,15 @@ serve(async (req) => {
                         title: notificationContent.title,
                         body: notificationContent.body,
                     },
+                    android: {
+                        notification: {
+                            channel_id: "custom_sound_channel",
+                            sound: "notification_sound",
+                            default_sound: false,
+                            default_vibrate_timings: false,
+                            vibrate_timings: ["0.0s", "0.2s", "0.1s", "0.2s"]
+                        }
+                    },
                     data: {
                         orderId: record.id.toString(),
                         status: newStatus

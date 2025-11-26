@@ -28,6 +28,32 @@ public class MainActivity extends BridgeActivity {
     
     super.onCreate(savedInstanceState);
 
+    // --- NOTIFICATION CHANNEL SETUP ---
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // Create the NotificationChannel
+        String channelId = "custom_sound_channel";
+        CharSequence name = "Notificaciones con Sonido";
+        String description = "Canal para notificaciones importantes con sonido personalizado";
+        int importance = android.app.NotificationManager.IMPORTANCE_HIGH;
+        android.app.NotificationChannel channel = new android.app.NotificationChannel(channelId, name, importance);
+        channel.setDescription(description);
+
+        // Configure Audio Attributes
+        android.media.AudioAttributes audioAttributes = new android.media.AudioAttributes.Builder()
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+            .build();
+
+        // Set Custom Sound
+        android.net.Uri soundUri = android.net.Uri.parse(android.content.ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/raw/notification_sound");
+        channel.setSound(soundUri, audioAttributes);
+
+        // Register the channel with the system
+        android.app.NotificationManager notificationManager = getSystemService(android.app.NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+    }
+    // ----------------------------------
+
     // --- MAPBOX INITIALIZATION ---
     // For Mapbox SDK v10+, initialization is handled automatically
     // by providing your access token in strings.xml.
