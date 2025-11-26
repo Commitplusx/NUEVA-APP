@@ -75,15 +75,17 @@ serve(async (req) => {
             // Status Messages Mapping
             const statusMessages: Record<string, { title: string, body: string }> = {
                 'pending': { title: '⏳ Pedido Recibido', body: 'Estamos confirmando tu orden con el restaurante.' },
-                'confirmed': { title: '👨‍🍳 Pedido Confirmado', body: 'El restaurante ha aceptado tu pedido.' },
+                'accepted': { title: '👨‍🍳 Pedido Aceptado', body: 'El restaurante está preparando tu comida.' },
                 'preparing': { title: '🔥 Preparando tu comida', body: 'El restaurante está cocinando tus platillos.' },
                 'ready': { title: '🥡 Pedido Listo', body: 'Tu comida está lista y esperando al repartidor.' },
-                'on_way': { title: '🛵 ¡Va en camino!', body: 'El repartidor ya tiene tu pedido y se dirige hacia ti.' },
+                'picked_up': { title: '🛵 ¡Va en camino!', body: 'El repartidor ya tiene tu pedido.' },
+                'on_way': { title: '🛵 ¡Va en camino!', body: 'El repartidor se dirige hacia ti.' },
                 'delivered': { title: '✅ ¡Entregado!', body: 'Disfruta tu comida. ¡Gracias por tu preferencia!' },
                 'cancelled': { title: '❌ Pedido Cancelado', body: 'Lo sentimos, tu pedido ha sido cancelado.' },
             }
 
-            const notificationContent = statusMessages[newStatus] || {
+            const normalizedStatus = newStatus.toLowerCase().trim();
+            const notificationContent = statusMessages[normalizedStatus] || {
                 title: 'Actualización de Pedido',
                 body: `Tu pedido ahora está: ${newStatus}`
             }
