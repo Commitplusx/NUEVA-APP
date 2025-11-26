@@ -130,6 +130,7 @@ export interface Profile {
   address_line_2?: string; // Depto./Unidad/Piso
   access_code?: string; // Código de acceso
   updated_at?: string;
+  fcm_token?: string;
 }
 
 export interface OrderUserDetails {

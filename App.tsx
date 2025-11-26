@@ -51,12 +51,15 @@ const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ childr
   </motion.div>
 );
 
+import { usePushNotifications } from './hooks/usePushNotifications';
+
 /**
  * @component App
  * @description Componente principal que define la estructura de la aplicación y sus rutas.
  * Gestiona la visibilidad de la cabecera y el sidebar basándose en la ruta actual y el rol del usuario.
  */
 const App: React.FC = () => {
+  usePushNotifications(); // Initialize Push Notifications
   const { isSidebarOpen, userRole, isCustomizationModalOpen, isProductModalOpen, isAddressModalOpen, isBottomNavVisible } = useAppContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,11 +78,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const setupPlatform = async () => {
       if (Capacitor.isNativePlatform()) {
-        // Prevent the webview from overlapping the status bar
-        await StatusBar.setOverlaysWebView({ overlay: false });
-        // Set status bar style to dark text
+        // Allow the webview to overlap the status bar for a transparent effect
+        await StatusBar.setOverlaysWebView({ overlay: true });
+        // Set status bar style to dark text (Light style)
         await StatusBar.setStyle({ style: Style.Light });
-        await StatusBar.setBackgroundColor({ color: '#000000' });
+        // Remove explicit background color setting or set to transparent if needed
+        // await StatusBar.setBackgroundColor({ color: '#00000000' });
       }
     };
     setupPlatform();
