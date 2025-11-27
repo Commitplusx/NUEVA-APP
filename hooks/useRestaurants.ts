@@ -4,8 +4,10 @@ import { supabase } from '../services/supabase';
 import { Restaurant } from '../types';
 import { denormalizeRestaurants } from '../services/denormalize';
 import { Filters } from '../components/AdvancedFilters';
+import { Preferences } from '@capacitor/preferences';
 
 const PAGE_SIZE = 8;
+const CACHE_KEY = 'app-restaurants-cache';
 
 interface UseRestaurantsProps {
   searchQuery?: string;
@@ -22,9 +24,36 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
+  // Load from cache on mount
+  useEffect(() => {
+    const loadCache = async () => {
+      // Only load cache if no search/filters
+      if (searchQuery || (filters.categories && filters.categories.length > 0) || filters.sortBy) return;
+
+      try {
+        const { value } = await Preferences.get({ key: CACHE_KEY });
+        if (value) {
+          const cachedData = JSON.parse(value);
+          if (Array.isArray(cachedData) && cachedData.length > 0) {
+            setRestaurants(cachedData);
+            setLoading(false); // Show cached data immediately
+          }
+        }
+      } catch (e) {
+        console.error("Error loading cache", e);
+      }
+    };
+    loadCache();
+  }, []);
+
   const fetchPage = useCallback(async (pageToFetch: number, isNewFilter: boolean) => {
-    if (pageToFetch === 0) setLoading(true);
-    else setLoadingMore(true);
+    // If loading page 0 and we already have data (from cache), don't set loading to true to avoid flicker
+    // unless it's a new filter/search
+    if (pageToFetch === 0) {
+      if (isNewFilter || restaurants.length === 0) setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
 
     try {
@@ -91,12 +120,22 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
         menuItemsResult.data || []
       );
 
-      setRestaurants(prev => (pageToFetch === 0 || isNewFilter) ? denormalized : [...prev, ...denormalized]);
+      setRestaurants(prev => {
+        const newData = (pageToFetch === 0 || isNewFilter) ? denormalized : [...prev, ...denormalized];
+
+        // Cache the data if it's the first page and default view
+        if (pageToFetch === 0 && !searchQuery && (!filters.categories || filters.categories.length === 0) && !filters.sortBy) {
+          Preferences.set({ key: CACHE_KEY, value: JSON.stringify(newData) }).catch(e => console.error("Cache save error", e));
+        }
+
+        return newData;
+      });
+
       setHasMore(restaurantsData.length === PAGE_SIZE);
 
     } catch (err: any) {
       setError('No se pudieron cargar los restaurantes.');
-      setRestaurants([]); // Clear restaurants on error
+      // Keep existing data if fetch fails (fallback to cache/previous state)
       console.error(err);
     } finally {
       setLoading(false);
@@ -105,7 +144,9 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
   }, [searchQuery, filters]);
 
   useEffect(() => {
-    setRestaurants([]);
+    // Reset and fetch when filters change
+    // Note: We don't clear restaurants immediately here to avoid flash if we have cache or previous data
+    // The fetchPage will handle the replacement
     setPage(0);
     setHasMore(true);
     fetchPage(0, true);

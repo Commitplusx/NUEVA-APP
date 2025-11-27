@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ProductDetail } from './ProductDetail';
 import { Restaurant, MenuItem } from '../types';
 import { MinusIcon, PlusIcon } from './icons';
+import Lottie from 'lottie-react';
+import cartAnimation from './animations/cart checkout - fast.json';
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -82,7 +85,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
   };
 
   const handleAddToCartClick = () => {
-    onAddToCart(item, quantity, selectedIngredients, selectedOptions);
+    setIsAnimating(true);
+    setTimeout(() => {
+      onAddToCart(item, quantity, selectedIngredients, selectedOptions);
+      setIsAnimating(false);
+      onClose();
+    }, 1500); // Wait for animation
   };
 
   const modalVariants = {
@@ -137,16 +145,41 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, 
             {/* --- Minimalist Bottom Action Bar --- */}
             <div className={`bg-white border-t border-gray-100 p-4 pb-8 md:pb-6 z-20 flex-shrink-0 ${isDesktop ? 'rounded-b-2xl' : ''}`}>
               <div className="flex items-center justify-center max-w-3xl mx-auto w-full">
-                {/* Green Vibrant Button - Full Width */}
+                {/* Purple Vibrant Button - Full Width */}
                 <button
                   onClick={handleAddToCartClick}
-                  className="w-full bg-green-600 text-white h-14 rounded-full hover:bg-green-700 active:scale-95 transition-all shadow-lg shadow-green-600/20 flex justify-between items-center px-6"
+                  disabled={isAnimating}
+                  className="w-full bg-purple-600 text-white h-14 rounded-full hover:bg-purple-700 active:scale-95 transition-all shadow-lg shadow-purple-600/20 flex justify-between items-center px-6 disabled:opacity-70 disabled:scale-100"
                 >
-                  <span className="font-bold text-base">Agregar al carrito</span>
-                  <span className="font-bold text-lg">${totalPrice}</span>
+                  {isAnimating ? (
+                    <div className="flex justify-center items-center w-full">
+                      <span className="font-bold text-base mr-2">Agregando...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-bold text-base">Agregar al carrito</span>
+                      <span className="font-bold text-lg">${totalPrice}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Full Screen Animation Overlay */}
+            <AnimatePresence>
+              {isAnimating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm"
+                >
+                  <div className="w-64 h-64">
+                    <Lottie animationData={cartAnimation} loop={false} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       )}

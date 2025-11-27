@@ -9,7 +9,7 @@ export const AdminHeader: React.FC = () => {
         <div className="bg-white pt-4 pb-6 px-4 mb-6 rounded-b-[2rem] shadow-sm">
             {/* Top Bar */}
             <div className="flex justify-between items-center mb-6">
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-purple-100 shadow-sm">
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-purple-100 shadow-sm cursor-pointer hover:border-purple-300 transition-colors" onClick={() => window.location.href = '/profile'}>
                     <img
                         src={profile?.avatar || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop"}
                         alt="Admin User"

@@ -1,10 +1,11 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HomeIcon, HeartIcon, ShoppingBagIcon, UtensilsIcon, UserIcon } from './icons';
+import { HomeIcon, HeartIcon, ShoppingBagIcon, UtensilsIcon, UserIcon, StoreIcon, GridIcon, TicketIcon } from './icons';
 import { useAppContext } from '../context/AppContext';
+import { motion } from 'framer-motion';
 
 export const BottomNav: React.FC = () => {
-  const { cartItemCount, isBottomNavVisible } = useAppContext();
+  const { cartItemCount, isBottomNavVisible, userRole } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -12,7 +13,7 @@ export const BottomNav: React.FC = () => {
     return null;
   }
 
-  const navItems = [
+  const userNavItems = [
     {
       icon: HomeIcon,
       label: 'Inicio',
@@ -46,34 +47,84 @@ export const BottomNav: React.FC = () => {
     },
   ];
 
+  const adminNavItems = [
+    {
+      icon: HomeIcon,
+      label: 'Dashboard',
+      path: '/admin',
+      isActive: (path: string) => path === '/admin'
+    },
+    {
+      icon: StoreIcon,
+      label: 'Restaurantes',
+      path: '/admin/restaurants',
+      isActive: (path: string) => path === '/admin/restaurants'
+    },
+    {
+      icon: GridIcon,
+      label: 'Categorías',
+      path: '/admin/categories',
+      isActive: (path: string) => path === '/admin/categories'
+    },
+    {
+      icon: TicketIcon,
+      label: 'Tarifas',
+      path: '/admin/tariffs',
+      isActive: (path: string) => path === '/admin/tariffs'
+    },
+    {
+      icon: UserIcon,
+      label: 'Perfil',
+      path: '/profile',
+      isActive: (path: string) => path === '/profile'
+    },
+  ];
+
+  const navItems = userRole === 'admin' ? adminNavItems : userNavItems;
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   return (
-    <div className="fixed bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-50 w-[90%] md:w-auto max-w-md">
-      <div className="bg-white/90 backdrop-blur-xl px-6 md:px-8 py-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/50 flex items-center justify-between md:justify-center md:gap-10">
+    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] max-w-md">
+      <div className="bg-white/95 backdrop-blur-xl px-2 py-2 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 flex items-center justify-between relative">
         {navItems.map((item, index) => {
           const active = item.isActive(location.pathname);
 
           return (
-            <div key={index} className="relative group cursor-pointer" onClick={() => handleNavigation(item.path)}>
+            <div key={index} className="relative z-10 flex-1 flex justify-center">
               {item.isFab ? (
-                <div className="relative -top-10 transform transition-transform duration-300 hover:-translate-y-2">
-                  <div className="w-14 h-14 md:w-16 md:h-16 bg-[#2d0c5e] rounded-full flex items-center justify-center shadow-xl shadow-purple-900/40 border-4 border-gray-50">
-                    <item.icon className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                <div
+                  className="relative -top-8 cursor-pointer group"
+                  onClick={() => handleNavigation(item.path)}
+                >
+                  <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/40 border-[4px] border-gray-50 transform transition-transform duration-300 group-hover:scale-110 group-active:scale-95">
+                    <item.icon className="w-6 h-6 text-white" />
                     {cartItemCount > 0 && (
-                      <div className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-red-500 rounded-full border-2 border-[#2d0c5e] flex items-center justify-center">
-                        <span className="text-[9px] md:text-[10px] font-bold text-white">{cartItemCount}</span>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-white">{cartItemCount}</span>
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-1 transition-colors duration-300 hover:text-purple-600 text-gray-400">
-                  <item.icon className={`w-6 h-6 md:w-7 md:h-7 ${active ? 'text-purple-600' : 'text-gray-400 group-hover:text-purple-400'}`} />
-                  {active && <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-purple-600 rounded-full absolute -bottom-2 md:-bottom-3" />}
-                </div>
+                <button
+                  onClick={() => handleNavigation(item.path)}
+                  className={`relative flex flex-col items-center justify-center w-full py-2 rounded-[1.5rem] transition-all duration-300 ${active ? 'text-purple-700' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute inset-0 bg-purple-100 rounded-[1.5rem] -z-10"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <item.icon className={`w-6 h-6 mb-0.5 ${active ? 'stroke-[2.5px]' : 'stroke-2'}`} />
+                  <span className={`text-[10px] font-bold ${active ? 'opacity-100' : 'opacity-0 hidden'} transition-opacity duration-200`}>
+                    {item.label}
+                  </span>
+                </button>
               )}
             </div>
           );

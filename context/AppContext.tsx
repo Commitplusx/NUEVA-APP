@@ -973,6 +973,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
+    // Check for initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        setUserRole(session.user.email?.endsWith('@admin.com') ? 'admin' : 'user');
+      }
+      setIsLoadingAuth(false);
+    });
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
 
 
@@ -1381,69 +1390,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
 
 
+
+
+
+
+
+
+
   const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
 
+      // Clear local storage cache
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('userProfileTimestamp');
+      localStorage.removeItem('userOrders');
+      localStorage.removeItem('userOrdersTimestamp');
 
-
-
-
-
-
-    await supabase.auth.signOut();
-
-
-
-
-
-
-
-    setUser(null);
-
-
-
-
-
-
-
-    setUserRole('guest');
-
-
-
-
-
-
-
-    setIsSidebarOpen(false);
-
-
-
-
-
-
-
-    showToast('Has cerrado sesión.', 'info');
-
-
-
-
-
-
-
+      setUser(null);
+      setUserRole('guest');
+      setIsSidebarOpen(false);
+      showToast('Has cerrado sesión.', 'info');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      showToast('Error al cerrar sesión', 'error');
+    }
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   const handleSelectRestaurant = (restaurant: Restaurant) => {
 

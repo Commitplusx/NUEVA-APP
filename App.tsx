@@ -15,6 +15,11 @@ import { AppProvider } from './context/AppContext';
 import { Spinner } from './components/Spinner';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PaymentMethod } from './components/PaymentMethod';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { usePushNotifications } from './hooks/usePushNotifications';
+import Favorites from './components/Favorites';
 
 // Lazy load de los componentes de página
 const Home = lazy(() => import('./components/Home').then(module => ({ default: module.Home })));
@@ -32,7 +37,6 @@ const ManageServiceRequests = lazy(() => import('./components/admin/ManageServic
 const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
 const VerifyCode = lazy(() => import('./components/VerifyCode').then(module => ({ default: module.VerifyCode })));
 const MapDemoPage = lazy(() => import('./components/MapDemoPage').then(module => ({ default: module.MapDemoPage })));
-const PaymentMethod = lazy(() => import('./components/PaymentMethod').then(module => ({ default: module.PaymentMethod })));
 
 /**
  * @component PageTransitionWrapper
@@ -41,17 +45,15 @@ const PaymentMethod = lazy(() => import('./components/PaymentMethod').then(modul
  */
 const PageTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.3, ease: "easeOut" }}
+    initial={{ opacity: 0, x: 10 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -10 }}
+    transition={{ duration: 0.2, ease: "easeInOut" }}
     style={{ width: '100%', height: '100%' }}
   >
     {children}
   </motion.div>
 );
-
-import { usePushNotifications } from './hooks/usePushNotifications';
 
 /**
  * @component App
@@ -127,7 +129,7 @@ const App: React.FC = () => {
         {isSidebarOpen && userRole !== 'admin' && shouldShowBottomNav && <Sidebar />}
       </AnimatePresence>
       {/* Removed pt-10 to eliminate white space on desktop, kept flex-grow and overflow handling */}
-      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-28' : ''}`}>
+      <main className={`flex-grow overflow-y-auto ${shouldShowBottomNav ? 'pb-32' : ''}`}>
         <AnimatePresence mode="wait">
           <Suspense fallback={<div className="flex justify-center items-center h-full"><Spinner /></div>}>
             <Routes location={location}>
@@ -136,29 +138,55 @@ const App: React.FC = () => {
               <Route path="/verify-code" element={<PageTransitionWrapper><VerifyCode /></PageTransitionWrapper>} />
               <Route path="/restaurants" element={<PageTransitionWrapper><Restaurants /></PageTransitionWrapper>} />
               <Route path="/restaurants/:id" element={<PageTransitionWrapper><RestaurantDetail /></PageTransitionWrapper>} />
-              <Route path="/request" element={<PageTransitionWrapper><RequestService /></PageTransitionWrapper>} />
-              <Route path="/cart" element={<PageTransitionWrapper><Cart /></PageTransitionWrapper>} />
-              <Route path="/profile" element={<PageTransitionWrapper><UserProfile /></PageTransitionWrapper>} />
-              <Route path="/payment-methods" element={<PageTransitionWrapper><PaymentMethod /></PageTransitionWrapper>} />
-              <Route path="/admin" element={<Admin />}>
+
+              {/* Protected User Routes */}
+              <Route path="/request" element={
+                <ProtectedRoute>
+                  <PageTransitionWrapper><RequestService /></PageTransitionWrapper>
+                </ProtectedRoute>
+              } />
+              <Route path="/cart" element={
+                <ProtectedRoute>
+                  <PageTransitionWrapper><Cart /></PageTransitionWrapper>
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <PageTransitionWrapper><UserProfile /></PageTransitionWrapper>
+                </ProtectedRoute>
+              } />
+              <Route path="/payment-methods" element={
+                <ProtectedRoute>
+                  <PageTransitionWrapper><PaymentMethod /></PageTransitionWrapper>
+                </ProtectedRoute>
+              } />
+              <Route path="/favorites" element={
+                <ProtectedRoute>
+                  <PageTransitionWrapper><Favorites /></PageTransitionWrapper>
+                </ProtectedRoute>
+              } />
+
+              {/* Protected Admin Routes */}
+              <Route path="/admin" element={
+                <ProtectedRoute role="admin">
+                  <Admin />
+                </ProtectedRoute>
+              }>
                 <Route index element={<PageTransitionWrapper><DashboardOverview /></PageTransitionWrapper>} />
                 <Route path="restaurants" element={<PageTransitionWrapper><ManageRestaurants /></PageTransitionWrapper>} />
                 <Route path="categories" element={<PageTransitionWrapper><ManageCategories /></PageTransitionWrapper>} />
                 <Route path="tariffs" element={<PageTransitionWrapper><ManageTariffs /></PageTransitionWrapper>} />
                 <Route path="requests" element={<PageTransitionWrapper><ManageServiceRequests /></PageTransitionWrapper>} />
               </Route>
+
               <Route path="/map-demo" element={<PageTransitionWrapper><MapDemoPage /></PageTransitionWrapper>} />
             </Routes>
           </Suspense>
         </AnimatePresence>
       </main>
-
-
     </div>
   );
 };
-
-import { ErrorBoundary } from './components/ErrorBoundary';
 
 /**
  * @component AppWrapper

@@ -153,7 +153,13 @@ export const getProfile = async (): Promise<Profile> => {
       lng: null,
       avatar: '',
       phone: '',
+      email: user.email || '', // Fallback to auth email
     };
+  }
+
+  // If profile exists but email is missing in profile table, use auth email
+  if (!profile.email && user.email) {
+    profile.email = user.email;
   }
 
   return profile;

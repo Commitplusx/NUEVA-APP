@@ -8,7 +8,7 @@ import { Toast } from './Toast';
 import { useAppContext } from '../context/AppContext';
 import { Avatar } from './Avatar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeftIcon, ChevronRightIcon, PhoneIcon, MenuDots, MapIcon, ShoppingBagIcon, CreditCardIcon, LogOutIcon, PackageIcon, HeadphonesIcon, TicketIcon, StarIcon, CrownIcon, LocationIcon, DocumentTextIcon, BellIcon, StoreIcon, MotorcycleIcon, UserIcon, SparklesIcon, XCircleIcon } from './icons';
+import { ChevronLeftIcon, ChevronRightIcon, PhoneIcon, MenuDots, MapIcon, ShoppingBagIcon, CreditCardIcon, LogOutIcon, PackageIcon, HeadphonesIcon, TicketIcon, StarIcon, CrownIcon, LocationIcon, DocumentTextIcon, BellIcon, StoreIcon, MotorcycleIcon, UserIcon, SparklesIcon, XCircleIcon, HeartIcon } from './icons';
 import Map, { Marker, MapRef } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Capacitor } from '@capacitor/core';
@@ -17,9 +17,12 @@ import Lottie from 'lottie-react';
 import profileAnimation from './animations/profile.json';
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className = "" }) => (
-  <div className={`mb-6 ${className}`}>
-    <h2 className="px-4 text-xl font-bold text-gray-900 mb-3">{title}</h2>
-    <div>{children}</div>
+  <div className={`mb-8 ${className}`}>
+    <h2 className="px-2 text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+      <span className="w-1 h-6 bg-purple-600 rounded-full"></span>
+      {title}
+    </h2>
+    <div className="space-y-3">{children}</div>
   </div>
 );
 
@@ -34,31 +37,35 @@ interface ListItemProps {
 
 const ListItem: React.FC<ListItemProps> = ({ icon, text, subtext, value, onClick, hasChevron = true }) => {
   const content = (
-    <div className="flex items-center p-4 bg-white">
-      <div className="mr-4 text-gray-600">{icon}</div>
-      <div className="flex-1">
-        <p className="font-semibold text-gray-800">{text}</p>
-        {subtext && <p className="text-sm text-gray-500">{subtext}</p>}
+    <div className="flex items-center p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 group">
+      <div className="mr-4 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+        {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
       </div>
-      {value && <p className="font-semibold text-gray-800">{value}</p>}
-      {hasChevron && <ChevronRightIcon className="w-5 h-5 text-gray-400 ml-4" />}
+      <div className="flex-1">
+        <p className="font-bold text-gray-800 text-sm group-hover:text-purple-900 transition-colors">{text}</p>
+        {subtext && <p className="text-xs text-gray-500 mt-0.5">{subtext}</p>}
+      </div>
+      {value && <p className="font-bold text-gray-900 text-sm">{value}</p>}
+      {hasChevron && <ChevronRightIcon className="w-4 h-4 text-gray-300 group-hover:text-purple-400 transition-colors ml-3" />}
     </div>
   );
 
   if (onClick) {
     return (
-      <button onClick={onClick} className="w-full text-left transition-colors duration-200 hover:bg-gray-50 first:rounded-t-xl last:rounded-b-xl">
+      <button onClick={onClick} className="w-full text-left block">
         {content}
       </button>
     )
   }
-  return <div className="first:rounded-t-xl last:rounded-b-xl">{content}</div>;
+  return <div>{content}</div>;
 };
 
 const QuickActionButton: React.FC<{ icon: React.ReactNode, label: string, onClick: () => void }> = ({ icon, label, onClick }) => (
-  <button onClick={onClick} className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-sm border border-gray-200 hover:bg-gray-50 hover:shadow-md transition-all duration-200">
-    <div className="text-gray-700">{icon}</div>
-    <span className="mt-2 font-semibold text-sm text-gray-800">{label}</span>
+  <button onClick={onClick} className="flex flex-col items-center justify-center gap-2 group w-full">
+    <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600 group-hover:bg-purple-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+      {icon}
+    </div>
+    <span className="font-semibold text-xs text-gray-600 group-hover:text-purple-700 transition-colors">{label}</span>
   </button>
 );
 
@@ -249,21 +256,26 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-end justify-center z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50"
           onClick={onClose}
         >
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: "0%" }}
             exit={{ y: "100%" }}
-            className="bg-gray-50 rounded-t-2xl shadow-xl max-w-md w-full h-full max-h-[95vh] flex flex-col"
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-white rounded-t-[2.5rem] shadow-2xl max-w-md w-full h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <header className="p-4 border-b border-gray-200 flex-shrink-0">
-              <h2 className="text-xl font-bold text-center text-gray-800">Agregar nueva dirección</h2>
+            <header className="p-6 pb-4 border-b border-gray-100 flex-shrink-0 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">Nueva Dirección</h2>
+              <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                <XCircleIcon className="w-6 h-6 text-gray-500" />
+              </button>
             </header>
+
             <div className="overflow-y-auto flex-grow">
-              <div className="-mx-0 h-48 w-auto rounded-none overflow-hidden relative">
+              <div className="mx-6 mt-2 h-48 rounded-2xl overflow-hidden relative shadow-md border border-gray-100">
                 {Capacitor.getPlatform() === 'web' ? (
                   import.meta.env.VITE_MAPBOX_TOKEN ? (
                     <Map
@@ -276,58 +288,95 @@ const AddressManagerModal: React.FC<AddressManagerModalProps> = ({ isOpen, onClo
                       <Marker longitude={mapCenter.lng} latitude={mapCenter.lat} />
                     </Map>
                   ) : (
-                    <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-4 text-center">
-                      <MapIcon className="w-12 h-12 text-gray-400 mb-2" />
+                    <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center p-4 text-center">
+                      <MapIcon className="w-12 h-12 text-gray-300 mb-2" />
                       <p className="text-gray-500 font-medium">Mapa no disponible</p>
-                      <p className="text-xs text-gray-400 mt-1">Verifica la configuración de Mapbox</p>
                     </div>
                   )
                 ) : (
                   <div
-                    className="w-full h-full bg-gray-200 flex items-center justify-center relative cursor-pointer"
+                    className="w-full h-full bg-gray-100 flex items-center justify-center relative cursor-pointer group"
                     onClick={handleOpenNativeMap}
                   >
                     <img
                       src={`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/${mapCenter.lng},${mapCenter.lat},15,0,0/600x300?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
                       alt="Mapa"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-10">
-                      <button className="bg-white px-4 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2">
-                        <MapIcon className="w-4 h-4" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                      <button className="bg-white px-5 py-2.5 rounded-full shadow-lg font-bold text-sm flex items-center gap-2 text-gray-900 transform transition-transform group-hover:scale-105">
+                        <MapIcon className="w-4 h-4 text-purple-600" />
                         Abrir Mapa
                       </button>
                     </div>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none"></div>
               </div>
-              <div className="p-4 -mt-4">
-                <div className="space-y-4 mt-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Calle y Número</label>
-                    <input name="street_address" value={addressData.street_address || ''} onChange={handleInputChange} className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" placeholder="Ej. Av. Central Poniente 123" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia</label>
-                      <input name="neighborhood" value={addressData.neighborhood || ''} onChange={handleInputChange} className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" placeholder="Ej. Centro" />
+
+              <div className="p-6 space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Calle y Número</label>
+                  <div className="relative">
+                    <input
+                      name="street_address"
+                      value={addressData.street_address || ''}
+                      onChange={handleInputChange}
+                      className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
+                      placeholder="Ej. Av. Central Poniente 123"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-600">
+                      <LocationIcon className="w-5 h-5" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
-                      <input name="postal_code" value={addressData.postal_code || ''} onChange={handleInputChange} className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" placeholder="Ej. 30000" />
-                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Colonia</label>
+                    <input
+                      name="neighborhood"
+                      value={addressData.neighborhood || ''}
+                      onChange={handleInputChange}
+                      className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
+                      placeholder="Ej. Centro"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Referencias / Detalles</label>
-                    <input name="address_line_2" value={addressData.address_line_2 || ''} onChange={handleInputChange} className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500" placeholder="Ej. Frente al parque, casa azul..." />
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">C.P.</label>
+                    <input
+                      name="postal_code"
+                      value={addressData.postal_code || ''}
+                      onChange={handleInputChange}
+                      className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
+                      placeholder="30000"
+                    />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Referencias</label>
+                  <input
+                    name="address_line_2"
+                    value={addressData.address_line_2 || ''}
+                    onChange={handleInputChange}
+                    className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
+                    placeholder="Ej. Casa azul, frente al parque..."
+                  />
                 </div>
               </div>
             </div>
-            <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-              <button onClick={handleSaveAddress} className="w-full py-4 bg-gray-900 text-white font-bold transition-transform shadow-lg disabled:opacity-50 rounded-lg hover:bg-black" disabled={isSaving || !addressData.street_address}>
-                {isSaving ? 'Guardando...' : 'Guardar y continuar'}
+
+            <div className="p-6 bg-white border-t border-gray-100 flex-shrink-0">
+              <button
+                onClick={handleSaveAddress}
+                className="w-full py-4 bg-purple-600 text-white font-bold text-lg rounded-2xl shadow-lg shadow-purple-600/30 hover:bg-purple-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:shadow-none"
+                disabled={isSaving || !addressData.street_address}
+              >
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner className="w-5 h-5 border-white" /> Guardando...
+                  </span>
+                ) : 'Guardar Dirección'}
               </button>
             </div>
           </motion.div>
@@ -384,51 +433,76 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, on
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: "-50px", opacity: 0 }}
-            animate={{ y: "0", opacity: 1 }}
-            exit={{ y: "50px", opacity: 0 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            initial={{ y: 50, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 50, opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-white rounded-[2rem] p-8 shadow-2xl max-w-md w-full relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Editar Perfil</h2>
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-indigo-600"></div>
 
-            <div className="space-y-4">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+              <span className="w-2 h-8 bg-purple-600 rounded-full"></span>
+              Editar Perfil
+            </h2>
+
+            <div className="space-y-5">
               <div>
-                <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                <label htmlFor="full_name" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Nombre Completo</label>
                 <input
                   type="text"
                   id="full_name"
                   name="full_name"
                   value={profileData.full_name || ''}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                  className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
                   placeholder="Tu nombre completo"
                 />
               </div>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Teléfono</label>
+                <label htmlFor="phone" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Teléfono</label>
                 <input
                   type="tel"
                   id="phone"
                   name="phone"
                   value={profileData.phone || ''}
                   onChange={handleInputChange}
-                  className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-black focus:border-black sm:text-sm"
+                  className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
                   placeholder="Tu teléfono (Ej: +521...)"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={profileData.email || ''}
+                  onChange={handleInputChange}
+                  className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-purple-500/20 text-gray-900 font-medium transition-all"
+                  placeholder="tu@correo.com"
                 />
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end space-x-3">
-              <button onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold transition-colors" disabled={isSaving}>
+            <div className="mt-8 flex justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 font-bold transition-colors"
+                disabled={isSaving}
+              >
                 Cancelar
               </button>
-              <button onClick={handleSaveProfile} className="px-5 py-2 bg-black text-white rounded-lg hover:bg-gray-800 font-bold transition-colors" disabled={isSaving}>
+              <button
+                onClick={handleSaveProfile}
+                className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-bold transition-all shadow-lg shadow-purple-600/30 active:scale-95"
+                disabled={isSaving}
+              >
                 {isSaving ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
@@ -535,11 +609,11 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
 
   const getStatusStyle = (status: string) => {
     const s = status?.toLowerCase() || '';
-    if (s.includes('entregado') || s.includes('completado')) return 'text-green-600 bg-green-100 border border-green-200';
-    if (s.includes('pendiente') || s.includes('preparando') || s.includes('confirmado')) return 'text-orange-600 bg-orange-100 border border-orange-200';
-    if (s.includes('recogido') || s.includes('camino') || s.includes('reparto') || s.includes('delivery')) return 'text-blue-600 bg-blue-100 border border-blue-200';
-    if (s.includes('cancelado')) return 'text-red-600 bg-red-100 border border-red-200';
-    return 'text-gray-600 bg-gray-100 border border-gray-200';
+    if (s.includes('entregado') || s.includes('completado')) return 'text-green-700 bg-green-50 border border-green-100';
+    if (s.includes('pendiente') || s.includes('preparando') || s.includes('confirmado')) return 'text-orange-700 bg-orange-50 border border-orange-100';
+    if (s.includes('recogido') || s.includes('camino') || s.includes('reparto') || s.includes('delivery')) return 'text-blue-700 bg-blue-50 border border-blue-100';
+    if (s.includes('cancelado')) return 'text-red-700 bg-red-50 border border-red-100';
+    return 'text-gray-700 bg-gray-50 border border-gray-100';
   };
 
   return (
@@ -549,59 +623,79 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: "-50px", opacity: 0 }}
-            animate={{ y: "0", opacity: 1 }}
-            exit={{ y: "50px", opacity: 0 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full relative"
+            initial={{ y: 50, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 50, opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-white rounded-[2rem] p-6 shadow-2xl max-w-md w-full h-[80vh] flex flex-col relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">Mis Pedidos</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="w-2 h-8 bg-purple-600 rounded-full"></span>
+                Mis Pedidos
+              </h2>
+              <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors">
+                <XCircleIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
 
             {loadingOrders ? (
-              <Spinner />
+              <div className="flex-1 flex items-center justify-center">
+                <Spinner />
+              </div>
             ) : errorOrders ? (
-              <p className="text-red-500 text-center">{errorOrders}</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <p className="text-red-500 font-medium mb-2">{errorOrders}</p>
+              </div>
             ) : orders.length === 0 ? (
-              <p className="text-gray-600 text-center">No tienes pedidos realizados aún.</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <PackageIcon className="w-10 h-10 text-gray-300" />
+                </div>
+                <p className="text-gray-500 font-medium">No tienes pedidos realizados aún.</p>
+              </div>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              <div className="space-y-4 overflow-y-auto pr-2 flex-grow">
                 {orders.map((order, index) => (
                   <div
                     key={order.id || `order-${index}`}
-                    className="p-4 border border-gray-200 rounded-xl shadow-sm bg-white cursor-pointer hover:shadow-md transition-all"
+                    className="p-5 border border-gray-100 rounded-2xl shadow-sm bg-white cursor-pointer hover:shadow-md hover:border-purple-100 transition-all group"
                     onClick={() => handleOrderClick(order)}
                   >
-                    <div className="flex justify-between items-start mb-3">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <p className="font-bold text-lg text-gray-800">Pedido #{order.id.toString().slice(0, 8)}</p>
-                        <span className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <p className="font-bold text-lg text-gray-900 group-hover:text-purple-700 transition-colors">Pedido #{order.id.toString().slice(0, 8)}</p>
+                        <span className="text-xs text-gray-400 font-medium">{new Date(order.created_at).toLocaleDateString()} • {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${getStatusStyle(order.status)}`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${getStatusStyle(order.status)}`}>
                         {order.status || 'Desconocido'}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center mb-3">
-                      <p className="text-sm font-medium text-gray-600">Total</p>
+                    <div className="flex justify-between items-center mb-4 bg-gray-50 p-3 rounded-xl">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total</p>
                       <p className="font-bold text-lg text-gray-900">${order.total_amount?.toFixed(2) || '0.00'}</p>
                     </div>
 
                     {order.order_items && order.order_items.length > 0 && (
-                      <div className="pt-3 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Artículos</p>
-                        <ul className="space-y-1">
+                      <div className="pt-3 border-t border-gray-50">
+                        <p className="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide">Artículos</p>
+                        <ul className="space-y-2">
                           {order.order_items.slice(0, 2).map((item: any, itemIndex: number) => (
-                            <li key={item.id || `order-${order.id}-item-${itemIndex}`} className="text-sm text-gray-700 flex justify-between">
-                              <span><span className="font-bold text-gray-900">{item.quantity}x</span> {item.name}</span>
+                            <li key={item.id || `order-${order.id}-item-${itemIndex}`} className="text-sm text-gray-600 flex justify-between items-center">
+                              <span className="flex items-center gap-2">
+                                <span className="w-5 h-5 bg-purple-100 text-purple-700 font-bold rounded flex items-center justify-center text-xs">{item.quantity}</span>
+                                <span className="font-medium">{item.name}</span>
+                              </span>
                             </li>
                           ))}
                           {order.order_items.length > 2 && (
-                            <li className="text-xs text-gray-500 italic">+ {order.order_items.length - 2} más...</li>
+                            <li className="text-xs text-purple-500 font-medium pl-7">+ {order.order_items.length - 2} más...</li>
                           )}
                         </ul>
                       </div>
@@ -610,12 +704,6 @@ const UserOrdersModal: React.FC<UserOrdersModalProps> = ({ isOpen, onClose, show
                 ))}
               </div>
             )}
-
-            <div className="mt-6 flex justify-end">
-              <button onClick={onClose} className="px-6 py-2.5 bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200 font-bold transition-colors text-sm">
-                Cerrar
-              </button>
-            </div>
           </motion.div>
         </motion.div>
       )}
@@ -652,77 +740,80 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, or
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           onClick={onClose}
         >
           <motion.div
-            initial={{ y: "-50px", opacity: 0 }}
-            animate={{ y: "0", opacity: 1 }}
-            exit={{ y: "50px", opacity: 0 }}
-            transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="bg-white rounded-2xl p-6 shadow-2xl max-w-md w-full relative overflow-hidden"
+            initial={{ y: 50, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 50, opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="bg-white rounded-[2rem] p-6 shadow-2xl max-w-md w-full relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Detalle del Pedido</h2>
-              <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
-                <XCircleIcon className="w-6 h-6 text-gray-500" />
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <span className="w-2 h-8 bg-purple-600 rounded-full"></span>
+                Detalle del Pedido
+              </h2>
+              <button onClick={onClose} className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors">
+                <XCircleIcon className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 
             <div className="mb-6 flex justify-center">
-              <span className={`px-4 py-2 rounded-full text-sm font-bold capitalize shadow-sm ${getStatusStyle(order.status)}`}>
+              <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm ${getStatusStyle(order.status)}`}>
                 {order.status || 'Desconocido'}
               </span>
             </div>
 
             {order.restaurants && (
-              <div className="flex items-center mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex items-center mb-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                 <img
                   src={order.restaurants.image_url}
                   alt={order.restaurants.name}
-                  className="w-16 h-16 rounded-full object-cover mr-4 border-2 border-white shadow-sm"
+                  className="w-14 h-14 rounded-full object-cover mr-4 border-2 border-white shadow-sm"
                 />
                 <div>
                   <p className="font-bold text-lg text-gray-900">{order.restaurants.name}</p>
-                  <p className="text-sm text-gray-500">Restaurante</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Restaurante</p>
                 </div>
               </div>
             )}
 
             <div className="space-y-4 text-gray-700 mb-8">
-              <div className="flex justify-between border-b border-gray-100 pb-2">
-                <span className="text-gray-500">Fecha</span>
-                <span className="font-medium">{new Date(order.created_at).toLocaleString()}</span>
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="text-gray-500 font-medium text-sm">Fecha</span>
+                <span className="font-bold text-gray-900 text-sm">{new Date(order.created_at).toLocaleString()}</span>
               </div>
 
               {order.order_items && order.order_items.length > 0 && (
                 <div>
-                  <p className="font-bold text-gray-900 mb-3">Artículos</p>
+                  <p className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide">Artículos</p>
                   <ul className="space-y-3">
                     {order.order_items.map((item: any, itemIndex: number) => (
                       <li key={`order-${order.id}-detail-${itemIndex}`} className="flex justify-between items-center text-sm">
-                        <span className="flex items-center gap-2">
-                          <span className="bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded text-xs">{item.quantity}x</span>
-                          <span className="text-gray-800">{item.name}</span>
+                        <span className="flex items-center gap-3">
+                          <span className="bg-purple-100 text-purple-700 font-bold w-6 h-6 rounded flex items-center justify-center text-xs">{item.quantity}</span>
+                          <span className="text-gray-700 font-medium">{item.name}</span>
                         </span>
-                        <span className="font-medium text-gray-900">${(item.quantity * item.price)?.toFixed(2) || '0.00'}</span>
+                        <span className="font-bold text-gray-900">${(item.quantity * item.price)?.toFixed(2) || '0.00'}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-4">
+              <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-4">
                 <span className="text-lg font-bold text-gray-900">Total</span>
-                <span className="text-2xl font-bold text-orange-600">${order.total_amount?.toFixed(2) || '0.00'}</span>
+                <span className="text-2xl font-bold text-purple-600">${order.total_amount?.toFixed(2) || '0.00'}</span>
               </div>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => onRepeatOrder(order)}
-                className="flex-1 px-5 py-3 bg-black text-white rounded-xl hover:bg-gray-800 font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="flex-1 px-5 py-4 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 font-bold transition-all shadow-lg shadow-purple-600/30 active:scale-[0.98]"
               >
                 Repetir Orden
               </button>
@@ -790,6 +881,12 @@ export const UserProfile: React.FC = () => {
     fetchProfile();
   }, [user]);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [loading, user, navigate]);
+
   const handleSaveProfile = async (profileData: Partial<Profile>) => {
     if (!profile) return;
     try {
@@ -845,80 +942,85 @@ export const UserProfile: React.FC = () => {
   const comingSoon = () => showToast('Próximamente disponible', 'info');
 
   return (
-    <div className="h-full overflow-y-auto bg-white pb-8">
+    <div className="h-full overflow-y-auto bg-gray-50 pb-24">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <header className="p-4 pt-6 flex items-center justify-between bg-white">
-        <button
-          onClick={handleBack}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-        >
-          <ChevronLeftIcon className="w-5 h-5 text-gray-700" />
-        </button>
-        <h1 className="text-4xl font-bold text-gray-900">Cuenta</h1>
-        <button
-          onClick={comingSoon}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
-        >
-          <MenuDots className="w-5 h-5 text-gray-700" />
-        </button>
-      </header>
+      {/* Header with Gradient */}
+      <div className="relative bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 pb-10 pt-safe-top rounded-b-[2.5rem] shadow-lg overflow-hidden">
+        {/* Decorative Circles */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-48 h-48 bg-purple-400 opacity-10 rounded-full translate-x-1/3 translate-y-1/3 blur-2xl"></div>
 
-      <div className="px-4 mb-6">
-        <div className="flex items-center">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-500 text-2xl font-bold mr-4 border-4 border-white shadow-lg">
-            {profile?.avatar ? (
-              <Avatar
-                url={profile.avatar}
-                size={64}
-                onUpload={() => { }}
-                loading={false}
-              />
-            ) : (
-              <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
-            )}
-          </div>
-          <div>
-            <p className="text-lg font-bold text-gray-900">{profile?.full_name || 'Tu nombre'}</p>
-            <button onClick={() => setShowEditProfileModal(true)} className="text-sm font-semibold text-gray-800 hover:text-gray-600">
-              Editar perfil ›
+        <header className="px-6 py-4 flex items-center justify-between relative z-10">
+          <button
+            onClick={handleBack}
+            className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-all border border-white/10"
+          >
+            <ChevronLeftIcon className="w-6 h-6 text-white" />
+          </button>
+          <h1 className="text-xl font-bold text-white tracking-wide">Mi Perfil</h1>
+          <button
+            onClick={comingSoon}
+            className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-all border border-white/10"
+          >
+            <MenuDots className="w-6 h-6 text-white" />
+          </button>
+        </header>
+
+        <div className="flex flex-col items-center mt-4 px-6 relative z-10">
+          <div className="w-28 h-28 rounded-full p-1 bg-white/20 backdrop-blur-sm mb-4 relative">
+            <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-xl relative">
+              {profile?.avatar ? (
+                <Avatar
+                  url={profile.avatar}
+                  size={112} // 28 * 4
+                  onUpload={() => { }}
+                  loading={false}
+                />
+              ) : (
+                <Lottie animationData={profileAnimation} loop={true} className="w-full h-full scale-110" />
+              )}
+            </div>
+            <button
+              onClick={() => setShowEditProfileModal(true)}
+              className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-purple-50 text-purple-600 hover:scale-110 transition-transform"
+            >
+              <SparklesIcon className="w-4 h-4" />
             </button>
           </div>
+
+          <h2 className="text-2xl font-bold text-white text-center mb-1">{profile?.full_name || 'Invitado'}</h2>
+          <p className="text-purple-100 text-sm text-center max-w-[80%] leading-relaxed opacity-90">
+            {formatAddress(profile)}
+          </p>
+          {profile?.phone && (
+            <span className="mt-2 px-3 py-1 bg-white/10 rounded-full text-xs font-medium text-white border border-white/10 backdrop-blur-sm">
+              {profile.phone}
+            </span>
+          )}
         </div>
-        <p className="text-gray-400 text-sm mt-1">{formatAddress(profile)}</p>
-        <p className="text-gray-400 text-sm mt-1">{profile?.phone || 'No hay teléfono registrado.'}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 px-4 mb-8">
-        <QuickActionButton icon={<PackageIcon className="w-7 h-7" />} label="Pedidos" onClick={() => setShowOrdersModal(true)} />
-        <QuickActionButton icon={<HeadphonesIcon className="w-7 h-7" />} label="Editar Perfil" onClick={() => setShowEditProfileModal(true)} />
-        <QuickActionButton icon={<CreditCardIcon className="w-7 h-7" />} label="Métodos de pago" onClick={() => navigate('/payment-methods')} />
+      {/* Quick Actions - Floating Overlap */}
+      <div className="px-6 -mt-8 relative z-20 mb-8">
+        <div className="bg-white rounded-3xl shadow-xl p-4 flex justify-between items-center border border-gray-100">
+          <QuickActionButton icon={<PackageIcon className="w-6 h-6" />} label="Pedidos" onClick={() => setShowOrdersModal(true)} />
+          <div className="w-px h-10 bg-gray-100"></div>
+          <QuickActionButton icon={<HeartIcon className="w-6 h-6" />} label="Favoritos" onClick={comingSoon} />
+          <div className="w-px h-10 bg-gray-100"></div>
+          <QuickActionButton icon={<CreditCardIcon className="w-6 h-6" />} label="Pagos" onClick={() => navigate('/payment-methods')} />
+        </div>
       </div>
 
-      <div className="px-4 space-y-8">
-        <Section title="Beneficios">
-          <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-            <ListItem
-              icon={<div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">CR</div>}
-              text="Créditos"
-              value="$0.00"
-              hasChevron={false}
-            />
-          </div>
+      <div className="px-5 space-y-6">
+        <Section title="Mi Cuenta">
+          <ListItem icon={<LocationIcon className="w-6 h-6" />} text="Direcciones" onClick={() => setIsAddressModalOpen(true)} subtext="Gestiona tus direcciones de entrega" />
+          <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => navigate('/payment-methods')} subtext="Tarjetas y efectivo" />
         </Section>
 
-        <Section title="Mi cuenta">
-          <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-            <ListItem icon={<LocationIcon className="w-6 h-6" />} text="Direcciones" onClick={() => setIsAddressModalOpen(true)} />
-            <hr className="border-gray-200" />
-            <ListItem icon={<CreditCardIcon className="w-6 h-6" />} text="Métodos de pago" onClick={() => navigate('/payment-methods')} />
-          </div>
-        </Section>
-
-        <Section title="Sesión">
-          <div className="rounded-xl border border-gray-300 shadow-sm overflow-hidden">
-            <ListItem icon={<LogOutIcon className="w-6 h-6 text-red-600" />} text="Cerrar Sesión" onClick={handleLogoutClick} />
-          </div>
+        <Section title="Configuración">
+          <ListItem icon={<BellIcon className="w-6 h-6" />} text="Notificaciones" onClick={comingSoon} subtext="Alertas y promociones" />
+          <ListItem icon={<LogOutIcon className="w-6 h-6 text-red-500" />} text="Cerrar Sesión" onClick={handleLogoutClick} hasChevron={false} />
         </Section>
       </div>
 

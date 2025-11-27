@@ -35,20 +35,20 @@ const Stepper: React.FC<{ currentStep: CartStep }> = ({ currentStep }) => {
         <React.Fragment key={step}>
           <div className="flex flex-col items-center text-center">
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${index <= currentStepIndex ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors duration-300 ${index <= currentStepIndex ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-500'
                 }`}
             >
               {index < currentStepIndex ? <ChevronLeftIcon className="w-6 h-6 rotate-180" /> : index + 1}
             </div>
             <p
-              className={`mt-2 text-xs font-bold transition-colors duration-300 ${index <= currentStepIndex ? 'text-orange-500' : 'text-gray-500'
+              className={`mt-2 text-xs font-bold transition-colors duration-300 ${index <= currentStepIndex ? 'text-purple-600' : 'text-gray-500'
                 }`}
             >
               {getStepName(step)}
             </p>
           </div>
           {index < steps.length - 1 && (
-            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${index < currentStepIndex ? 'border-orange-500' : 'border-gray-200'
+            <div className={`flex-auto border-t-2 transition-colors duration-300 mx-2 ${index < currentStepIndex ? 'border-purple-600' : 'border-gray-200'
               }`}></div>
           )}
         </React.Fragment>
@@ -72,7 +72,7 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 const PRICE_PER_KM = 10; // $10 per km
 
 export const Cart: React.FC = () => {
-  useThemeColor('#f97316');
+  useThemeColor('#9333ea');
   const {
     cart: cartItems,
     handleUpdateCart,
@@ -118,22 +118,15 @@ export const Cart: React.FC = () => {
   useEffect(() => {
     if (user && profile) {
       setUserDetails(prev => {
-        // Si la dirección actual es diferente a la del perfil (y no está vacía), 
-        // asumimos que el usuario ya eligió otra ubicación y NO sobrescribimos con el perfil.
-        const isAddressDifferent = prev.address && prev.address !== profile.street_address;
+        const newDetails = { ...prev };
 
-        if (isAddressDifferent) {
-          return prev;
-        }
+        if (!newDetails.name && profile.full_name) newDetails.name = profile.full_name;
+        if (!newDetails.address && profile.street_address) newDetails.address = profile.street_address;
+        if (!newDetails.neighborhood && profile.neighborhood) newDetails.neighborhood = profile.neighborhood;
+        if (!newDetails.postalCode && profile.postal_code) newDetails.postalCode = profile.postal_code;
+        if (!newDetails.phone && profile.phone) newDetails.phone = profile.phone;
 
-        return {
-          ...prev,
-          name: prev.name || profile.full_name || '',
-          address: prev.address || profile.street_address || '',
-          neighborhood: prev.neighborhood || profile.neighborhood || '',
-          postalCode: prev.postalCode || profile.postal_code || '',
-          phone: prev.phone || profile.phone || '',
-        };
+        return newDetails;
       });
 
       // Inicializar coords desde perfil SOLO si no existen ya
@@ -447,7 +440,7 @@ export const Cart: React.FC = () => {
           </div>
           <button
             onClick={() => navigate('/payment-methods', { state: { from: '/cart' } })}
-            className="font-semibold text-orange-500 text-sm hover:text-orange-600"
+            className="font-semibold text-purple-600 text-sm hover:text-purple-700"
           >
             Cambiar
           </button>
@@ -457,7 +450,7 @@ export const Cart: React.FC = () => {
       <button
         onClick={() => setStep('details')}
         disabled={!canProceedToDetails}
-        className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg shadow-md hover:bg-orange-600 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+        className="w-full py-3 bg-purple-600 text-white font-bold rounded-lg shadow-md hover:bg-purple-700 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         Continuar a la Entrega
       </button>
@@ -471,7 +464,7 @@ export const Cart: React.FC = () => {
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
         <div className="relative flex items-center">
           <UserCircleIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-          <input type="text" name="name" id="name" value={userDetails.name} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu nombre" />
+          <input type="text" name="name" id="name" value={userDetails.name} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Tu nombre" />
         </div>
       </div>
 
@@ -480,7 +473,7 @@ export const Cart: React.FC = () => {
         <div className="flex gap-2">
           <div className="relative flex-grow flex items-center">
             <LocationIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-            <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Calle y número" />
+            <input type="text" name="address" id="address" value={userDetails.address} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Calle y número" />
           </div>
           <button
             onClick={handleOpenMap}
@@ -495,17 +488,17 @@ export const Cart: React.FC = () => {
 
       <div>
         <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio / Colonia *</label>
-        <input type="text" name="neighborhood" id="neighborhood" value={userDetails.neighborhood} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu barrio o colonia" />
+        <input type="text" name="neighborhood" id="neighborhood" value={userDetails.neighborhood} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Tu barrio o colonia" />
       </div>
       <div>
         <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">Código Postal</label>
-        <input type="text" name="postalCode" id="postalCode" value={userDetails.postalCode} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu código postal" />
+        <input type="text" name="postalCode" id="postalCode" value={userDetails.postalCode} onChange={handleInputChange} className="w-full py-3 px-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Tu código postal" />
       </div>
       <div>
         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono de Contacto *</label>
         <div className="relative flex items-center">
           <MailIcon className="absolute left-3 w-5 h-5 text-gray-400" />
-          <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" placeholder="Tu número de WhatsApp" />
+          <input type="tel" name="phone" id="phone" value={userDetails.phone} onChange={handleInputChange} className="w-full py-3 pl-10 pr-4 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Tu número de WhatsApp" />
         </div>
       </div>
       {calculatedDistance !== null && (
@@ -516,7 +509,7 @@ export const Cart: React.FC = () => {
       )}
       <div className="grid grid-cols-2 gap-4 pt-4">
         <button onClick={() => setStep('cart')} className="bg-gray-200 text-gray-800 font-bold py-3 rounded-lg">Volver</button>
-        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-orange-500 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Revisar Pedido</button>
+        <button onClick={() => setStep('confirmation')} disabled={!canProceedToConfirmation} className="bg-purple-600 text-white font-bold py-3 rounded-lg disabled:bg-gray-400">Revisar Pedido</button>
       </div>
     </div>
   );
@@ -581,19 +574,19 @@ export const Cart: React.FC = () => {
         <div className="p-6 space-y-4">
           <div className="space-y-2 text-sm text-gray-700">
             <div className="flex items-center gap-2">
-              <UserCircleIcon className="w-5 h-5 text-orange-500" />
+              <UserCircleIcon className="w-5 h-5 text-purple-600" />
               <p><strong>Nombre:</strong> {userDetails.name}</p>
             </div>
             <div className="flex items-start gap-2">
-              <LocationIcon className="w-5 h-5 text-orange-500 mt-1" />
+              <LocationIcon className="w-5 h-5 text-purple-600 mt-1" />
               <p><strong>Dirección:</strong> {userDetails.address}{userDetails.neighborhood ? `, ${userDetails.neighborhood}` : ''}{userDetails.postalCode ? `, C.P. ${userDetails.postalCode}` : ''}</p>
             </div>
             <div className="flex items-center gap-2">
-              <MailIcon className="w-5 h-5 text-orange-500" />
+              <MailIcon className="w-5 h-5 text-purple-600" />
               <p><strong>Teléfono:</strong> {userDetails.phone}</p>
             </div>
             <div className="flex items-center gap-2">
-              <CreditCardIcon className="w-5 h-5 text-orange-500" />
+              <CreditCardIcon className="w-5 h-5 text-purple-600" />
               <p><strong>Método de Pago:</strong> <span className="font-semibold capitalize">{selectedPaymentMethod.replace(/_/g, ' ')}</span></p>
             </div>
           </div>
@@ -660,7 +653,7 @@ export const Cart: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-gray-50 min-h-full">
+    <div className="p-4 bg-gray-50 min-h-full pb-24">
       <div className="flex items-center gap-4 mb-6">
         {step === 'cart' && (
           <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white shadow-sm">
@@ -677,7 +670,7 @@ export const Cart: React.FC = () => {
           <p className="mt-4 text-gray-500">Tu carrito está vacío.</p>
           <button
             onClick={() => navigate('/restaurants')}
-            className="mt-6 px-6 py-2 bg-orange-500 text-white font-semibold rounded-full shadow-md hover:bg-orange-600 transition-all"
+            className="mt-6 px-6 py-2 bg-purple-600 text-white font-semibold rounded-full shadow-md hover:bg-purple-700 transition-all"
           >
             Ver Restaurantes
           </button>

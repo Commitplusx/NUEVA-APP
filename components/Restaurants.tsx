@@ -9,6 +9,10 @@ import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
 import { getTransformedImageUrl } from '../services/image';
 import AdvancedFilters, { Filters } from './AdvancedFilters';
+import { ProductDetailModal } from './ProductDetailModal';
+import { useAppContext } from '../context/AppContext';
+import Lottie from 'lottie-react';
+import profileAnimation from './animations/profile.json';
 
 // --- Animation Variants ---
 const listVariants = {
@@ -187,21 +191,37 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
     if (node) observer.current.observe(node);
   }, [loading, loadingMore, hasMore, loadMore]);
 
+  const { user, profile } = useAppContext();
+
   return (
     <div className="pb-20 pt-4 bg-white min-h-screen font-sans">
       <div className="px-4 pt-2 mb-6 flex justify-between items-center">
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
-          {/* Placeholder for user avatar - using a generic image or the user's profile image if available */}
-          <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop" alt="User" className="w-full h-full object-cover" />
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="User" className="w-full h-full object-cover" />
+            ) : (
+              <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Entregar en</span>
+            <div className="flex items-center gap-1 text-purple-700 font-bold">
+              <span className="line-clamp-1 max-w-[200px]">
+                {profile?.street_address ? `${profile.street_address} ${profile.neighborhood || ''}` : 'Seleccionar dirección'}
+              </span>
+              <ChevronDownIcon className="w-4 h-4" />
+            </div>
+          </div>
         </div>
-        <button className="p-2 text-gray-600">
+        <button className="p-2 text-gray-600 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors">
           <GridIcon className="w-6 h-6" />
         </button>
       </div>
 
       <div className="px-4 mb-6">
-        <h1 className="text-3xl text-gray-800">Food</h1>
-        <h1 className="text-3xl font-extrabold text-gray-900">Delivery!</h1>
+        <h1 className="text-3xl text-gray-800">Tu tiempo,</h1>
+        <h1 className="text-3xl font-extrabold text-gray-900">nuestro trabajo</h1>
       </div>
 
       <div className="px-4 mb-8 flex gap-3">
@@ -232,29 +252,33 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
           <span className="text-xs text-gray-500 font-medium mb-1 bg-gray-100 px-2 py-0.5 rounded-full">{restaurants.length} lugares</span>
         </div>
 
-        <div
+        <motion.div
           className="grid grid-cols-2 gap-4"
+          variants={listVariants}
+          animate="show"
         >
           {loading && [...Array(6)].map((_, i) => <RestaurantCardSkeleton key={`skeleton-${i}`} />)}
           {!loading && error && <div key="error-msg" className="text-center text-red-500 col-span-2 py-10"><p>{error}</p></div>}
           {!loading && !error && restaurants.map((restaurant: Restaurant, index: number) => {
             const isLastElement = restaurants.length === index + 1;
             return (
-              <div
+              <motion.div
                 key={restaurant.id}
                 ref={isLastElement ? lastRestaurantElementRef : null}
+                variants={itemVariants}
+                layout
               >
                 <MobileRestaurantCard
                   restaurant={restaurant}
                   onSelect={() => navigate(`/restaurants/${restaurant.id}`)}
                 />
-              </div>
+              </motion.div>
             );
           })}
           {loadingMore && <div className="col-span-2"><Spinner /></div>}
           {!hasMore && restaurants.length > 0 && <p className="col-span-2 text-center text-gray-400 text-[10px] py-4 font-medium tracking-wide uppercase">Has llegado al final</p>}
           {!loading && restaurants.length === 0 && <div className="col-span-2 text-center text-gray-500 p-6 mt-4 bg-gray-50 rounded-xl shadow-sm mx-2"><StoreIcon className="w-10 h-10 mx-auto text-gray-300 mb-2" /><p className="text-sm">No encontramos restaurantes por aquí.</p></div>}
-        </div>
+        </motion.div>
       </section>
     </div>
   );
@@ -262,38 +286,119 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
 
 
 // --- Banner Component ---
+// --- Banner Component ---
 const Banner: React.FC = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const bannerItems = [
+    {
+      title: "30% OFF",
+      subtitle: "En tus restaurantes favoritos. ¡Solo por tiempo limitado!",
+      tag: "Promo Flash",
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
+      gradient: "from-[#4a148c] via-[#7b1fa2] to-[#9c27b0]"
+    },
+    {
+      title: "2x1 Sushi",
+      subtitle: "Los mejores rollos al mejor precio. ¡No te lo pierdas!",
+      tag: "Martes Loco",
+      image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=2070&auto=format&fit=crop",
+      gradient: "from-[#c62828] via-[#d32f2f] to-[#e53935]"
+    },
+    {
+      title: "Envío Gratis",
+      subtitle: "En pedidos mayores a $200. ¡Aprovecha ahora!",
+      tag: "Fin de Semana",
+      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop",
+      gradient: "from-[#1565c0] via-[#1976d2] to-[#1e88e5]"
+    }
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % bannerItems.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleOrderNow = () => {
+    const grid = document.getElementById('restaurants-grid');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="relative w-full h-64 rounded-[2rem] overflow-hidden mb-10 shadow-2xl group cursor-pointer">
-      {/* Background with Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#4a148c] via-[#7b1fa2] to-[#9c27b0]"></div>
+      <AnimatePresence mode='wait'>
+        <motion.div
+          key={currentIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0"
+        >
+          {/* Background with Gradient */}
+          <div className={`absolute inset-0 bg-gradient-to-r ${bannerItems[currentIndex].gradient}`}></div>
 
-      {/* Content */}
-      <div className="absolute inset-0 flex items-center justify-between p-10">
-        <div className="flex flex-col items-start z-10 space-y-4">
-          <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-white/10">
-            Promo Flash
-          </span>
-          <h2 className="text-6xl font-black text-white leading-tight drop-shadow-md">
-            30% OFF
-          </h2>
-          <p className="text-purple-100 text-lg font-medium max-w-xs leading-relaxed">
-            En tus restaurantes favoritos. ¡Solo por tiempo limitado!
-          </p>
-          <button className="mt-2 bg-white text-purple-700 px-8 py-3.5 rounded-2xl font-bold shadow-lg hover:bg-purple-50 hover:scale-105 transition-all active:scale-95 text-base">
-            Pedir Ahora
-          </button>
-        </div>
+          {/* Content */}
+          <div className="absolute inset-0 flex items-center justify-between p-10">
+            <div className="flex flex-col items-start z-10 space-y-4">
+              <motion.span
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-white/10"
+              >
+                {bannerItems[currentIndex].tag}
+              </motion.span>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-6xl font-black text-white leading-tight drop-shadow-md"
+              >
+                {bannerItems[currentIndex].title}
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-white/90 text-lg font-medium max-w-xs leading-relaxed"
+              >
+                {bannerItems[currentIndex].subtitle}
+              </motion.p>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                onClick={handleOrderNow}
+                className="mt-2 bg-white text-purple-700 px-8 py-3.5 rounded-2xl font-bold shadow-lg hover:bg-purple-50 hover:scale-105 transition-all active:scale-95 text-base"
+              >
+                Pedir Ahora
+              </motion.button>
+            </div>
 
-        {/* Image */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 h-full">
-          <img
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"
-            alt="Food Banner"
-            className="w-full h-full object-cover mask-image-gradient"
-            style={{ maskImage: 'linear-gradient(to right, transparent, black 20%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 20%)' }}
+            {/* Image */}
+            <div className="absolute right-0 top-0 bottom-0 w-1/2 h-full">
+              <img
+                src={bannerItems[currentIndex].image}
+                alt="Food Banner"
+                className="w-full h-full object-cover mask-image-gradient"
+                style={{ maskImage: 'linear-gradient(to right, transparent, black 20%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 20%)' }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+        {bannerItems.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrentIndex(idx)}
+            className={`w-2 h-2 rounded-full transition-all ${idx === currentIndex ? 'bg-white w-6' : 'bg-white/50'}`}
           />
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -302,6 +407,7 @@ const Banner: React.FC = () => {
 // --- Desktop View (Redesigned) ---
 const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore, error, loadMore, searchQuery, setSearchQuery, isFiltersOpen, setIsFiltersOpen, selectedCategory, onSelectCategory, selectedRestaurant, setSelectedRestaurant }) => {
   const navigate = useNavigate();
+  const { user, profile } = useAppContext();
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-sans pb-40 selection:bg-purple-100 selection:text-purple-900">
@@ -315,14 +421,18 @@ const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore
             <span className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-1">Entregar ahora</span>
             <div className="flex items-center gap-2 group cursor-pointer">
               <h1 className="text-2xl font-bold text-purple-700 group-hover:text-purple-800 transition-colors">
-                Casa • Calle Principal 123
+                {profile?.street_address ? `${profile.street_address} ${profile.neighborhood || ''}` : 'Seleccionar dirección'}
               </h1>
               <ChevronDownIcon className="w-5 h-5 text-purple-400 group-hover:translate-y-0.5 transition-transform" />
             </div>
           </div>
 
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md cursor-pointer hover:ring-4 ring-purple-100 transition-all">
-            <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop" alt="User" className="w-full h-full object-cover" />
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md cursor-pointer hover:ring-4 ring-purple-100 transition-all bg-gray-100">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="User" className="w-full h-full object-cover" />
+            ) : (
+              <Lottie animationData={profileAnimation} loop={true} className="w-full h-full" />
+            )}
           </div>
         </header>
 
@@ -355,7 +465,7 @@ const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore
         <Categories selectedCategory={selectedCategory} onSelectCategory={onSelectCategory} />
 
         {/* Restaurants Grid */}
-        <section>
+        <section id="restaurants-grid">
           <div className="flex justify-between items-end mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Restaurantes Recomendados</h2>
             <span className="text-sm text-gray-500 font-medium bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
@@ -394,9 +504,22 @@ const DesktopView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore
 
 // --- Main Component ---
 export const Restaurants: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  // Initialize state from sessionStorage if available
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('restaurants_searchQuery') || '');
   const [filters, setFilters] = useState<Partial<Filters>>({});
-  const [selectedCategory, setSelectedCategory] = useState<number>(0);
+  const [selectedCategory, setSelectedCategory] = useState<number>(() => {
+    const saved = sessionStorage.getItem('restaurants_selectedCategory');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  // Persist state changes
+  useEffect(() => {
+    sessionStorage.setItem('restaurants_searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    sessionStorage.setItem('restaurants_selectedCategory', selectedCategory.toString());
+  }, [selectedCategory]);
 
   const {
     restaurants,

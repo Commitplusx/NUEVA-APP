@@ -164,3 +164,11 @@ export interface Order {
   driver_id?: string | null;
   created_at?: string;
 }
+
+export interface Favorite {
+  id: number;
+  user_id: string;
+  menu_item_id: number;
+  created_at: string;
+  menu_item?: MenuItem; // For joining data
+}
