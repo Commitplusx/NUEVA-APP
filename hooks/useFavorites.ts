@@ -25,7 +25,17 @@ export const useFavorites = () => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setFavorites(data || []);
+
+            // Map raw DB data to MenuItem type (image_url -> imageUrl)
+            const formattedData = (data || []).map((fav: any) => ({
+                ...fav,
+                menu_item: fav.menu_item ? {
+                    ...fav.menu_item,
+                    imageUrl: fav.menu_item.image_url || fav.menu_item.imageUrl
+                } : null
+            }));
+
+            setFavorites(formattedData);
         } catch (error) {
             console.error('Error fetching favorites:', error);
         } finally {
@@ -62,7 +72,14 @@ export const useFavorites = () => {
 
                 if (error) throw error;
                 if (data) {
-                    setFavorites(prev => [data, ...prev]);
+                    const formattedFav = {
+                        ...data,
+                        menu_item: data.menu_item ? {
+                            ...data.menu_item,
+                            imageUrl: data.menu_item.image_url || data.menu_item.imageUrl
+                        } : null
+                    };
+                    setFavorites(prev => [formattedFav, ...prev]);
                 }
             }
         } catch (error) {

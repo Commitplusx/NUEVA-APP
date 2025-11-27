@@ -80,12 +80,15 @@ const App: React.FC = () => {
   useEffect(() => {
     const setupPlatform = async () => {
       if (Capacitor.isNativePlatform()) {
-        // Allow the webview to overlap the status bar for a transparent effect
-        await StatusBar.setOverlaysWebView({ overlay: true });
-        // Set status bar style to dark text (Light style)
-        await StatusBar.setStyle({ style: Style.Light });
-        // Remove explicit background color setting or set to transparent if needed
-        // await StatusBar.setBackgroundColor({ color: '#00000000' });
+        try {
+          // Set status bar to purple with light text (Style.Dark means dark background/light text)
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: '#9333ea' });
+          // Disable overlay so the status bar has its own space and color
+          await StatusBar.setOverlaysWebView({ overlay: false });
+        } catch (e) {
+          console.error('Error configuring status bar:', e);
+        }
       }
     };
     setupPlatform();
