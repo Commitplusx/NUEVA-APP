@@ -15,6 +15,7 @@ import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/services/supabase';
 import Lottie from 'lottie-react';
 import profileAnimation from './animations/profile.json';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 const Section: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className = "" }) => (
   <div className={`mb-8 ${className}`}>
@@ -827,6 +828,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ isOpen, onClose, or
 
 
 export const UserProfile: React.FC = () => {
+  useThemeColor('#7e22ce');
   const navigate = useNavigate();
   const { user, handleLogout, showToast, setIsAddressModalOpen, isAddressModalOpen } = useAppContext();
   const [profile, setProfile] = useState<Profile | null>(null);

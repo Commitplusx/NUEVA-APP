@@ -8,6 +8,7 @@ import { ServiceCard } from './ServiceCard';
 import secondPageAnimation from './animations/2dapagina.json';
 import firstPageAnimation from './animations/1ra.json';
 import thirdPageAnimation from './animations/3ra.json';
+import { useThemeColor } from '../hooks/useThemeColor';
 
 interface ServiceData {
   icon: React.ReactElement;
@@ -34,7 +35,7 @@ const services: ServiceData[] = [
     title: "Paquetería y Trámites",
     description: "Recogemos y entregamos tus paquetes.",
     path: "/coming-soon",
-  }
+  },
 ];
 
 const sectionVariants = {
@@ -56,6 +57,7 @@ const sectionVariants = {
 };
 
 export const Home: React.FC = () => {
+  useThemeColor('#ffffff');
   const { user: userObject, userRole, profile } = useAppContext();
   const navigate = useNavigate();
 

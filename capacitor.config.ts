@@ -4,11 +4,10 @@ const config: CapacitorConfig = {
   appId: 'estrella.app.shop',
   appName: 'App Estrella',
   webDir: 'dist',
-  // server: {
-  //   url: 'https://app-estrella.shop',
-  //   cleartext: true,
-  //   androidScheme: 'https'
-  // },
+  server: {
+    url: 'http://192.168.1.79:3000',
+    cleartext: true,
+  },
   plugins: {
     StatusBar: {
       overlaysWebView: false,

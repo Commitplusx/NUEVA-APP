@@ -78,20 +78,7 @@ const App: React.FC = () => {
 
 
   useEffect(() => {
-    const setupPlatform = async () => {
-      if (Capacitor.isNativePlatform()) {
-        try {
-          // Set status bar to purple with light text (Style.Dark means dark background/light text)
-          await StatusBar.setStyle({ style: Style.Dark });
-          await StatusBar.setBackgroundColor({ color: '#9333ea' });
-          // Disable overlay so the status bar has its own space and color
-          await StatusBar.setOverlaysWebView({ overlay: false });
-        } catch (e) {
-          console.error('Error configuring status bar:', e);
-        }
-      }
-    };
-    setupPlatform();
+    // Platform setup if needed
   }, []);
 
   // PWA install prompt logic
