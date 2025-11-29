@@ -61,6 +61,8 @@ export interface Restaurant {
   lng?: number;
   categories?: Category[];
   menu?: MenuItem[];
+  description?: string;
+  is_active?: boolean;
 }
 
 // Frontend-specific types

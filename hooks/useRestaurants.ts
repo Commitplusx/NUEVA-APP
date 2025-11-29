@@ -157,6 +157,61 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
     fetchPage(0, true);
   });
 
+  // Real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:restaurants')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          const newRecord = payload.new;
+
+          setRestaurants(prev => prev.map(r => {
+            if (r.id === newRecord.id) {
+              // Merge updates. We preserve existing joined data (categories, menu) 
+              // and update only the fields present in the restaurants table.
+              return {
+                ...r,
+                name: newRecord.name,
+                description: newRecord.description,
+                is_active: newRecord.is_active,
+                imageUrl: newRecord.image_url || newRecord.logo_url || r.imageUrl,
+                rating: newRecord.rating,
+                deliveryTime: newRecord.delivery_time,
+                deliveryFee: newRecord.delivery_fee,
+                // Update snake_case props if they exist in the type
+                delivery_time: newRecord.delivery_time,
+                delivery_fee: newRecord.delivery_fee,
+                street_address: newRecord.street_address,
+                neighborhood: newRecord.neighborhood,
+                city: newRecord.city,
+                postal_code: newRecord.postal_code,
+                lat: newRecord.lat,
+                lng: newRecord.lng,
+              };
+            }
+            return r;
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Listening for updates on restaurants table...');
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const loadMore = () => {
     if (loading || loadingMore || !hasMore) return;
     const nextPage = page + 1;

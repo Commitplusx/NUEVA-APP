@@ -28,10 +28,11 @@ export const useThemeColor = (color: string) => {
           // 2. Set Background Color
           await StatusBar.setBackgroundColor({ color });
 
-          // 3. Set Style:
-          // Style.Light = Dark Icons (for light backgrounds)
-          // Style.Dark = Light Icons (for dark backgrounds)
-          await StatusBar.setStyle({ style: isLight ? Style.Light : Style.Dark });
+          // 3. Set Style
+          // Observed Behavior: Style.Dark = Black Icons, Style.Light = White Icons
+          // For Light Background (isLight=true) -> Need Black Icons -> Style.Dark
+          // For Dark Background (isLight=false) -> Need White Icons -> Style.Light
+          await StatusBar.setStyle({ style: isLight ? Style.Dark : Style.Light });
 
           console.log('[useThemeColor] Status bar updated successfully');
         } catch (e) {

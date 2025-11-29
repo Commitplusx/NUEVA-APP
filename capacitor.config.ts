@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   plugins: {
     StatusBar: {
       overlaysWebView: false,
-      style: 'dark'
+      style: 'light'
     },
     Mapbox: {
       accessToken: 'pk.eyJ1IjoiZGVpZmYiLCJhIjoiY21pOGY4emtkMGI4OTJucTEwcGI1NHF1cCJ9.54Lh3CFkG_QP60n5PHdqPQ'

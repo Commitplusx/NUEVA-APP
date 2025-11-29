@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Restaurant } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { useThemeColor } from '../hooks/useThemeColor';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, SlidersIcon, StoreIcon, MotorcycleIcon, SparklesIcon, PlusIcon, ChevronRightIcon, GridIcon, HomeIcon, HeartIcon, ShoppingBagIcon, UtensilsIcon, UserIcon, ChevronDownIcon } from './icons';
 import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
@@ -117,11 +119,12 @@ const Categories: React.FC<{ selectedCategory: number; onSelectCategory: (id: nu
 // --- Mobile Restaurant Card (New Design) ---
 const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 400);
+  const isActive = restaurant.is_active !== false; // Default to true if undefined
 
   return (
     <div
-      onClick={onSelect}
-      className="w-full bg-white rounded-[2rem] p-3 shadow-lg border border-gray-100 active:scale-95 transition-transform cursor-pointer relative group"
+      onClick={isActive ? onSelect : undefined}
+      className={`w-full bg-white rounded-[2rem] p-3 shadow-lg border border-gray-100 transition-transform relative group ${isActive ? 'active:scale-95 cursor-pointer' : 'opacity-75 grayscale cursor-not-allowed'}`}
       role="button"
       tabIndex={0}
     >
@@ -141,10 +144,21 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
         )}
 
         {/* Time Badge Overlay */}
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-gray-800 flex items-center shadow-sm">
-          <ClockIcon className="w-3 h-3 mr-1 text-purple-600" />
-          {restaurant.delivery_time} min
-        </div>
+        {isActive && (
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-gray-800 flex items-center shadow-sm">
+            <ClockIcon className="w-3 h-3 mr-1 text-purple-600" />
+            {restaurant.delivery_time} min
+          </div>
+        )}
+
+        {/* Inactive Overlay */}
+        {!isActive && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+            <span className="bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg transform -rotate-3 border-2 border-white">
+              Cerrado
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content Section */}
@@ -157,7 +171,14 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
           </div>
         </div>
 
-        {/* Categories / Description */}
+        {/* Description */}
+        {restaurant.description && (
+          <p className="text-gray-500 text-xs mb-2 line-clamp-2 leading-relaxed">
+            {restaurant.description}
+          </p>
+        )}
+
+        {/* Categories */}
         <p className="text-gray-400 text-[10px] mb-3 line-clamp-1 font-medium">
           {restaurant.categories?.map(c => c.name).join(', ') || restaurant.category || 'Restaurant'}
         </p>
@@ -167,9 +188,11 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
             {Number(restaurant.delivery_fee || 0) === 0 ? 'Free' : `$${Number(restaurant.delivery_fee || 0).toFixed(2)}`}
           </span>
 
-          <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-colors">
-            <PlusIcon className="w-5 h-5" />
-          </div>
+          {isActive && (
+            <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <PlusIcon className="w-5 h-5" />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -530,12 +553,23 @@ export const Restaurants: React.FC = () => {
     loadMore,
   } = useRestaurants({ searchQuery, filters });
 
-  // Filter restaurants based on selected category
+  // Filter restaurants based on selected category and sort by active status
   const filteredRestaurants = React.useMemo(() => {
-    if (!selectedCategory) return restaurants;
-    return restaurants.filter(restaurant =>
-      restaurant.categories?.some(cat => cat.id === selectedCategory)
-    );
+    let result = restaurants;
+
+    if (selectedCategory) {
+      result = result.filter(restaurant =>
+        restaurant.categories?.some(cat => cat.id === selectedCategory)
+      );
+    }
+
+    // Sort: Active first, Inactive last
+    return [...result].sort((a, b) => {
+      const aActive = a.is_active !== false; // Default true
+      const bActive = b.is_active !== false;
+      if (aActive === bActive) return 0;
+      return aActive ? -1 : 1;
+    });
   }, [restaurants, selectedCategory]);
 
 
@@ -544,7 +578,29 @@ export const Restaurants: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
-  useThemeColor('#ffffff'); // White background for new design
+  // Explicitly force status bar for Restaurants component
+  useEffect(() => {
+    const forceStatusBar = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await StatusBar.setBackgroundColor({ color: '#ffffff' });
+
+          // Toggle strategy: Set to Light first (White Icons), then to Dark (Black Icons)
+          // This forces a redraw if the system thinks it's already in the target state
+          await StatusBar.setStyle({ style: Style.Light });
+
+          setTimeout(async () => {
+            console.log('Forcing Style.Dark in Restaurants');
+            await StatusBar.setStyle({ style: Style.Dark });
+          }, 300);
+
+        } catch (e) {
+          console.error('Error forcing status bar in Restaurants:', e);
+        }
+      }
+    };
+    forceStatusBar();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
