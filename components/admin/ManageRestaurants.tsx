@@ -167,9 +167,114 @@ const RestaurantForm: React.FC<{
 
   const fullAddress = [streetAddress, neighborhood, city, postalCode].filter(Boolean).join(', ');
 
+  // Schedule State
+  const [activeTab, setActiveTab] = useState<'info' | 'schedules'>('info');
+  const [schedules, setSchedules] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (restaurant && restaurant.schedules && restaurant.schedules.length > 0) {
+      setSchedules(restaurant.schedules);
+    } else {
+      // Initialize default 7 days
+      const defaultSchedules = Array.from({ length: 7 }, (_, i) => ({
+        day_of_week: i + 1, // 1=Monday
+        open_time: '09:00:00',
+        close_time: '22:00:00',
+        is_enabled: false
+      }));
+      setSchedules(defaultSchedules);
+    }
+  }, [restaurant]);
+
+  const handleScheduleChange = (index: number, field: string, value: any) => {
+    const newSchedules = [...schedules];
+    newSchedules[index] = { ...newSchedules[index], [field]: value };
+    setSchedules(newSchedules);
+  };
+
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  // Update handleSubmit to save schedules
+  const handleSubmitWithSchedules = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      // ... existing validation ...
+      const fee = parseFloat(deliveryFee);
+      const time = parseInt(deliveryTime, 10);
+
+      if (isNaN(fee) || isNaN(time)) {
+        showToast('El costo de envío y el tiempo de entrega deben ser números válidos.', 'error');
+        setIsSaving(false);
+        return;
+      }
+
+      if (!lat || !lng) {
+        showToast('Por favor, selecciona una ubicación en el mapa.', 'error');
+        setIsSaving(false);
+        return;
+      }
+
+      let finalImageUrl = imageUrl;
+      if (imageFile) {
+        finalImageUrl = await uploadImage(imageFile);
+      }
+
+      const restaurantData = {
+        name,
+        imageUrl: finalImageUrl,
+        deliveryFee: fee,
+        deliveryTime: time,
+        street_address: streetAddress,
+        neighborhood,
+        city,
+        postal_code: postalCode,
+        lat: lat,
+        lng: lng,
+        rating: restaurant?.rating || 0,
+      };
+
+      let savedRestaurant: Restaurant;
+      if (restaurant) {
+        savedRestaurant = await updateRestaurant(restaurant.id, restaurantData);
+        // Save Schedules
+        await import('../../services/api').then(mod => mod.saveSchedules(restaurant.id, schedules));
+      } else {
+        savedRestaurant = await addRestaurant(restaurantData);
+        // Note: For new restaurants, we might not have ID immediately available for schedules if addRestaurant doesn't return it correctly or if we want to separate concerns.
+        // But addRestaurant returns the created object.
+        // However, we need to make sure saveSchedules works.
+        // For now, let's try to save schedules for new restaurants too.
+        await import('../../services/api').then(mod => mod.saveSchedules(savedRestaurant.id, schedules));
+      }
+
+      const categoryNames = category.split(',').map(c => c.trim()).filter(c => c);
+      const categoryIds: number[] = [];
+      for (const catName of categoryNames) {
+        let existingCategory = allCategories.find(c => c.name.toLowerCase() === catName.toLowerCase());
+        if (existingCategory) {
+          categoryIds.push(existingCategory.id);
+        } else {
+          const newCategory = await addCategory({ name: catName, icon: 'DefaultIcon' });
+          categoryIds.push(newCategory.id);
+        }
+      }
+
+      await updateRestaurantCategories(savedRestaurant.id, categoryIds);
+
+      showToast(restaurant ? 'Restaurante actualizado!' : 'Restaurante agregado!', 'success');
+      onSave();
+    } catch (error: any) {
+      console.error('Error saving restaurant:', error);
+      showToast(getErrorMessage(error), 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all flex flex-col">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
           <h2 className="text-2xl font-bold text-gray-800">{restaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}</h2>
           <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -177,80 +282,140 @@ const RestaurantForm: React.FC<{
           </button>
         </div>
 
-        <div className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100">
+          <button
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'info' ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('info')}
+          >
+            Información
+          </button>
+          <button
+            className={`flex-1 py-3 text-sm font-semibold transition-colors ${activeTab === 'schedules' ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('schedules')}
+          >
+            Horarios
+          </button>
+        </div>
 
-              <div className="md:col-span-2">
-                <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Restaurante</label>
-                <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
-              </div>
+        <div className="p-8 overflow-y-auto">
+          <form onSubmit={handleSubmitWithSchedules} className="space-y-6">
 
-              <div className="md:col-span-2">
-                <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">Categorías</label>
-                <input type="text" id="category" placeholder="pizzas, italiana, rápido" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
-                <p className="text-xs text-gray-500 mt-2 ml-1">Separa las categorías con comas.</p>
-              </div>
-
-              {/* Address Fields */}
-              <div className="md:col-span-2 bg-gray-50 p-6 rounded-xl border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <label className="text-sm font-semibold text-gray-700">Ubicación</label>
-                  <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded-md">Requerido</span>
+            {activeTab === 'info' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Restaurante</label>
+                  <input type="text" id="name" placeholder="Ej: Pizza Planet" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
                 </div>
 
-                <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      {fullAddress || 'No se ha seleccionado ninguna ubicación.'}
-                    </p>
+                <div className="md:col-span-2">
+                  <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2">Categorías</label>
+                  <input type="text" id="category" placeholder="pizzas, italiana, rápido" value={category} onChange={e => setCategory(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                  <p className="text-xs text-gray-500 mt-2 ml-1">Separa las categorías con comas.</p>
+                </div>
+
+                {/* Address Fields */}
+                <div className="md:col-span-2 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <label className="text-sm font-semibold text-gray-700">Ubicación</label>
+                    <span className="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-1 rounded-md">Requerido</span>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <MapPinIcon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {fullAddress || 'No se ha seleccionado ninguna ubicación.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPickerOpen(true)}
+                    className="w-full py-3 bg-white border-2 border-blue-500 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <MapPinIcon className="w-5 h-5" />
+                    <span>{fullAddress ? 'Cambiar Ubicación' : 'Seleccionar en Mapa'}</span>
+                  </button>
+                </div>
+
+                <div>
+                  <label htmlFor="deliveryFee" className="block text-sm font-semibold text-gray-700 mb-2">Costo de Envío</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-400">$</span>
+                    <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="0.00" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsPickerOpen(true)}
-                  className="w-full py-3 bg-white border-2 border-blue-500 text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
-                >
-                  <MapPinIcon className="w-5 h-5" />
-                  <span>{fullAddress ? 'Cambiar Ubicación' : 'Seleccionar en Mapa'}</span>
-                </button>
-              </div>
-
-              <div>
-                <label htmlFor="deliveryFee" className="block text-sm font-semibold text-gray-700 mb-2">Costo de Envío</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3.5 text-gray-400">$</span>
-                  <input type="number" id="deliveryFee" step="0.01" min="0" placeholder="0.00" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} required className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                <div>
+                  <label htmlFor="deliveryTime" className="block text-sm font-semibold text-gray-700 mb-2">Tiempo de Entrega</label>
+                  <div className="relative">
+                    <input type="number" id="deliveryTime" min="0" placeholder="30" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
+                    <span className="absolute right-4 top-3.5 text-gray-400 text-sm">min</span>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="deliveryTime" className="block text-sm font-semibold text-gray-700 mb-2">Tiempo de Entrega</label>
-                <div className="relative">
-                  <input type="number" id="deliveryTime" min="0" placeholder="30" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all" />
-                  <span className="absolute right-4 top-3.5 text-gray-400 text-sm">min</span>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen de Portada</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative">
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="Vista Previa" className="w-full h-48 object-cover rounded-lg shadow-sm" />
-                  ) : (
-                    <div className="text-center">
-                      <div className="bg-gray-200 p-3 rounded-full inline-block mb-2">
-                        <span className="text-2xl">📷</span>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Imagen de Portada</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative">
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Vista Previa" className="w-full h-48 object-cover rounded-lg shadow-sm" />
+                    ) : (
+                      <div className="text-center">
+                        <div className="bg-gray-200 p-3 rounded-full inline-block mb-2">
+                          <span className="text-2xl">📷</span>
+                        </div>
+                        <p className="text-sm text-gray-500">Haz clic o arrastra una imagen aquí</p>
                       </div>
-                      <p className="text-sm text-gray-500">Haz clic o arrastra una imagen aquí</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {activeTab === 'schedules' && (
+              <div className="space-y-4">
+                {schedules.map((schedule, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-24 font-bold text-gray-700">{days[index]}</div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={schedule.is_enabled}
+                          onChange={e => handleScheduleChange(index, 'is_enabled', e.target.checked)}
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                      </label>
+                    </div>
+
+                    {schedule.is_enabled && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={schedule.open_time.slice(0, 5)}
+                          onChange={e => handleScheduleChange(index, 'open_time', e.target.value + ':00')}
+                          className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        />
+                        <span className="text-gray-400">-</span>
+                        <input
+                          type="time"
+                          value={schedule.close_time.slice(0, 5)}
+                          onChange={e => handleScheduleChange(index, 'close_time', e.target.value + ':00')}
+                          className="px-2 py-1 border border-gray-300 rounded-md text-sm"
+                        />
+                      </div>
+                    )}
+                    {!schedule.is_enabled && (
+                      <span className="text-sm text-gray-400 italic">Cerrado</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
               <button type="button" onClick={onCancel} className="px-6 py-2.5 text-gray-700 font-semibold bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">

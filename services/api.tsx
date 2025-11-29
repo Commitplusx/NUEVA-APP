@@ -371,6 +371,33 @@ export const deleteRestaurant = async (id: number): Promise<void> => {
   if (error) throw error;
 };
 
+export const saveSchedules = async (restaurantId: number, schedules: any[]): Promise<void> => {
+  // 1. Delete existing schedules
+  const { error: deleteError } = await supabase
+    .from('restaurant_schedules')
+    .delete()
+    .eq('restaurant_id', restaurantId);
+
+  if (deleteError) throw deleteError;
+
+  // 2. Insert new schedules
+  if (schedules.length > 0) {
+    const schedulesToInsert = schedules.map(s => ({
+      restaurant_id: restaurantId,
+      day_of_week: s.day_of_week,
+      open_time: s.open_time,
+      close_time: s.close_time,
+      is_enabled: s.is_enabled
+    }));
+
+    const { error: insertError } = await supabase
+      .from('restaurant_schedules')
+      .insert(schedulesToInsert);
+
+    if (insertError) throw insertError;
+  }
+};
+
 export const uploadImage = async (file: File): Promise<string> => {
   const fileName = `${Date.now()}-${file.name}`;
   const { data, error } = await supabase.storage

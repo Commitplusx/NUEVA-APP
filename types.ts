@@ -42,6 +42,15 @@ export interface MenuItemOptionGroup {
   options: MenuItemOption[];
 }
 
+export interface Schedule {
+  id: string;
+  restaurant_id: string;
+  day_of_week: number; // 1=Monday, 7=Sunday
+  open_time: string;
+  close_time: string;
+  is_enabled: boolean;
+}
+
 export interface Restaurant {
   id: number;
   name: string;
@@ -63,17 +72,7 @@ export interface Restaurant {
   menu?: MenuItem[];
   description?: string;
   is_active?: boolean;
-}
-
-// Frontend-specific types
-
-export interface CartItem {
-  id: string; // Unique identifier for product + customization combo
-  product: MenuItem;
-  quantity: number;
-  customizedIngredients: Ingredient[];
-  selectedOptions?: Record<string, string[]>;
-  restaurant: Restaurant;
+  schedules?: Schedule[];
 }
 
 export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'admin' | 'login';

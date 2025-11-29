@@ -119,12 +119,61 @@ const Categories: React.FC<{ selectedCategory: number; onSelectCategory: (id: nu
 // --- Mobile Restaurant Card (New Design) ---
 const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => void; }> = ({ restaurant, onSelect }) => {
   const optimizedImageUrl = getTransformedImageUrl(restaurant.imageUrl || '', 400, 400);
-  const isActive = restaurant.is_active !== false; // Default to true if undefined
+
+  // Schedule Logic
+  const getScheduleStatus = () => {
+    if (restaurant.is_active === false) return { isOpen: false, message: 'NO DISPONIBLE' };
+    if (!restaurant.schedules || restaurant.schedules.length === 0) return { isOpen: true, message: '' };
+
+    const now = new Date();
+    const currentDay = now.getDay() || 7; // 0=Sunday -> 7, 1=Monday...
+
+    const todaySchedule = restaurant.schedules.find(s => s.day_of_week === currentDay && s.is_enabled);
+
+    console.log(`[Debug Schedule] ${restaurant.name}: Day ${currentDay}, Schedules:`, restaurant.schedules);
+    if (todaySchedule) console.log(`[Debug Schedule] Today:`, todaySchedule);
+    else console.log(`[Debug Schedule] No schedule for today (Day ${currentDay})`);
+
+    // Helper to format time
+    const formatTime = (time: string) => time.slice(0, 5);
+
+    if (todaySchedule) {
+      const [openHour, openMinute] = todaySchedule.open_time.split(':').map(Number);
+      const [closeHour, closeMinute] = todaySchedule.close_time.split(':').map(Number);
+
+      const openTime = new Date(now);
+      openTime.setHours(openHour, openMinute, 0);
+
+      const closeTime = new Date(now);
+      closeTime.setHours(closeHour, closeMinute, 0);
+
+      if (now >= openTime && now <= closeTime) {
+        return { isOpen: true, message: '' };
+      }
+
+      if (now < openTime) {
+        return { isOpen: false, message: `CERRADO\nABRE ${formatTime(todaySchedule.open_time)}` };
+      }
+    }
+
+    // If we are here, it's either no schedule for today OR we are past closing time.
+    // Check tomorrow
+    const tomorrowDay = (currentDay % 7) + 1;
+    const tomorrowSchedule = restaurant.schedules.find(s => s.day_of_week === tomorrowDay && s.is_enabled);
+
+    if (tomorrowSchedule) {
+      return { isOpen: false, message: `CERRADO\nABRE MAÑANA ${formatTime(tomorrowSchedule.open_time)}` };
+    }
+
+    return { isOpen: false, message: 'CERRADO' };
+  };
+
+  const { isOpen, message } = getScheduleStatus();
 
   return (
     <div
-      onClick={isActive ? onSelect : undefined}
-      className={`w-full bg-white rounded-[2rem] p-3 shadow-lg border border-gray-100 transition-transform relative group ${isActive ? 'active:scale-95 cursor-pointer' : 'opacity-75 grayscale cursor-not-allowed'}`}
+      onClick={isOpen ? onSelect : undefined}
+      className={`w-full bg-white rounded-[2rem] p-3 shadow-lg border border-gray-100 transition-transform relative group ${isOpen ? 'active:scale-95 cursor-pointer' : 'opacity-75 grayscale cursor-not-allowed'}`}
       role="button"
       tabIndex={0}
     >
@@ -144,7 +193,7 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
         )}
 
         {/* Time Badge Overlay */}
-        {isActive && (
+        {isOpen && (
           <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-gray-800 flex items-center shadow-sm">
             <ClockIcon className="w-3 h-3 mr-1 text-purple-600" />
             {restaurant.delivery_time} min
@@ -152,10 +201,10 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
         )}
 
         {/* Inactive Overlay */}
-        {!isActive && (
+        {!isOpen && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-            <span className="bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg transform -rotate-3 border-2 border-white">
-              Cerrado
+            <span className="bg-red-500 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg transform -rotate-3 border-2 border-white text-center">
+              {message}
             </span>
           </div>
         )}
@@ -188,7 +237,7 @@ const MobileRestaurantCard: React.FC<{ restaurant: Restaurant; onSelect: () => v
             {Number(restaurant.delivery_fee || 0) === 0 ? 'Free' : `$${Number(restaurant.delivery_fee || 0).toFixed(2)}`}
           </span>
 
-          {isActive && (
+          {isOpen && (
             <div className="w-8 h-8 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-colors">
               <PlusIcon className="w-5 h-5" />
             </div>

@@ -107,10 +107,11 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
       const { data: restaurantsData, error: restaurantsError } = await query.range(from, to);
       if (restaurantsError) throw restaurantsError;
 
-      const [categoriesResult, restaurantCategoriesResult, menuItemsResult] = await Promise.all([
+      const [categoriesResult, restaurantCategoriesResult, menuItemsResult, schedulesResult] = await Promise.all([
         supabase.from('categories').select('*'),
         supabase.from('restaurant_categories').select('*'),
         supabase.from('menu_items').select('*'),
+        supabase.from('restaurant_schedules').select('*'),
       ]);
 
       const denormalized = denormalizeRestaurants(
@@ -118,7 +119,10 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
         categoriesResult.data || [],
         restaurantCategoriesResult.data || [],
         menuItemsResult.data || []
-      );
+      ).map(r => ({
+        ...r,
+        schedules: (schedulesResult.data || []).filter(s => s.restaurant_id === r.id)
+      }));
 
       setRestaurants(prev => {
         const newData = (pageToFetch === 0 || isNewFilter) ? denormalized : [...prev, ...denormalized];
