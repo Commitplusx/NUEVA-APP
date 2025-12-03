@@ -73,6 +73,7 @@ export interface Restaurant {
   description?: string;
   is_active?: boolean;
   schedules?: Schedule[];
+  phone?: string;
 }
 
 export type Page = 'home' | 'request' | 'restaurants' | 'restaurantDetail' | 'productDetail' | 'cart' | 'admin' | 'login';
@@ -172,4 +173,20 @@ export interface Favorite {
   menu_item_id: number;
   created_at: string;
   menu_item?: MenuItem; // For joining data
+}
+
+export interface Banner {
+  id: number;
+  image_url: string;
+  link_url?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface CartItem {
+  product: MenuItem;
+  quantity: number;
+  restaurant: Restaurant;
+  customizedIngredients?: any;
 }

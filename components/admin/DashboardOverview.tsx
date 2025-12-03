@@ -105,6 +105,16 @@ export const DashboardOverview: React.FC = () => {
       gradientFrom: 'from-slate-700',
       gradientTo: 'to-slate-900',
       iconColor: 'text-white'
+    },
+    {
+      title: 'Banners',
+      value: 'Gestión',
+      icon: <TagIcon />, // Reusing TagIcon or similar if Image icon not available in imports
+      loading: false,
+      to: '/admin/banners',
+      gradientFrom: 'from-pink-500',
+      gradientTo: 'to-rose-500',
+      iconColor: 'text-white'
     }
   ];
 

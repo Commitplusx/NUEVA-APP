@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppState } from './useAppState';
 import { supabase } from '../services/supabase';
 import { Restaurant } from '../types';
@@ -46,11 +46,17 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
     loadCache();
   }, []);
 
+  // Use ref to access current restaurants in fetchPage without adding to deps
+  const restaurantsRef = useRef(restaurants);
+  useEffect(() => {
+    restaurantsRef.current = restaurants;
+  }, [restaurants]);
+
   const fetchPage = useCallback(async (pageToFetch: number, isNewFilter: boolean) => {
     // If loading page 0 and we already have data (from cache), don't set loading to true to avoid flicker
     // unless it's a new filter/search
     if (pageToFetch === 0) {
-      if (isNewFilter || restaurants.length === 0) setLoading(true);
+      if (isNewFilter || restaurantsRef.current.length === 0) setLoading(true);
     } else {
       setLoadingMore(true);
     }
@@ -145,16 +151,18 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [searchQuery, filters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, JSON.stringify(filters)]);
 
   useEffect(() => {
     // Reset and fetch when filters change
-    // Note: We don't clear restaurants immediately here to avoid flash if we have cache or previous data
+    // Note: We don't clear restaurants immediately here to avoid flicker
     // The fetchPage will handle the replacement
     setPage(0);
     setHasMore(true);
     fetchPage(0, true);
-  }, [searchQuery, filters, fetchPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, JSON.stringify(filters), fetchPage]);
 
   useAppState(() => {
     console.log('App came to foreground, refreshing restaurants...');
@@ -185,7 +193,10 @@ export const useRestaurants = ({ searchQuery, filters = EMPTY_FILTERS }: UseRest
                 name: newRecord.name,
                 description: newRecord.description,
                 is_active: newRecord.is_active,
-                imageUrl: newRecord.image_url || newRecord.logo_url || r.imageUrl,
+                // Add timestamp to force cache refresh if URL is the same but content changed
+                imageUrl: (newRecord.image_url || newRecord.logo_url)
+                  ? `${newRecord.image_url || newRecord.logo_url}?t=${Date.now()}`
+                  : r.imageUrl,
                 rating: newRecord.rating,
                 deliveryTime: newRecord.delivery_time,
                 deliveryFee: newRecord.delivery_fee,

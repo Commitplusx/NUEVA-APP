@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MenuItem, Ingredient, Category } from '../../types';
+import { MenuItem, Category } from '../../types';
 import { getMenuItems, addMenuItem, updateMenuItem, deleteMenuItem, uploadImage } from '../../services/api';
 import { useAdminCategories } from '../../hooks/useAdminCategories';
 import { useAppContext } from '../../context/AppContext';
 import { Spinner } from '../Spinner';
-import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon, XCircleIcon, UtensilsIcon } from '../icons';
-import * as LucideIcons from 'lucide-react';
+import { PlusIcon, EditIcon, TrashIcon, AlertTriangleIcon, XCircleIcon, UtensilsIcon, ChevronRightIcon, ChevronLeftIcon, CheckIcon } from '../icons';
 
 interface ManageMenuItemsProps {
   restaurantId: number;
@@ -22,6 +21,9 @@ const MenuItemForm: React.FC<{
   onCancel: () => void;
 }> = ({ menuItem, restaurantId, categories, onSave, onCancel }) => {
   const { showToast } = useAppContext();
+
+  // Form State
+  const [currentStep, setCurrentStep] = useState(1);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number | string>('');
@@ -43,26 +45,13 @@ const MenuItemForm: React.FC<{
       setImageUrl(menuItem.image_url || '');
       setImagePreview(menuItem.image_url || '');
       setIsPopular(menuItem.is_popular || false);
-      // Normalizar ingredientes: ahora esperamos string[]
       const rawIngredients = menuItem.ingredients || [];
-      // Asegurarnos de que sea un array de strings, manejando datos antiguos
       const normalized = Array.isArray(rawIngredients)
-        ? rawIngredients.map(ing => typeof ing === 'object' ? ing.name : ing).filter(Boolean)
+        ? rawIngredients.map(ing => typeof ing === 'object' ? (ing as any).name : ing).filter(Boolean)
         : [];
       setIngredients(normalized as string[]);
       setCustomizationGroups(menuItem.customizationOptions || []);
       setCategoryId(menuItem.category_id);
-    } else {
-      setName('');
-      setDescription('');
-      setPrice('');
-      setImageUrl('');
-      setImageFile(null);
-      setImagePreview(null);
-      setIsPopular(false);
-      setIngredients([]);
-      setCustomizationGroups([]);
-      setCategoryId(undefined);
     }
   }, [menuItem]);
 
@@ -87,6 +76,7 @@ const MenuItemForm: React.FC<{
     setIngredients(ingredients.filter(ing => ing !== name));
   };
 
+  // Customization Logic
   const addCustomizationGroup = () => {
     setCustomizationGroups([
       ...customizationGroups,
@@ -94,7 +84,7 @@ const MenuItemForm: React.FC<{
         id: Date.now().toString(),
         name: '',
         minSelect: 0,
-        maxSelect: 10,
+        maxSelect: 1,
         includedItems: 0,
         pricePerExtra: 0,
         options: []
@@ -108,15 +98,12 @@ const MenuItemForm: React.FC<{
 
   const updateCustomizationGroup = (id: string, field: string, value: any) => {
     setCustomizationGroups(customizationGroups.map(g => {
-      if (g.id === id) {
-        return { ...g, [field]: value };
-      }
+      if (g.id === id) return { ...g, [field]: value };
       return g;
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsSaving(true);
     try {
       const parsedPrice = parseFloat(price as string);
@@ -138,7 +125,7 @@ const MenuItemForm: React.FC<{
         price: parsedPrice,
         image_url: finalImageUrl,
         is_popular: isPopular,
-        ingredients: ingredients, // Ahora es un string[]
+        ingredients: ingredients,
         customizationOptions: customizationGroups,
         category_id: categoryId,
       };
@@ -153,214 +140,305 @@ const MenuItemForm: React.FC<{
       onSave();
     } catch (error: any) {
       console.error('Error saving menu item:', error);
-      showToast(`Error al guardar el producto: ${error.message || error}`, 'error');
+      showToast(`Error: ${error.message || error}`, 'error');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const validateStep1 = () => {
+    if (!name.trim()) return showToast('El nombre es requerido', 'error');
+    if (!price) return showToast('El precio es requerido', 'error');
+    if (!categoryId) return showToast('La categoría es requerida', 'error');
+    setCurrentStep(2);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-[60] animate-fade-in p-4">
-      <style>{`
-        @keyframes modalPop {
-          0% { opacity: 0; transform: scale(0.95) translateY(10px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        .animate-modal-pop {
-          animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.2s ease-out forwards;
-        }
-      `}</style>
-      <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-modal-pop relative">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{menuItem ? 'Editar' : 'Agregar'} Producto</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full">
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-end md:items-center z-[60] animate-fade-in p-0 md:p-4">
+      <div className="bg-white w-full h-[95vh] md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{menuItem ? 'Editar Producto' : 'Nuevo Producto'}</h2>
+            <p className="text-xs text-gray-500">Paso {currentStep} de 2</p>
+          </div>
+          <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors">
             <XCircleIcon className="w-8 h-8" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" placeholder="Nombre del Producto" value={name} onChange={e => setName(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
-          <textarea placeholder="Descripción" value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 h-24 resize-none transition-all"></textarea>
-          <input type="number" placeholder="Precio" value={price} onChange={e => setPrice(e.target.value)} required className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Categoría</label>
-            <select
-              value={categoryId || ''}
-              onChange={e => setCategoryId(Number(e.target.value) || undefined)}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            >
-              <option value="">Sin Categoría</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
+        {/* Progress Bar */}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full bg-blue-500 transition-all duration-300 ease-out"
+            style={{ width: currentStep === 1 ? '50%' : '100%' }}
+          />
+        </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Imagen del Producto</label>
-            <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-            {imagePreview && <img src={imagePreview} alt="Vista Previa" className="mt-4 w-32 h-32 object-cover rounded-xl" />}
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="isPopular" checked={isPopular} onChange={e => setIsPopular(e.target.checked)} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-            <label htmlFor="isPopular" className="text-sm font-medium text-gray-700">¿Es Popular?</label>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Ingredientes (Etiquetas simples)</label>
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                placeholder="Añadir ingrediente"
-                value={ingredientName}
-                onChange={e => setIngredientName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddIngredient(); } }}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              />
-              <button type="button" onClick={handleAddIngredient} className="px-4 py-2 text-white font-semibold bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors">Añadir</button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {ingredients.map(ing => (
-                <div key={ing} className="flex items-center gap-2 bg-gray-100 text-gray-800 px-3 py-1 rounded-full border border-gray-200">
-                  <span>{ing}</span>
-                  <button type="button" onClick={() => handleRemoveIngredient(ing)} className="text-red-500 hover:text-red-700">
-                    <XCircleIcon className="w-4 h-4" />
-                  </button>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {currentStep === 1 ? (
+            <div className="space-y-6 animate-fade-in">
+              {/* Image Picker */}
+              <div className="flex justify-center">
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <UtensilsIcon className="w-10 h-10 text-gray-300" />
+                    )}
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl">
+                    <span className="text-white text-xs font-bold">Cambiar Foto</span>
+                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                  </label>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Customization Groups Section */}
-          <div className="border-t border-gray-100 pt-4 mt-4">
-            <h3 className="text-lg font-bold text-gray-800 mb-3">Grupos de Personalización</h3>
-            <p className="text-sm text-gray-500 mb-4">Define grupos de opciones como "Elige tus toppings" o "Salsas".</p>
-
-            {customizationGroups.map((group, index) => (
-              <div key={group.id} className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 relative">
-                <button
-                  type="button"
-                  onClick={() => removeCustomizationGroup(group.id)}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Nombre del Grupo</label>
-                    <input
-                      type="text"
-                      value={group.name}
-                      onChange={(e) => updateCustomizationGroup(group.id, 'name', e.target.value)}
-                      placeholder="Ej: Toppings Incluidos"
-                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Incluidos (Gratis)</label>
-                      <input
-                        type="number"
-                        value={group.includedItems}
-                        onChange={(e) => updateCustomizationGroup(group.id, 'includedItems', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Precio Extra</label>
-                      <input
-                        type="number"
-                        value={group.pricePerExtra}
-                        onChange={(e) => updateCustomizationGroup(group.id, 'pricePerExtra', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="Ej. Hamburguesa Doble"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Opciones (Separadas por coma)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                  <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none h-24 resize-none"
+                    placeholder="Ingredientes, preparación..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-3.5 text-gray-500">$</span>
+                      <input
+                        type="number"
+                        value={price}
+                        onChange={e => setPrice(e.target.value)}
+                        className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                    <select
+                      value={categoryId || ''}
+                      onChange={e => setCategoryId(Number(e.target.value) || undefined)}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      <option value="">Seleccionar</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <input
+                    type="checkbox"
+                    id="isPopular"
+                    checked={isPopular}
+                    onChange={e => setIsPopular(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="isPopular" className="text-sm font-medium text-gray-700">Marcar como Popular</label>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ingredientes / Etiquetas</label>
                   <div className="flex gap-2 mb-2">
                     <input
                       type="text"
-                      placeholder="Ej: Mango, Pepino, Aguacate"
-                      id={`options-input-${group.id}`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const val = e.currentTarget.value;
-                          if (val) {
-                            const newOptions = val.split(',').map(s => ({ name: s.trim() })).filter(o => o.name);
-                            const updatedOptions = [...group.options, ...newOptions];
-                            updateCustomizationGroup(group.id, 'options', updatedOptions);
-                            e.currentTarget.value = '';
-                          }
-                        }
-                      }}
-                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      value={ingredientName}
+                      onChange={e => setIngredientName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddIngredient()}
+                      className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      placeholder="Ej. Picante, Vegano"
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.getElementById(`options-input-${group.id}`) as HTMLInputElement;
-                        if (input && input.value) {
-                          const val = input.value;
-                          const newOptions = val.split(',').map(s => ({ name: s.trim() })).filter(o => o.name);
-                          const updatedOptions = [...group.options, ...newOptions];
-                          updateCustomizationGroup(group.id, 'options', updatedOptions);
-                          input.value = '';
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
-                    >
+                    <button onClick={handleAddIngredient} className="px-4 py-2 bg-gray-900 text-white rounded-xl font-medium text-sm">
                       Agregar
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {group.options.map((opt: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-1 bg-white border border-gray-200 px-2 py-1 rounded text-xs">
-                        <span>{opt.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newOpts = [...group.options];
-                            newOpts.splice(idx, 1);
-                            updateCustomizationGroup(group.id, 'options', newOpts);
-                          }}
-                          className="text-red-400 hover:text-red-600"
-                        >
-                          &times;
-                        </button>
-                      </div>
+                    {ingredients.map(ing => (
+                      <span key={ing} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                        {ing}
+                        <button onClick={() => handleRemoveIngredient(ing)} className="text-gray-400 hover:text-red-500">&times;</button>
+                      </span>
                     ))}
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
+          ) : (
+            <div className="space-y-6 animate-fade-in">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg h-fit">
+                  <UtensilsIcon className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-blue-900">Personalización</h4>
+                  <p className="text-xs text-blue-700 mt-1">Agrega grupos de opciones como "Elige tu Salsa" o "Toppings Extra".</p>
+                </div>
+              </div>
 
+              {customizationGroups.map((group, index) => (
+                <div key={group.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md">Grupo {index + 1}</span>
+                      <input
+                        type="text"
+                        value={group.name}
+                        onChange={(e) => updateCustomizationGroup(group.id, 'name', e.target.value)}
+                        placeholder="Nombre del Grupo"
+                        className="bg-transparent border-none focus:ring-0 text-sm font-bold text-gray-900 placeholder-gray-400 w-40"
+                      />
+                    </div>
+                    <button onClick={() => removeCustomizationGroup(group.id)} className="text-red-400 hover:text-red-600">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-400">Mínimo</label>
+                        <input
+                          type="number"
+                          value={group.minSelect}
+                          onChange={(e) => updateCustomizationGroup(group.id, 'minSelect', parseInt(e.target.value) || 0)}
+                          className="w-full mt-1 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-400">Máximo</label>
+                        <input
+                          type="number"
+                          value={group.maxSelect}
+                          onChange={(e) => updateCustomizationGroup(group.id, 'maxSelect', parseInt(e.target.value) || 0)}
+                          className="w-full mt-1 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-gray-400">Precio Extra</label>
+                        <input
+                          type="number"
+                          value={group.pricePerExtra}
+                          onChange={(e) => updateCustomizationGroup(group.id, 'pricePerExtra', parseFloat(e.target.value) || 0)}
+                          className="w-full mt-1 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 mb-2 block">Opciones</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nueva opción (Enter)"
+                          id={`opt-${group.id}`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = e.currentTarget.value;
+                              if (val) {
+                                const newOpts = [...group.options, { name: val.trim() }];
+                                updateCustomizationGroup(group.id, 'options', newOpts);
+                                e.currentTarget.value = '';
+                              }
+                            }
+                          }}
+                          className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {group.options.map((opt: any, idx: number) => (
+                          <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-600 shadow-sm">
+                            {opt.name}
+                            <button
+                              onClick={() => {
+                                const newOpts = [...group.options];
+                                newOpts.splice(idx, 1);
+                                updateCustomizationGroup(group.id, 'options', newOpts);
+                              }}
+                              className="text-gray-400 hover:text-red-500"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={addCustomizationGroup}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-blue-500 hover:text-blue-500 transition-colors flex items-center justify-center gap-2"
+              >
+                <PlusIcon className="w-5 h-5" />
+                <span>Agregar Grupo</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-gray-100 bg-white flex justify-between items-center">
+          {currentStep === 2 ? (
             <button
-              type="button"
-              onClick={addCustomizationGroup}
-              className="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors flex items-center justify-center gap-2"
+              onClick={() => setCurrentStep(1)}
+              className="px-6 py-3 text-gray-600 font-bold hover:bg-gray-50 rounded-xl transition-colors flex items-center gap-2"
             >
-              <PlusIcon className="w-5 h-5" />
-              <span>Agregar Grupo de Opciones</span>
+              <ChevronLeftIcon className="w-5 h-5" />
+              Atrás
             </button>
-          </div>
-          <div className="flex justify-end space-x-4 pt-4">
-            <button type="button" onClick={onCancel} className="px-6 py-2.5 text-gray-700 font-semibold bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Cancelar</button>
-            <button type="submit" disabled={isSaving} className="px-6 py-2.5 text-white font-semibold bg-blue-500 rounded-xl hover:bg-blue-600 shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed">
-              {isSaving ? 'Guardando...' : 'Guardar'}
+          ) : (
+            <div></div> // Spacer
+          )}
+
+          {currentStep === 1 ? (
+            <button
+              onClick={validateStep1}
+              className="px-8 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors flex items-center gap-2 shadow-lg shadow-gray-200"
+            >
+              Siguiente
+              <ChevronRightIcon className="w-5 h-5" />
             </button>
-          </div>
-        </form>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg shadow-blue-200 disabled:opacity-70"
+            >
+              {isSaving ? (
+                <Spinner className="w-5 h-5 border-white" />
+              ) : (
+                <>
+                  <CheckIcon className="w-5 h-5" />
+                  Guardar Producto
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -401,17 +479,20 @@ const MenuItemList: React.FC<{
     });
 
     return { groups, uncategorized };
-  }, [menuItems, categories]) as { groups: Record<string, MenuItem[]>; uncategorized: MenuItem[] };
+  }, [menuItems, categories]);
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8 pb-20">
       {Object.entries(groupedItems.groups).map(([categoryName, items]) => (
         <div key={categoryName}>
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
+          <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2 sticky top-0 bg-gray-50 py-2 z-10">
+            <span className="w-1 h-5 bg-blue-500 rounded-full"></span>
             {categoryName}
+            <span className="text-xs font-normal text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">
+              {items.length}
+            </span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-3">
             {items.map(item => (
               <MenuItemCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
             ))}
@@ -421,11 +502,11 @@ const MenuItemList: React.FC<{
 
       {groupedItems.uncategorized.length > 0 && (
         <div>
-          <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="w-1 h-6 bg-gray-400 rounded-full"></span>
+          <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2 sticky top-0 bg-gray-50 py-2 z-10">
+            <span className="w-1 h-5 bg-gray-400 rounded-full"></span>
             Sin Categoría
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-3">
             {groupedItems.uncategorized.map(item => (
               <MenuItemCard key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
             ))}
@@ -437,70 +518,58 @@ const MenuItemList: React.FC<{
 };
 
 const MenuItemCard: React.FC<{ item: MenuItem; onEdit: (item: MenuItem) => void; onDelete: (id: number) => void }> = ({ item, onEdit, onDelete }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
-    {/* Cover Image */}
-    <div className="relative h-48 w-full overflow-hidden bg-gray-100">
-      <img
-        src={item.image_url || 'https://via.placeholder.com/400x300?text=No+Image'}
-        alt={item.name}
-        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-
-      {item.is_popular && (
-        <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-lg shadow-sm flex items-center gap-1">
-          <span>★ Popular</span>
+  <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex gap-3 items-start hover:shadow-md transition-shadow">
+    {/* Image - Left */}
+    <div className="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden relative">
+      {item.image_url ? (
+        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-gray-300">
+          <UtensilsIcon className="w-6 h-6" />
         </div>
       )}
-
-      <div className="absolute bottom-3 left-3 text-white">
-        <span className="text-lg font-bold bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20">
-          ${item.price.toFixed(2)}
-        </span>
-      </div>
+      {item.is_popular && (
+        <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg">
+          ★
+        </div>
+      )}
     </div>
 
-    {/* Content */}
-    <div className="p-4 flex-1 flex flex-col">
-      <div className="mb-3">
-        <h3 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1" title={item.name}>{item.name}</h3>
-        <p className="text-sm text-gray-500 line-clamp-2 h-10">{item.description || 'Sin descripción'}</p>
+    {/* Content - Middle */}
+    <div className="flex-1 min-w-0">
+      <div className="flex justify-between items-start">
+        <h4 className="font-bold text-gray-900 text-sm truncate pr-2">{item.name}</h4>
+        <span className="font-bold text-blue-600 text-sm">${item.price.toFixed(2)}</span>
       </div>
 
-      {/* Ingredients / Tags */}
-      <div className="flex flex-wrap gap-1 mb-4">
-        {item.ingredients && item.ingredients.length > 0 ? (
-          item.ingredients.slice(0, 3).map((ing, idx) => (
-            <span key={idx} className="text-[10px] font-medium bg-gray-50 text-gray-600 px-2 py-1 rounded-md border border-gray-100">
+      <p className="text-xs text-gray-500 line-clamp-2 mt-0.5 h-8">
+        {item.description || 'Sin descripción'}
+      </p>
+
+      <div className="flex items-center justify-between mt-2">
+        <div className="flex gap-1 overflow-hidden">
+          {item.ingredients && item.ingredients.slice(0, 2).map((ing, idx) => (
+            <span key={idx} className="text-[10px] bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded border border-gray-100 truncate max-w-[60px]">
               {ing}
             </span>
-          ))
-        ) : (
-          <span className="text-[10px] text-gray-400 italic">Sin ingredientes listados</span>
-        )}
-        {item.ingredients && item.ingredients.length > 3 && (
-          <span className="text-[10px] font-medium bg-gray-50 text-gray-600 px-2 py-1 rounded-md border border-gray-100">
-            +{item.ingredients.length - 3}
-          </span>
-        )}
-      </div>
+          ))}
+        </div>
 
-      <div className="mt-auto pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
-        <button
-          onClick={() => onEdit(item)}
-          className="flex items-center justify-center gap-2 py-2 rounded-xl text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors font-medium text-sm"
-        >
-          <EditIcon className="w-4 h-4" />
-          <span>Editar</span>
-        </button>
-
-        <button
-          onClick={() => onDelete(item.id)}
-          className="flex items-center justify-center gap-2 py-2 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 transition-colors font-medium text-sm"
-        >
-          <TrashIcon className="w-4 h-4" />
-          <span>Eliminar</span>
-        </button>
+        {/* Actions - Right (Inline for mobile ease) */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEdit(item)}
+            className="p-1.5 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            <EditIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="p-1.5 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            <TrashIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -529,7 +598,6 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
       setMenuItems(data);
     } catch (err: any) {
       setError(err.message || 'Error al cargar los productos.');
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -570,71 +638,56 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
         showToast('Producto eliminado.', 'success');
         fetchMenuItems();
       } catch (err: any) {
-        console.error('Error deleting menu item:', err);
-        showToast(`Error al eliminar el producto: ${err.message || err}`, 'error');
+        showToast(`Error: ${err.message || err}`, 'error');
       }
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in p-4">
-      <style>{`
-        @keyframes modalPop {
-          0% { opacity: 0; transform: scale(0.95) translateY(10px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        .animate-modal-pop {
-          animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.2s ease-out forwards;
-        }
-      `}</style>
-      <div className="bg-gray-50 rounded-2xl shadow-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-modal-pop">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">Gestionar Menú de {restaurantName}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <XCircleIcon className="w-8 h-8" />
-          </button>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <div className="w-full md:w-1/3">
-            <select
-              value={filterCategoryId}
-              onChange={(e) => setFilterCategoryId(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-            >
-              <option value="all">Todas las Categorías</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-              <option value="-1">Sin Categoría</option>
-            </select>
+    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex justify-center items-center z-50 animate-fade-in p-0 md:p-4">
+      <div className="bg-gray-50 w-full h-full md:h-[90vh] md:max-w-4xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-gray-800 leading-tight">Menú</h2>
+            <p className="text-xs text-gray-500 truncate max-w-[200px]">{restaurantName}</p>
           </div>
-          <button
-            onClick={handleAddNew}
-            className="flex items-center gap-2 bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md hover:bg-blue-600 transition-all transform hover:-translate-y-0.5"
-          >
-            <PlusIcon className="w-5 h-5" />
-            <span>Agregar Producto</span>
+          <button onClick={onClose} className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200">
+            <XCircleIcon className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        {/* Filters & Actions */}
+        <div className="px-4 py-3 bg-white border-b border-gray-100 flex gap-3 overflow-x-auto no-scrollbar flex-shrink-0">
+          <button
+            onClick={() => setFilterCategoryId('all')}
+            className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filterCategoryId === 'all' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+          >
+            Todos
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setFilterCategoryId(cat.id)}
+              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${filterCategoryId === cat.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
-            <div className="flex justify-center py-10">
+            <div className="flex justify-center py-20">
               <Spinner />
             </div>
           ) : error ? (
-            <div className="text-center text-red-500 col-span-1 py-10 bg-red-50 rounded-xl border border-red-100">
-              <AlertTriangleIcon className="w-12 h-12 mx-auto mb-4 text-red-400" />
-              <h3 className="text-lg font-semibold mb-2">Error al Cargar</h3>
-              <p className="text-sm">{error}</p>
+            <div className="text-center text-red-500 py-10">
+              <AlertTriangleIcon className="w-10 h-10 mx-auto mb-2 opacity-50" />
+              <p>{error}</p>
             </div>
           ) : (
             <MenuItemList
@@ -650,6 +703,27 @@ export const ManageMenuItems: React.FC<ManageMenuItemsProps> = ({ restaurantId, 
               onDelete={handleDelete}
             />
           )}
+        </div>
+
+        {/* Floating Action Button (Mobile Style) */}
+        <div className="absolute bottom-6 right-6 md:static md:hidden">
+          <button
+            onClick={handleAddNew}
+            className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-300 flex items-center justify-center hover:scale-105 transition-transform"
+          >
+            <PlusIcon className="w-8 h-8" />
+          </button>
+        </div>
+
+        {/* Desktop Add Button (Hidden on Mobile) */}
+        <div className="hidden md:block p-4 border-t border-gray-200 bg-white">
+          <button
+            onClick={handleAddNew}
+            className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <PlusIcon className="w-5 h-5" />
+            Agregar Nuevo Producto
+          </button>
         </div>
       </div>
 

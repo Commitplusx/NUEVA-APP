@@ -8,13 +8,15 @@ import { Profile } from '../types';
 import mapboxgl from 'mapbox-gl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { App } from '@capacitor/app';
+import Lottie from 'lottie-react';
+import profileAnimation from './animations/profile.json';
+
+import { useAppContext } from '../context/AppContext';
 
 interface OrderTrackerProps {
     orderId: number;
     onFinish?: () => void;
 }
-
-import { useAppContext } from '../context/AppContext';
 
 export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish }) => {
     const { setBottomNavVisible } = useAppContext();
@@ -59,26 +61,35 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
         }
     }, [orderId]);
 
-    // Fetch Order Data & App Resume Listener
+    // Realtime Order Subscription
     useEffect(() => {
         fetchOrder();
-        const interval = setInterval(fetchOrder, 5000); // Polling every 5s
 
-        // Listen for app resume to fetch immediately
-        const listener = App.addListener('appStateChange', ({ isActive }) => {
-            if (isActive) {
-                console.log('App resumed, refreshing order data...');
+        const channel = supabase
+            .channel(`public:order_tracker_${orderId}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'orders',
+                filter: `id=eq.${orderId}`
+            }, (payload) => {
+                console.log('Realtime Order Update:', payload);
                 fetchOrder();
-            }
+            })
+            .subscribe();
+
+        // Listen for app resume to fetch immediately (keep this for safety)
+        const listener = App.addListener('appStateChange', ({ isActive }) => {
+            if (isActive) fetchOrder();
         });
 
         return () => {
-            clearInterval(interval);
+            supabase.removeChannel(channel);
             listener.then(handle => handle.remove());
         };
-    }, [fetchOrder]);
+    }, [orderId, fetchOrder]);
 
-    // Fetch Driver Location & Profile
+    // Realtime Driver Location Subscription
     useEffect(() => {
         if (!order?.driver_id) return;
 
@@ -91,7 +102,6 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                     .limit(1);
 
                 if (error) return;
-
                 const profile = data && data.length > 0 ? data[0] : null;
 
                 if (profile) {
@@ -106,8 +116,25 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
         };
 
         fetchDriverData();
-        const interval = setInterval(fetchDriverData, 10000); // Polling every 10s
-        return () => clearInterval(interval);
+
+        const channel = supabase
+            .channel(`public:driver_location_${order.driver_id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `user_id=eq.${order.driver_id}`
+            }, (payload) => {
+                const newRecord = payload.new as any;
+                if (newRecord.lat && newRecord.lng) {
+                    setDriverLocation({ lat: newRecord.lat, lng: newRecord.lng });
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [order?.driver_id]);
 
     // Update map bounds to fit all markers
@@ -346,11 +373,16 @@ export const OrderTracker: React.FC<OrderTrackerProps> = ({ orderId, onFinish })
                         </Marker>
                     )}
 
+                    import Lottie from 'lottie-react';
+                    import profileAnimation from './animations/profile.json';
+
+                    // ... (inside OrderTracker component)
+
                     {/* Customer Marker */}
                     {order.destination_lat && order.destination_lng && (
                         <Marker latitude={order.destination_lat} longitude={order.destination_lng}>
-                            <div className="bg-white p-2 rounded-full shadow-lg border-2 border-red-500">
-                                <FaMapMarkerAlt size={24} color="red" />
+                            <div className="relative w-24 h-24 -mt-12 -ml-12">
+                                <Lottie animationData={profileAnimation} loop={true} />
                             </div>
                         </Marker>
                     )}

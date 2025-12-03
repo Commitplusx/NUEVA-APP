@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category, MenuItem } from '../types';
+import { CartItem, Restaurant, Service, Tariff, ServiceRequest, Profile, OrderUserDetails, Order, Category, MenuItem, Banner } from '../types';
 import { supabase } from './supabase';
 import { getPublicImageUrl } from './denormalize';
 import { Capacitor } from '@capacitor/core';
@@ -317,6 +317,7 @@ export const addRestaurant = async (restaurant: Omit<Restaurant, 'id' | 'rating'
     postal_code: restaurant.postal_code,
     lat: restaurant.lat,
     lng: restaurant.lng,
+    phone: restaurant.phone,
     rating: 0
   };
 
@@ -573,9 +574,43 @@ export const calculateAndShowNativeRoute = async (
 
     const result = await NativeMap.calculateRoute({ origin, destination });
     const distance = result?.distance || null;
-    return distance;
+    return null;
   } catch (error) {
-    console.error('Error al calcular o mostrar la ruta nativa:', error);
+    console.error("Error calculating native route:", error);
     return null;
   }
+};
+
+export const getBanners = async (): Promise<Banner[]> => {
+  const { data, error } = await supabase.from('banners').select('*').order('display_order', { ascending: true });
+  if (error) throw error;
+  return data;
+};
+
+export const addBanner = async (banner: Omit<Banner, 'id' | 'created_at'>): Promise<Banner> => {
+  const { data, error } = await supabase.from('banners').insert([banner]).select();
+  if (error) throw error;
+  return data[0];
+};
+
+export const deleteBanner = async (id: number): Promise<void> => {
+  const { error } = await supabase.from('banners').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const uploadBannerImage = async (file: File): Promise<string> => {
+  const fileName = `${Date.now()}-${file.name}`;
+  const { data, error } = await supabase.storage
+    .from('banners')
+    .upload(fileName, file);
+
+  if (error) {
+    throw new Error('Error al subir la imagen: ' + error.message);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from('banners')
+    .getPublicUrl(data!.path);
+
+  return publicUrlData.publicUrl;
 };
