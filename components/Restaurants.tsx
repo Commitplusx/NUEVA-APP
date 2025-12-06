@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Restaurant } from '../types';
+import { Restaurant, Banner as BannerType } from '../types';
 import { useRestaurants } from '../hooks/useRestaurants';
 import { useThemeColor } from '../hooks/useThemeColor';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -10,6 +10,7 @@ import { SearchIcon, StarIcon, ClockIcon, AlertTriangleIcon, SlidersIcon, StoreI
 import { RestaurantCardSkeleton } from './RestaurantCardSkeleton';
 import { Spinner } from './Spinner';
 import { getTransformedImageUrl } from '../services/image';
+import { getBanners } from '../services/api';
 import AdvancedFilters, { Filters } from './AdvancedFilters';
 import { ProductDetailModal } from './ProductDetailModal';
 import { useAppContext } from '../context/AppContext';
@@ -360,118 +361,140 @@ const MobileView: React.FC<any> = ({ restaurants, loading, loadingMore, hasMore,
 // --- Banner Component ---
 // --- Banner Component ---
 const Banner: React.FC = () => {
+  const [banners, setBanners] = useState<BannerType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const bannerItems = [
-    {
-      title: "30% OFF",
-      subtitle: "En tus restaurantes favoritos. ¡Solo por tiempo limitado!",
-      tag: "Promo Flash",
-      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
-      gradient: "from-[#4a148c] via-[#7b1fa2] to-[#9c27b0]"
-    },
-    {
-      title: "2x1 Sushi",
-      subtitle: "Los mejores rollos al mejor precio. ¡No te lo pierdas!",
-      tag: "Martes Loco",
-      image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=2070&auto=format&fit=crop",
-      gradient: "from-[#c62828] via-[#d32f2f] to-[#e53935]"
-    },
-    {
-      title: "Envío Gratis",
-      subtitle: "En pedidos mayores a $200. ¡Aprovecha ahora!",
-      tag: "Fin de Semana",
-      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop",
-      gradient: "from-[#1565c0] via-[#1976d2] to-[#1e88e5]"
-    }
-  ];
+  const navigate = useNavigate();
 
+  // Fetch banners from Supabase
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % bannerItems.length);
-    }, 5000);
-    return () => clearInterval(interval);
+    const loadBanners = async () => {
+      try {
+        const data = await getBanners();
+        // Filter only active banners
+        const activeBanners = data.filter(b => b.is_active);
+        setBanners(activeBanners);
+      } catch (error) {
+        console.error('Error loading banners:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBanners();
   }, []);
 
-  const handleOrderNow = () => {
-    const grid = document.getElementById('restaurants-grid');
-    if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+  // Auto-rotate
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
+  const handleBannerClick = (banner: BannerType) => {
+    if (banner.restaurant_id) {
+      navigate(`/restaurants/${banner.restaurant_id}`);
+    } else if (banner.link_url) {
+      window.open(banner.link_url, '_blank');
+    }
   };
 
+  if (loading) {
+    return <div className="w-full h-64 rounded-[2rem] bg-gray-100 animate-pulse mb-10" />;
+  }
+
+  if (banners.length === 0) {
+    return null; // No banners to show
+  }
+
+  const currentBanner = banners[currentIndex];
+  // Default gradients if not provided (though Supabase usually has image_url)
+  const defaultGradient = "from-[#4a148c] via-[#7b1fa2] to-[#9c27b0]";
+
   return (
-    <div className="relative w-full h-64 rounded-[2rem] overflow-hidden mb-10 shadow-2xl group cursor-pointer">
+    <div
+      className="relative w-full h-64 rounded-[2rem] overflow-hidden mb-10 shadow-2xl group cursor-pointer"
+      onClick={() => handleBannerClick(currentBanner)}
+    >
       <AnimatePresence mode='wait'>
         <motion.div
-          key={currentIndex}
+          key={currentIndex} // Key change triggers animation
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
           className="absolute inset-0"
         >
-          {/* Background with Gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-r ${bannerItems[currentIndex].gradient}`}></div>
+          {/* Background Gradient (Fallback or Overlay) */}
+          <div className={`absolute inset-0 bg-gradient-to-r ${defaultGradient}`}></div>
+
+          {/* Full Background Image */}
+          <img
+            src={getTransformedImageUrl(currentBanner.image_url, 800, 400)}
+            alt="Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Dark Overlay for Text Readability */}
+          <div className="absolute inset-0 bg-black/30 bg-gradient-to-t from-black/60 to-transparent" />
 
           {/* Content */}
           <div className="absolute inset-0 flex items-center justify-between p-10">
             <div className="flex flex-col items-start z-10 space-y-4">
+              {/* Optional Tag - could be added to DB later if needed */}
               <motion.span
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider border border-white/10"
               >
-                {bannerItems[currentIndex].tag}
+                Promoción
               </motion.span>
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-6xl font-black text-white leading-tight drop-shadow-md"
-              >
-                {bannerItems[currentIndex].title}
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-white/90 text-lg font-medium max-w-xs leading-relaxed"
-              >
-                {bannerItems[currentIndex].subtitle}
-              </motion.p>
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                onClick={handleOrderNow}
-                className="mt-2 bg-white text-purple-700 px-8 py-3.5 rounded-2xl font-bold shadow-lg hover:bg-purple-50 hover:scale-105 transition-all active:scale-95 text-base"
-              >
-                Pedir Ahora
-              </motion.button>
-            </div>
 
-            {/* Image */}
-            <div className="absolute right-0 top-0 bottom-0 w-1/2 h-full">
-              <img
-                src={bannerItems[currentIndex].image}
-                alt="Food Banner"
-                className="w-full h-full object-cover mask-image-gradient"
-                style={{ maskImage: 'linear-gradient(to right, transparent, black 20%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 20%)' }}
-              />
+              {/* Using display_order or just generic title for now since DB might lack title field in simpler version. 
+                  If DB has title/subtitle, use them. If not, maybe hide text or use default. 
+                  Checking types.ts: Banner has id, image_url, link_url, display_order, is_active, restaurant_id. 
+                  NO Title/Subtitle in DB yet. We will just show the image clean. 
+              */}
+
+              {/* 
+                  Since the current DB schema for Banners (as per types.ts) is simple (just image), 
+                  we typically rely on the text being IN the image designed by the admin.
+                  So we don't render overlay text unless we add those columns.
+                  We'll keep the "Pedir Ahora" button if it links to a restaurant.
+               */}
+
+              {currentBanner.restaurant_id && (
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-32 bg-white text-purple-700 px-6 py-2.5 rounded-2xl font-bold shadow-lg hover:bg-purple-50 hover:scale-105 transition-all active:scale-95 text-sm"
+                >
+                  Ver Restaurante
+                </motion.button>
+              )}
             </div>
           </div>
         </motion.div>
       </AnimatePresence>
 
       {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {bannerItems.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentIndex(idx)}
-            className={`w-2 h-2 rounded-full transition-all ${idx === currentIndex ? 'bg-white w-6' : 'bg-white/50'}`}
-          />
-        ))}
-      </div>
+      {banners.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+          {banners.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentIndex(idx);
+              }}
+              className={`w-2 h-2 rounded-full transition-all ${idx === currentIndex ? 'bg-white w-6' : 'bg-white/50'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
-import { getBanners, addBanner, deleteBanner } from '../services/api';
+import { getBanners, addBanner, deleteBanner, updateBanner } from '../services/api';
 import { Banner } from '../types';
 
 export const useAdminBanners = () => {
@@ -37,5 +37,5 @@ export const useAdminBanners = () => {
         };
     }, [fetchBanners]);
 
-    return { banners, loading, error, fetchBanners, addBanner, deleteBanner };
+    return { banners, loading, error, fetchBanners, addBanner, deleteBanner, updateBanner };
 };

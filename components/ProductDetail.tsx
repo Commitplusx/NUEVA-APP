@@ -4,7 +4,7 @@ import { useThemeColor } from '../hooks/useThemeColor';
 import * as Icons from './icons';
 import { getTransformedImageUrl } from '../services/image';
 import IngredientIcon from './IngredientIcon';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProductDetailProps {
   item: MenuItem;
@@ -16,159 +16,231 @@ interface ProductDetailProps {
   hideAddToCartBar?: boolean;
   quantity: number;
   onQuantityChange: (qty: number) => void;
-  // New props for customization
   selectedOptions?: Record<string, string[]>;
   onOptionToggle?: (groupId: string, optionName: string, maxSelect: number) => void;
-  currentPrice?: number; // Calculated price including extras
+  currentPrice?: number;
 }
+
+// --- Animated Option Component ---
+const OptionItem: React.FC<{
+  name: string;
+  isSelected: boolean;
+  onToggle: () => void;
+  price?: number;
+}> = ({ name, isSelected, onToggle, price }) => (
+  <motion.div
+    onClick={onToggle}
+    layout
+    className={`relative flex items-center justify-between p-4 mb-2 rounded-2xl cursor-pointer border transition-colors ${isSelected
+        ? 'bg-purple-50 border-purple-200'
+        : 'bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+      }`}
+    whileTap={{ scale: 0.98 }}
+    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+  >
+    <div className="flex items-center gap-3">
+      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-purple-600 border-purple-600' : 'border-gray-300'
+        }`}>
+        {isSelected && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="text-white"
+          >
+            <Icons.CheckIcon className="w-4 h-4" />
+          </motion.div>
+        )}
+      </div>
+      <span className={`font-medium ${isSelected ? 'text-purple-900' : 'text-gray-700'}`}>
+        {name}
+      </span>
+    </div>
+    {price && price > 0 && (
+      <span className="text-sm font-semibold text-purple-600 bg-purple-100 px-2 py-1 rounded-md">
+        +${price.toFixed(2)}
+      </span>
+    )}
+  </motion.div>
+);
+
+// --- Ingredient Toggle Component ---
+const IngredientToggle: React.FC<{
+  name: string;
+  isSelected: boolean;
+  onToggle: () => void;
+}> = ({ name, isSelected, onToggle }) => (
+  <motion.button
+    onClick={onToggle}
+    layout
+    className={`flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 p-2 transition-all relative ${isSelected
+        ? 'bg-green-50 border-2 border-green-500 shadow-sm'
+        : 'bg-gray-50 border border-gray-100 opacity-60 grayscale'
+      }`}
+    whileTap={{ scale: 0.9 }}
+  >
+    <div className={`text-2xl ${isSelected ? 'text-green-600' : 'text-gray-400'}`}>
+      <IngredientIcon name={name} className="w-8 h-8" />
+    </div>
+    <span className="text-[10px] font-bold text-gray-700 leading-tight w-full text-center line-clamp-2">
+      {name}
+    </span>
+    {isSelected && (
+      <motion.div
+        layoutId={`check-${name}`}
+        className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow-sm"
+      >
+        <Icons.CheckIcon className="w-2.5 h-2.5 text-white" />
+      </motion.div>
+    )}
+  </motion.button>
+);
 
 export const ProductDetail: React.FC<ProductDetailProps> = ({
   item,
   restaurant,
   onBack,
-  onAddToCart,
   selectedIngredients,
   onToggleIngredient,
-  hideAddToCartBar = false,
   quantity,
   onQuantityChange,
   selectedOptions = {},
   onOptionToggle,
   currentPrice
 }) => {
-  useThemeColor('#f0fdf4'); // Light green background for the top part
+  useThemeColor('#ffffff');
 
   const displayPrice = currentPrice !== undefined ? currentPrice : item.price * quantity;
 
   return (
     <div className="bg-white md:h-full md:flex md:overflow-hidden h-full flex flex-col">
-      {/* Image Section with Circular Background - Reduced height for mobile */}
-      <div className="relative w-full bg-green-50 h-48 md:w-1/2 md:h-full flex-shrink-0 overflow-hidden rounded-b-[2rem] md:rounded-none md:rounded-r-[3rem]">
-        {/* Decorative Circle */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] aspect-square bg-white/40 rounded-full blur-3xl pointer-events-none" />
+      {/* --- Header Image --- */}
+      <div className="relative w-full h-64 md:h-full md:w-1/2 flex-shrink-0 overflow-hidden bg-white">
+        <motion.div
+          className="absolute inset-0 z-0 bg-purple-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        />
 
-        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-4">
+        {/* Abstract Backdrops */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] aspect-square bg-purple-200/20 rounded-full blur-[80px]" />
+
+        <div className="relative z-10 w-full h-full flex items-center justify-center p-8">
           <motion.img
-            src={getTransformedImageUrl(item.imageUrl || restaurant.imageUrl || '', 600, 600)}
+            src={getTransformedImageUrl(item.imageUrl || restaurant.imageUrl || '', 800, 800)}
             alt={item.name}
-            className="w-40 h-40 md:w-96 md:h-96 object-cover rounded-full shadow-xl shadow-green-900/20"
-            initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            className="w-48 h-48 md:w-96 md:h-96 object-cover rounded-full shadow-2xl shadow-purple-900/10"
+            initial={{ scale: 0.8, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ type: 'spring', damping: 20 }}
           />
         </div>
 
-        {/* Header Icons */}
-        <div className="absolute top-4 left-0 right-0 px-4 flex justify-between items-center z-20">
-          <button onClick={onBack} className="bg-white/80 backdrop-blur-md rounded-full p-2 shadow-sm hover:bg-white transition-transform active:scale-90">
-            <Icons.ChevronLeftIcon className="w-5 h-5 text-gray-800" />
-          </button>
-          <button className="bg-white/80 backdrop-blur-md rounded-full p-2 shadow-sm hover:bg-white transition-transform active:scale-90">
-            <Icons.HeartIcon className="w-5 h-5 text-gray-800" />
-          </button>
+        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-20">
+          <motion.button
+            onClick={onBack}
+            className="bg-white/90 backdrop-blur-md rounded-full p-3 shadow-lg hover:bg-white transition-all"
+            whileTap={{ scale: 0.9 }}
+          >
+            <Icons.ChevronLeftIcon className="w-6 h-6 text-gray-800" />
+          </motion.button>
+
+          {/* Info Badge */}
+          <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
+            <Icons.ClockIcon className="w-3.5 h-3.5 text-purple-600" />
+            <span className="text-xs font-bold text-gray-800">{restaurant.delivery_time} min</span>
+          </div>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="flex-grow flex flex-col p-5 md:p-10 md:w-1/2 md:overflow-y-auto">
-        <div className="flex flex-col items-center text-center mb-6">
+      {/* --- Content Scroll --- */}
+      <div className="flex-grow flex flex-col md:w-1/2 bg-white rounded-t-[2.5rem] -mt-10 md:mt-0 md:rounded-none relative z-10 md:overflow-y-auto">
+        <div className="p-6 md:p-10 pb-32">
 
-          <div className="flex justify-between items-center w-full mb-2">
-            <h1 className="text-2xl font-extrabold text-gray-900 text-left leading-tight flex-grow">{item.name}</h1>
-            <p className="text-2xl font-bold text-green-600 ml-4">${displayPrice.toFixed(2)}</p>
+          {/* Header Info */}
+          <div className="mb-8">
+            <div className="flex justify-between items-start gap-4 mb-2">
+              <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">{item.name}</h1>
+              <p className="text-2xl font-black text-purple-600 flex-shrink-0">${item.price.toFixed(2)}</p>
+            </div>
+            <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
           </div>
 
-          <div className="flex justify-between items-center w-full">
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium bg-gray-100 px-2 py-1 rounded-lg">
-              <Icons.ClockIcon className="w-3 h-3" />
-              <span>{restaurant.delivery_time} min</span>
-            </div>
+          {/* Divider */}
+          <div className="w-full h-px bg-gray-100 my-6" />
 
-            {/* Compact Quantity Selector */}
-            <div className="flex items-center gap-4 bg-yellow-400 rounded-full px-4 py-1.5 shadow-md shadow-yellow-400/20">
+          {/* Customization Groups */}
+          {item.customizationOptions?.map(group => (
+            <div key={group.id} className="mb-8">
+              <div className="flex justify-between items-baseline mb-4">
+                <h3 className="text-lg font-bold text-gray-900">{group.name}</h3>
+                <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                  {group.maxSelect === 1 ? 'Elige 1' : `Hasta ${group.maxSelect}`}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {group.options.map(opt => {
+                  // Calculate if this option adds extra cost
+                  const selectedCount = (selectedOptions[group.id] || []).length;
+                  const isSelected = (selectedOptions[group.id] || []).includes(opt.name);
+
+                  // Logic for display price: Show price if it WOULD cost extra or DOES cost extra
+                  // Simplifying: Just show the potential price per extra
+                  const priceDisplay = group.pricePerExtra > 0 ? group.pricePerExtra : undefined;
+
+                  return (
+                    <OptionItem
+                      key={opt.name}
+                      name={opt.name}
+                      isSelected={isSelected}
+                      price={priceDisplay}
+                      onToggle={() => onOptionToggle && onOptionToggle(group.id, opt.name, group.maxSelect || 100)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Ingredients */}
+          {(!item.customizationOptions || item.customizationOptions.length === 0) && item.ingredients && item.ingredients.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Ingredientes</h3>
+              <div className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar -mx-6 px-6 md:mx-0 md:px-0">
+                {item.ingredients.map(ing => (
+                  <IngredientToggle
+                    key={ing}
+                    name={ing}
+                    isSelected={selectedIngredients.includes(ing)}
+                    onToggle={() => onToggleIngredient(ing)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quantity Selector Inline (Desktop mostly, or just extra utility) */}
+          <div className="flex items-center justify-between mt-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <span className="font-bold text-gray-700">Cantidad</span>
+            <div className="flex items-center gap-6 bg-white rounded-xl shadow-sm px-2 py-1 border border-gray-200">
               <button
                 onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                className="text-black disabled:opacity-50 active:scale-90 transition-transform p-1"
+                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-purple-600 active:scale-90 transition-transform"
                 disabled={quantity <= 1}
               >
-                <Icons.MinusIcon className="w-4 h-4 font-bold" />
+                <Icons.MinusIcon className="w-5 h-5" />
               </button>
-              <span className="text-base font-bold text-black min-w-[1rem]">{quantity}</span>
+              <span className="text-xl font-black text-gray-900 w-6 text-center">{quantity}</span>
               <button
                 onClick={() => onQuantityChange(quantity + 1)}
-                className="text-black active:scale-90 transition-transform p-1"
+                className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-purple-600 active:scale-90 transition-transform"
               >
-                <Icons.PlusIcon className="w-4 h-4 font-bold" />
+                <Icons.PlusIcon className="w-5 h-5" />
               </button>
             </div>
           </div>
+
         </div>
-
-        {/* Customization Groups */}
-        {item.customizationOptions?.map(group => (
-          <div key={group.id} className="mb-5 w-full border-b border-gray-100 pb-4">
-            <h3 className="font-bold text-gray-800 mb-1 text-left text-sm">{group.name}</h3>
-            <div className="flex justify-between text-[10px] text-gray-500 mb-2">
-              <span>Elige hasta {group.maxSelect}</span>
-              <span>{group.includedItems} incluidos, extra +${group.pricePerExtra}</span>
-            </div>
-
-            {/* Grid Layout for Options */}
-            <div className="grid grid-cols-2 gap-3">
-              {group.options.map(opt => {
-                const isSelected = (selectedOptions[group.id] || []).includes(opt.name);
-                return (
-                  <div
-                    key={opt.name}
-                    onClick={() => onOptionToggle && onOptionToggle(group.id, opt.name, group.maxSelect || 100)}
-                    className={`flex justify-between items-center p-2.5 rounded-xl border cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50 shadow-sm' : 'border-gray-100 hover:border-gray-200 bg-white'
-                      }`}
-                  >
-                    <span className={`text-xs font-medium leading-tight ${isSelected ? 'text-green-700' : 'text-gray-600'}`}>{opt.name}</span>
-                    <div className={`w-4 h-4 rounded-full border flex-shrink-0 ml-2 flex items-center justify-center ${isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                      }`}>
-                      {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-
-        {/* Ingredients */}
-        {(!item.customizationOptions || item.customizationOptions.length === 0) && item.ingredients && item.ingredients.length > 0 && (
-          <div className="mb-6 w-full">
-            <h3 className="text-base font-bold text-gray-900 mb-3 text-left">Ingredients</h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar snap-x">
-              {item.ingredients.map(ingredientName => {
-                const isSelected = selectedIngredients.includes(ingredientName);
-                return (
-                  <button
-                    key={ingredientName}
-                    onClick={() => onToggleIngredient(ingredientName)}
-                    className={`flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center gap-1 p-1.5 transition-all snap-center ${isSelected
-                      ? 'bg-green-50 border-2 border-green-500 shadow-sm'
-                      : 'bg-gray-50 border border-gray-100 opacity-60 grayscale'
-                      }`}
-                  >
-                    <div className={`text-xl ${isSelected ? 'text-green-600' : 'text-gray-400'}`}>
-                      <IngredientIcon name={ingredientName} className="w-6 h-6" />
-                    </div>
-                    <span className="text-[9px] font-bold text-gray-700 truncate w-full text-center">{ingredientName}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-auto pt-2">
-          <p className="text-gray-400 text-xs leading-relaxed mb-4 text-center md:text-left line-clamp-3">{item.description}</p>
-        </div>
-
-        {/* Spacer for fixed bottom bar if needed */}
-        <div className="h-16 md:hidden"></div>
       </div>
     </div>
   );

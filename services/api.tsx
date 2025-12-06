@@ -598,6 +598,12 @@ export const deleteBanner = async (id: number): Promise<void> => {
   if (error) throw error;
 };
 
+export const updateBanner = async (id: number, updates: Partial<Banner>): Promise<Banner> => {
+  const { data, error } = await supabase.from('banners').update(updates).eq('id', id).select();
+  if (error) throw error;
+  return data[0];
+};
+
 export const uploadBannerImage = async (file: File): Promise<string> => {
   const fileName = `${Date.now()}-${file.name}`;
   const { data, error } = await supabase.storage

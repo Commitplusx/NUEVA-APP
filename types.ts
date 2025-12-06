@@ -181,6 +181,7 @@ export interface Banner {
   link_url?: string;
   display_order: number;
   is_active: boolean;
+  restaurant_id?: number | null;
   created_at?: string;
 }
 
